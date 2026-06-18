@@ -20,3 +20,13 @@
 - Confirmed the local HectaresBC archive is about 17 GB with 2,191 files, including 418 data-layer ZIPs, 1,765 virtual-layer ZIPs, and compact root metadata/control files.
 - Concluded that Phase 1 should focus on compact inventory, ZIP manifests, metadata parsing, representative integrity checks, and data-repository layout decisions before adding package/docs/CI scaffolding.
 - Merged Phase 0 governance baseline PR #32 and updated the roadmap closeout state so Phase 1 activation is the next workflow step.
+- Activated Phase 1 archive reconnaissance with parent issue #34, branch `feature/p1-archive-reconnaissance`, and child issues #36, #37, #38, #39, and #35.
+- Completed the P1.1 archive inventory output contract in `planning/phase1_archive_reconnaissance_plan.md`.
+- Completed P1.2 by adding `scripts/archive_inventory.py` and generating compact tracked outputs in `metadata/archive_inventory/`.
+- Verified the generated archive summary and ZIP manifest parse successfully, cover 2,191 files and 2,183 ZIP rows, and report zero bad ZIP rows.
+- Completed P1.3 by adding `scripts/summarize_root_metadata.py` and generating `metadata/archive_inventory/root_metadata_files.md`.
+- Verified root listing and metadata counts: `data_layers.txt` matches 418 data-layer ZIPs, `virtual_layers.txt` matches 1,765 virtual-layer ZIPs, and `virtual_layers_metadata_all.csv` has 1,765 rows with no duplicate filenames or layer IDs.
+- Completed P1.4 by adding `scripts/summarize_zip_payloads.py` and generating `metadata/archive_inventory/zip_payload_families.md`.
+- Verified ZIP payload-family signals: all 418 data-layer ZIPs have TIFF and WMS XML entries, all 1,765 virtual-layer ZIPs have TIFF and TXT metadata entries, all ZIP central directories open successfully, and two data-layer ZIPs contain nested ZIP entries.
+- Completed P1.5 with a hybrid data-repository layout recommendation in `metadata/archive_inventory/data_repo_layout_recommendation.md`.
+- Recommended preserving the rescued export layout exactly under `raw/hectaresbc_2022_export/` in `fresh-hectaresbc-data`, while keeping compact manifests and future canonical/derived products in separate paths with explicit provenance mappings.

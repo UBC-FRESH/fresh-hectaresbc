@@ -14,10 +14,15 @@ GitHub parent issue: #1
 
 ## Phase 1: Archive Reconnaissance
 
-- [ ] P1.1 Confirm `tmp/shared-data/hectaresbc` is present and readable.
-- [ ] P1.2 Produce a read-only top-level inventory: directory structure, file counts, extensions, sizes, and obvious metadata files.
-- [ ] P1.3 Identify geospatial data formats, virtual-layer candidates, metadata-bearing files, and archive integrity signals.
-- [ ] P1.4 Record compact tracked findings without committing bulky data or generated extracts.
+GitHub parent issue: #34
+
+Active branch: `feature/p1-archive-reconnaissance`
+
+- [x] P1.1 Define archive inventory output contract. Child issue: #36.
+- [x] P1.2 Build root inventory and ZIP manifest. Child issue: #37.
+- [x] P1.3 Parse root metadata and control files. Child issue: #38.
+- [x] P1.4 Classify ZIP payload families and integrity signals. Child issue: #39.
+- [x] P1.5 Recommend data repository layout approach. Child issue: #35.
 
 ## Phase 2: Metadata And Provenance Recovery
 
@@ -97,7 +102,7 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Close parent issue #1 after the Phase 0 closeout docs update merges.
-2. Activate Phase 1 by creating a Phase 1 parent issue and branch from updated `main`.
-3. Use `planning/archive_reconnaissance_2026-06-18.md` to seed the Phase 1 child issues.
+1. Mark PR #40 ready, merge Phase 1 to `main`, and close parent issue #34.
+2. Activate Phase 2 from updated `main` with a new parent issue and branch.
+3. Use Phase 1 outputs to seed Phase 2 metadata/provenance recovery child issues.
 4. Keep future parent issues (#6, #25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
