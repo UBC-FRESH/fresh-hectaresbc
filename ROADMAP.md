@@ -26,12 +26,19 @@ Active branch: `feature/p1-archive-reconnaissance`
 
 ## Phase 2: Metadata And Provenance Recovery
 
-- [ ] P2.1 Define a minimal dataset identity model: source path, original name, inferred title, format, CRS when known, metadata source, and uncertainty notes.
-- [ ] P2.2 Recover original HectaresBC metadata and virtual layer definitions where available.
-- [ ] P2.3 Draft naming and provenance conventions before any broad normalization.
+GitHub parent issue: #43
+
+Active branch: `feature/p2-metadata-provenance`
+
+- [x] P2.1 Define a minimal dataset identity model: source path, original name, inferred title, format, CRS when known, metadata source, and uncertainty notes. Child issue: #45.
+- [x] P2.2 Recover compact virtual-layer catalog records from root metadata and ZIP evidence. Child issue: #48.
+- [x] P2.3 Recover compact data-layer metadata records from per-ZIP metadata files. Child issue: #47.
+- [x] P2.4 Draft naming and provenance conventions before any broad normalization. Child issue: #44.
+- [x] P2.5 Summarize metadata recovery results and Phase 3 ingestion-design inputs. Child issue: #46.
 
 ## Phase 3: Reproducible Ingestion Design
 
+- [ ] Activate Phase 3 with a GitHub parent issue and feature branch after Phase 2 PR #49 merges to `main`.
 - [ ] P3.1 Choose tooling based on archive contents, not before.
 - [ ] P3.2 Design compact, rerunnable inventory and metadata extraction workflows.
 - [ ] P3.3 Add the first validation checks for source-data readability and metadata consistency.
@@ -41,6 +48,8 @@ Active branch: `feature/p1-archive-reconnaissance`
 GitHub parent issue: #6
 
 The HectaresBC archive is expected to include large files and a large total data payload. This repository will not track that payload directly with plain Git/GitHub. The planned pattern is to link a separate public DataLad/git-annex dataset repository, `UBC-FRESH/fresh-hectaresbc-data`, as a Git submodule under `external/fresh-hectaresbc-data`, following the established FEMIC `external/` pattern.
+
+Phase 4 storage work should configure a DataLad/git-annex S3 special remote pointing to a new Arbutus object-storage bucket. Credentials must use the user-local FEMIC-style pattern under `~/.config/fresh-hectaresbc/`, not tracked repo files. See `planning/arbutus_s3_special_remote_plan.md`.
 
 - [ ] P4.1 Define the data repository contract. Child issue: #8.
 - [ ] P4.2 Initialize `UBC-FRESH/fresh-hectaresbc-data` as a DataLad dataset. Child issue: #11.
@@ -102,7 +111,7 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Mark PR #40 ready, merge Phase 1 to `main`, and close parent issue #34.
-2. Activate Phase 2 from updated `main` with a new parent issue and branch.
-3. Use Phase 1 outputs to seed Phase 2 metadata/provenance recovery child issues.
+1. Mark draft PR #49 ready for review and merge Phase 2 to `main`.
+2. Close parent issue #43 only after PR #49 merges.
+3. Activate Phase 3 from updated `main` with a new parent issue and feature branch.
 4. Keep future parent issues (#6, #25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.

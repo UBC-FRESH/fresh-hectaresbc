@@ -103,3 +103,22 @@ See `metadata/archive_inventory/data_repo_layout_recommendation.md`.
 - The data repo has not yet been initialized as a DataLad dataset.
 - The main repo has not yet added an `external/` submodule.
 - Phase 1 archive reconnaissance produced compact inventory outputs and a layout recommendation.
+- Phase 4 storage planning now expects a DataLad/git-annex S3 special remote backed by a new Arbutus object-storage bucket, with user-local credentials kept outside the repo under `~/.config/fresh-hectaresbc/`.
+
+## Arbutus Credential And Special-Remote Pattern
+
+The planned Arbutus S3 special remote must use user-local credentials, following the FEMIC pattern.
+
+Credentials should live outside the repository:
+
+```text
+~/.config/fresh-hectaresbc/arbutus_env.sh
+```
+
+Optional package-specific DataLad environment setup may live at:
+
+```text
+~/.config/fresh-hectaresbc/datalad-env.sh
+```
+
+The repository should document the template and workflow, but never commit credentials or secret-bearing generated files. See `planning/arbutus_s3_special_remote_plan.md`.
