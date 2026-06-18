@@ -97,7 +97,7 @@ export PATH="$HOME/.local/bin:$PATH"
 source ~/.config/fresh-hectaresbc/arbutus_env.sh
 cd external/fresh-hectaresbc-data
 git annex enableremote arbutus-s3
-datalad get metadata/validation/arbutus_s3_smoke_test.bin
+datalad get raw/hectaresbc_2022_export/data_layers/adminunits_bcts.zip
 ```
 
 ## Data Repository Layout
@@ -202,6 +202,8 @@ Before Phase 4 closes:
 4. Representative payloads must be uploaded to and retrievable from the special remote.
 5. This main repository must link the data repository as a submodule under `external/fresh-hectaresbc-data`.
 6. A clean clone must be able to initialize the submodule and retrieve representative annexed payloads with documented commands.
+
+Phase 4 completion status: all six validation requirements are satisfied. See `planning/cold_clone_data_access_validation.md`.
 
 ## Deferred Decisions
 

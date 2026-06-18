@@ -40,7 +40,18 @@ export PATH="$HOME/.local/bin:$PATH"
 source ~/.config/fresh-hectaresbc/arbutus_env.sh
 cd external/fresh-hectaresbc-data
 git annex enableremote arbutus-s3
-datalad get metadata/validation/arbutus_s3_smoke_test.bin
 ```
 
-Credentials are user-local and must not be committed. See `planning/arbutus_s3_special_remote_plan.md` and `external/fresh-hectaresbc-data/docs/arbutus_s3_remote.md`.
+Retrieve the Phase 4 representative payload set:
+
+```bash
+datalad get \
+  raw/hectaresbc_2022_export/data_layers/adminunits_bcts.zip \
+  raw/hectaresbc_2022_export/data_layers/climatedecade_ahm.zip \
+  raw/hectaresbc_2022_export/data_layers/climatercp452050_tmaxsp.zip \
+  raw/hectaresbc_2022_export/data_layers/water_distancetocoast.zip \
+  raw/hectaresbc_2022_export/virtual_layers/virtualecocomm.alaskanmountainheatherdwarfshrublandharrimanellastellerianadwarfshrubland.425.zip \
+  raw/hectaresbc_2022_export/virtual_layers/virtualspecies.bulltroutsalvelinusconfluentus.1135.zip
+```
+
+Credentials are user-local and must not be committed. See `planning/arbutus_s3_special_remote_plan.md`, `planning/cold_clone_data_access_validation.md`, and `external/fresh-hectaresbc-data/docs/arbutus_s3_remote.md`.
