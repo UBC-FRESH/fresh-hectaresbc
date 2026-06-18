@@ -50,3 +50,4 @@
 - Activated Phase 4 DataLad-backed data repository work with parent issue #6 and branch `feature/p4-datalad-data-repo`.
 - Completed P4.1 with `planning/data_repository_contract.md`, defining main-repo/data-repo/object-store/local-archive roles, intended submodule path, DataLad layout, annex/plain-Git tracking rules, metadata handoff, representative retrieval payloads, and validation requirements.
 - Completed P4.2 by initializing sibling repository `UBC-FRESH/fresh-hectaresbc-data` as a DataLad/git-annex dataset, adding the initial raw/metadata/derived/docs scaffold and annex tracking policy, and pushing `main` plus `git-annex` branches to GitHub.
+- Completed P4.3 by creating Arbutus bucket `fresh-hectaresbc-data`, configuring the `arbutus-s3` git-annex special remote with `embedcreds=no`, uploading an annexed smoke-test payload, documenting the non-secret retrieval workflow in the data repo, and proving clean-clone retrieval through DataLad.
