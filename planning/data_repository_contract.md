@@ -76,13 +76,29 @@ Role:
 
 ## Intended Submodule Path
 
-This repository should link the data repository at:
+This repository links the data repository at:
 
 ```text
 external/fresh-hectaresbc-data
 ```
 
 Only the submodule pointer and public documentation belong in this repository. Annexed payloads belong in `fresh-hectaresbc-data`.
+
+Bootstrap commands:
+
+```bash
+git submodule update --init --recursive external/fresh-hectaresbc-data
+```
+
+On-demand retrieval happens inside the submodule:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+source ~/.config/fresh-hectaresbc/arbutus_env.sh
+cd external/fresh-hectaresbc-data
+git annex enableremote arbutus-s3
+datalad get metadata/validation/arbutus_s3_smoke_test.bin
+```
 
 ## Data Repository Layout
 
@@ -189,10 +205,7 @@ Before Phase 4 closes:
 
 ## Deferred Decisions
 
-- Exact Arbutus bucket name.
-- Exact S3 endpoint and region values.
 - Whether anonymous read access is enabled for the object store.
 - Whether UBC ARC Chinook becomes a mirror or replacement storage backend.
 - Whether future normalized or derived data products live in the same DataLad dataset.
 - Whether validation scripts are copied into the data repository or run only from the main repository.
-

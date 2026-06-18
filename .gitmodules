@@ -1,0 +1,3 @@
+[submodule "external/fresh-hectaresbc-data"]
+	path = external/fresh-hectaresbc-data
+	url = https://github.com/UBC-FRESH/fresh-hectaresbc-data.git

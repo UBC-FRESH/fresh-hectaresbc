@@ -61,7 +61,7 @@ Phase 4 storage work should configure a DataLad/git-annex S3 special remote poin
 - [x] P4.1 Define the data repository contract. Child issue: #8.
 - [x] P4.2 Initialize `UBC-FRESH/fresh-hectaresbc-data` as a DataLad dataset. Child issue: #11.
 - [x] P4.3 Configure storage remote for annexed payloads. Child issue: #9.
-- [ ] P4.4 Link the DataLad repo as a Git submodule at `external/fresh-hectaresbc-data`. Child issue: #7.
+- [x] P4.4 Link the DataLad repo as a Git submodule at `external/fresh-hectaresbc-data`. Child issue: #7.
 - [ ] P4.5 Validate cold-clone data access workflow. Child issue: #10.
 
 ## Phase 5: Core Python Access Library
@@ -118,6 +118,5 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P4.4 by linking the data repo as `external/fresh-hectaresbc-data`.
-2. Complete P4.5 with cold-clone data access validation.
-3. Keep future parent issues (#25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
+1. Complete P4.5 with cold-clone data access validation.
+2. Keep future parent issues (#25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
