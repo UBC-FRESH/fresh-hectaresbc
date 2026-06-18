@@ -44,3 +44,5 @@
 - Activated Phase 3 reproducible ingestion design with parent issue #50, branch `feature/p3-ingestion-design`, and child issues #54, #51, #52, and #53.
 - Completed P3.1 with `planning/phase3_reproducible_ingestion_plan.md`, choosing standard-library-first validation tooling and deferring geospatial/package/DataLad tooling until specific checks require them.
 - Completed P3.2 with `planning/ingestion_workflow_design.md`, defining recovered catalog validation, representative source payload inspection, catalog materialization deferral, nested ZIP handling, and DataLad metadata handoff boundaries.
+- Completed P3.3 by adding `scripts/validate_recovered_catalog.py`, `scripts/inspect_representative_payloads.py`, and compact validation reports in `metadata/validation/`.
+- Validated recovered catalog counts, IDs, manifest joins, JSON-in-CSV fields, expected payload members, known virtual-layer conflicts, and representative ZIP/raster readability; six representative payloads inspected successfully with rasterio reporting `EPSG:3005` and `17216x15744` dimensions.
