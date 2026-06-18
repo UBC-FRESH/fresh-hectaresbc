@@ -30,3 +30,4 @@
 - Verified ZIP payload-family signals: all 418 data-layer ZIPs have TIFF and WMS XML entries, all 1,765 virtual-layer ZIPs have TIFF and TXT metadata entries, all ZIP central directories open successfully, and two data-layer ZIPs contain nested ZIP entries.
 - Completed P1.5 with a hybrid data-repository layout recommendation in `metadata/archive_inventory/data_repo_layout_recommendation.md`.
 - Recommended preserving the rescued export layout exactly under `raw/hectaresbc_2022_export/` in `fresh-hectaresbc-data`, while keeping compact manifests and future canonical/derived products in separate paths with explicit provenance mappings.
+- Corrected the data-repository layout recommendation to exclude `hectaresbc_download_layers.ipynb` and `.ipynb_checkpoints/` from future public data distribution because the notebook was disposable 2022 acquisition tooling for an offline server.
