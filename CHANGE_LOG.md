@@ -19,3 +19,4 @@
 - Completed the Phase 0 archive reconnaissance review for #3 and recorded compact findings in `planning/archive_reconnaissance_2026-06-18.md`.
 - Confirmed the local HectaresBC archive is about 17 GB with 2,191 files, including 418 data-layer ZIPs, 1,765 virtual-layer ZIPs, and compact root metadata/control files.
 - Concluded that Phase 1 should focus on compact inventory, ZIP manifests, metadata parsing, representative integrity checks, and data-repository layout decisions before adding package/docs/CI scaffolding.
+- Merged Phase 0 governance baseline PR #32 and updated the roadmap closeout state so Phase 1 activation is the next workflow step.
