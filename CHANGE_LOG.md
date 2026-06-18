@@ -41,3 +41,5 @@
 - Completed P2.4 with `metadata/catalog_schema/naming_and_provenance_conventions.md`, defining provisional ID rules, display-name/source-name handling, provenance citation fields, verification statuses, uncertainty fields, and allowed/blocked/deferred normalization rules.
 - Added Phase 4 planning for an Arbutus-backed DataLad/git-annex S3 special remote using user-local credentials under `~/.config/fresh-hectaresbc/`, following the FEMIC credential pattern without committing secrets.
 - Completed P2.5 with `metadata/recovered_catalog/recovery_summary.md` and `planning/phase3_ingestion_inputs.md`, summarizing recovered metadata counts, unresolved gaps, and concrete Phase 3 ingestion-design boundaries.
+- Activated Phase 3 reproducible ingestion design with parent issue #50, branch `feature/p3-ingestion-design`, and child issues #54, #51, #52, and #53.
+- Completed P3.1 with `planning/phase3_reproducible_ingestion_plan.md`, choosing standard-library-first validation tooling and deferring geospatial/package/DataLad tooling until specific checks require them.

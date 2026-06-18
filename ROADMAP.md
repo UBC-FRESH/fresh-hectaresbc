@@ -38,10 +38,15 @@ Active branch: `feature/p2-metadata-provenance`
 
 ## Phase 3: Reproducible Ingestion Design
 
-- [ ] Activate Phase 3 with a GitHub parent issue and feature branch after Phase 2 PR #49 merges to `main`.
-- [ ] P3.1 Choose tooling based on archive contents, not before.
-- [ ] P3.2 Design compact, rerunnable inventory and metadata extraction workflows.
-- [ ] P3.3 Add the first validation checks for source-data readability and metadata consistency.
+GitHub parent issue: #50
+
+Active branch: `feature/p3-ingestion-design`
+
+- [x] Activate Phase 3 with a GitHub parent issue and feature branch after Phase 2 PR #49 merges to `main`.
+- [x] P3.1 Choose tooling based on archive contents, not before. Child issue: #54.
+- [ ] P3.2 Design compact, rerunnable inventory and metadata extraction workflows. Child issue: #51.
+- [ ] P3.3 Add the first validation checks for source-data readability and metadata consistency. Child issue: #52.
+- [ ] P3.4 Summarize ingestion design and Phase 4 inputs. Child issue: #53.
 
 ## Phase 4: DataLad-Backed Data Repository
 
@@ -111,7 +116,7 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Mark draft PR #49 ready for review and merge Phase 2 to `main`.
-2. Close parent issue #43 only after PR #49 merges.
-3. Activate Phase 3 from updated `main` with a new parent issue and feature branch.
+1. Complete P3.2 by designing compact, rerunnable ingestion workflows.
+2. Complete P3.3 by adding the first validation checks for recovered catalog consistency and representative source readability.
+3. Complete P3.4 with a Phase 3 summary and Phase 4 DataLad/data-repository inputs.
 4. Keep future parent issues (#6, #25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
