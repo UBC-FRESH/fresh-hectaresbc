@@ -104,6 +104,20 @@ See `metadata/archive_inventory/data_repo_layout_recommendation.md`.
 - The main repo has not yet added an `external/` submodule.
 - Phase 1 archive reconnaissance produced compact inventory outputs and a layout recommendation.
 - Phase 4 storage planning now expects a DataLad/git-annex S3 special remote backed by a new Arbutus object-storage bucket, with user-local credentials kept outside the repo under `~/.config/fresh-hectaresbc/`.
+- Phase 3 validation identified six representative ZIP payloads for early cold-clone and annex retrieval checks. See `planning/phase3_ingestion_summary.md`.
+
+## Phase 3 Handoff Inputs
+
+Phase 4 should copy or mirror compact archive inventory, recovered catalog, schema, and validation metadata from the main repo into `fresh-hectaresbc-data` as plain Git-tracked metadata where useful.
+
+Recommended representative payloads for first retrieval validation:
+
+- `data_layers/adminunits_bcts.zip`
+- `data_layers/climatedecade_ahm.zip`
+- `data_layers/climatercp452050_tmaxsp.zip`
+- `data_layers/water_distancetocoast.zip`
+- `virtual_layers/virtualecocomm.alaskanmountainheatherdwarfshrublandharrimanellastellerianadwarfshrubland.425.zip`
+- `virtual_layers/virtualspecies.bulltroutsalvelinusconfluentus.1135.zip`
 
 ## Arbutus Credential And Special-Remote Pattern
 
