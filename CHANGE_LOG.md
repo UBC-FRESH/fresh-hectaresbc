@@ -16,3 +16,6 @@
 - Closed superseded issues #14 and #17 after replacing them with core access-library issues #30, #28, and #29.
 - Added strict development workflow rules: active roadmap phases map to a parent issue and feature branch, tasks map to child issues, child issues close one at a time, and parent issues close only after the phase PR merges to `main`.
 - Opened draft Phase 0 PR #32 from `feature/p0-governance-bootstrap` to `main`; it remains draft until the first archive reconnaissance informs #3.
+- Completed the Phase 0 archive reconnaissance review for #3 and recorded compact findings in `planning/archive_reconnaissance_2026-06-18.md`.
+- Confirmed the local HectaresBC archive is about 17 GB with 2,191 files, including 418 data-layer ZIPs, 1,765 virtual-layer ZIPs, and compact root metadata/control files.
+- Concluded that Phase 1 should focus on compact inventory, ZIP manifests, metadata parsing, representative integrity checks, and data-repository layout decisions before adding package/docs/CI scaffolding.

@@ -9,7 +9,7 @@ GitHub parent issue: #1
 - [x] P0.1 Create root agent operating contract in `AGENTS.md`. Child issue: #5.
 - [x] P0.2 Establish lightweight roadmap and changelog surfaces. Child issue: #2.
 - [x] P0.3 Create first focused planning note for archive inventory. Child issue: #4.
-- [ ] P0.4 Review and refine this scaffold after the first archive reconnaissance pass. Child issue: #3.
+- [x] P0.4 Review and refine this scaffold after the first archive reconnaissance pass. Child issue: #3.
 - [x] P0.5 Define strict issue, branch, and PR workflow. Child issue: #31.
 
 ## Phase 1: Archive Reconnaissance
@@ -97,9 +97,8 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Keep draft PR #32 open as the Phase 0 governance branch/PR surface.
-2. Run a read-only reconnaissance of `tmp/shared-data/hectaresbc`.
-3. Record findings in a compact tracked note under `planning/` or a dedicated metadata summary.
-4. Revisit `ROADMAP.md` and decide whether Phase 1 needs more detailed subtasks before tooling is introduced.
-5. Update #3, mark PR #32 ready, merge it, and then close #1 once Phase 0 review is complete.
-6. Keep future parent issues (#6, #25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
+1. Mark PR #32 ready for review and merge the Phase 0 governance baseline.
+2. Close parent issue #1 after PR #32 merges to `main`.
+3. Activate Phase 1 by creating a Phase 1 parent issue and branch from updated `main`.
+4. Use `planning/archive_reconnaissance_2026-06-18.md` to seed the Phase 1 child issues.
+5. Keep future parent issues (#6, #25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
