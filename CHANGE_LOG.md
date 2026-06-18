@@ -46,3 +46,4 @@
 - Completed P3.2 with `planning/ingestion_workflow_design.md`, defining recovered catalog validation, representative source payload inspection, catalog materialization deferral, nested ZIP handling, and DataLad metadata handoff boundaries.
 - Completed P3.3 by adding `scripts/validate_recovered_catalog.py`, `scripts/inspect_representative_payloads.py`, and compact validation reports in `metadata/validation/`.
 - Validated recovered catalog counts, IDs, manifest joins, JSON-in-CSV fields, expected payload members, known virtual-layer conflicts, and representative ZIP/raster readability; six representative payloads inspected successfully with rasterio reporting `EPSG:3005` and `17216x15744` dimensions.
+- Completed P3.4 with `planning/phase3_ingestion_summary.md`, summarizing validation results, unresolved ingestion risks, metadata recommended for `fresh-hectaresbc-data`, and six representative payloads for Phase 4 DataLad cold-clone validation.
