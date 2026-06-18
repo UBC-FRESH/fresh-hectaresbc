@@ -112,7 +112,7 @@ Filename-derived hints may be recorded in a clearly labelled `uncertainty_notes`
 
 ## Provisional Identifier Rules
 
-Until naming conventions are finalized in `P2.4`, `dataset_id` values should be provisional and deterministic:
+`dataset_id` values are provisional and deterministic. The governing rules are defined in `metadata/catalog_schema/naming_and_provenance_conventions.md`:
 
 - prefix with `dl_` for data layers and `vl_` for virtual layers;
 - derive the base from the original ZIP stem;
@@ -130,4 +130,3 @@ If this rule produces a duplicate, do not silently append a suffix. Record the c
 - Whether IDs should be based on HectaresBC source IDs, filenames, hashes, or curated slugs.
 - How to version corrected metadata when recovered metadata conflicts with source archive contents.
 - How to represent derived products and AOI-specific outputs.
-

@@ -33,7 +33,7 @@ Active branch: `feature/p2-metadata-provenance`
 - [x] P2.1 Define a minimal dataset identity model: source path, original name, inferred title, format, CRS when known, metadata source, and uncertainty notes. Child issue: #45.
 - [x] P2.2 Recover compact virtual-layer catalog records from root metadata and ZIP evidence. Child issue: #48.
 - [x] P2.3 Recover compact data-layer metadata records from per-ZIP metadata files. Child issue: #47.
-- [ ] P2.4 Draft naming and provenance conventions before any broad normalization. Child issue: #44.
+- [x] P2.4 Draft naming and provenance conventions before any broad normalization. Child issue: #44.
 - [ ] P2.5 Summarize metadata recovery results and Phase 3 ingestion-design inputs. Child issue: #46.
 
 ## Phase 3: Reproducible Ingestion Design
@@ -108,6 +108,5 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P2.4 by drafting naming/provenance conventions before normalization.
-2. Complete P2.5 with a Phase 2 summary and concrete Phase 3 ingestion-design inputs.
-3. Keep future parent issues (#6, #25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
+1. Complete P2.5 with a Phase 2 summary and concrete Phase 3 ingestion-design inputs.
+2. Keep future parent issues (#6, #25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
