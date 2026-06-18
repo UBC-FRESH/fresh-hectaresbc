@@ -36,3 +36,5 @@
 - Completed P2.2 by adding `scripts/recover_virtual_layer_records.py` and compact recovered virtual-layer outputs in `metadata/recovered_catalog/`.
 - Recovered 1,765 virtual-layer records with complete root listing, manifest, ZIP, and `metadata.txt` coverage; 1,753 records are `metadata_recovered`, and 12 have a source conflict where the root CSV priority is blank but ZIP metadata priority is `0`.
 - Audited closed GitHub issues for unchecked body checklists, corrected completed and superseded closeout states, and updated `AGENTS.md` to require checklist completion or explicit superseded/not-applicable handling before closing child issues.
+- Completed P2.3 by adding `scripts/recover_data_layer_records.py` and compact recovered data-layer outputs in `metadata/recovered_catalog/`.
+- Recovered 418 data-layer records with complete root listing, ZIP, primary grid metadata HTML, raster member, and WMS XML coverage; all 418 records are `metadata_recovered`, 104 include category CSV metadata, and two ZIPs contain nested ZIP members.

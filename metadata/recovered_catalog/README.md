@@ -8,10 +8,12 @@ The files here are source-backed project metadata, not normalized final catalog 
 
 - `virtual_layer_records.csv`: one recovered record for each virtual-layer ZIP listed by the archive.
 - `virtual_layer_recovery_summary.md`: counts, checks, and source-conflict notes for the virtual-layer recovery pass.
+- `data_layer_records.csv`: one recovered record for each data-layer ZIP listed by the archive.
+- `data_layer_recovery_summary.md`: counts, checks, and metadata notes for the data-layer recovery pass.
 
 ## Regeneration
 
 ```bash
 python scripts/recover_virtual_layer_records.py
+python scripts/recover_data_layer_records.py
 ```
-
