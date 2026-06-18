@@ -28,3 +28,5 @@
 - Verified root listing and metadata counts: `data_layers.txt` matches 418 data-layer ZIPs, `virtual_layers.txt` matches 1,765 virtual-layer ZIPs, and `virtual_layers_metadata_all.csv` has 1,765 rows with no duplicate filenames or layer IDs.
 - Completed P1.4 by adding `scripts/summarize_zip_payloads.py` and generating `metadata/archive_inventory/zip_payload_families.md`.
 - Verified ZIP payload-family signals: all 418 data-layer ZIPs have TIFF and WMS XML entries, all 1,765 virtual-layer ZIPs have TIFF and TXT metadata entries, all ZIP central directories open successfully, and two data-layer ZIPs contain nested ZIP entries.
+- Completed P1.5 with a hybrid data-repository layout recommendation in `metadata/archive_inventory/data_repo_layout_recommendation.md`.
+- Recommended preserving the rescued export layout exactly under `raw/hectaresbc_2022_export/` in `fresh-hectaresbc-data`, while keeping compact manifests and future canonical/derived products in separate paths with explicit provenance mappings.

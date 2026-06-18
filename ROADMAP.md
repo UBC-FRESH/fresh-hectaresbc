@@ -22,7 +22,7 @@ Active branch: `feature/p1-archive-reconnaissance`
 - [x] P1.2 Build root inventory and ZIP manifest. Child issue: #37.
 - [x] P1.3 Parse root metadata and control files. Child issue: #38.
 - [x] P1.4 Classify ZIP payload families and integrity signals. Child issue: #39.
-- [ ] P1.5 Recommend data repository layout approach. Child issue: #35.
+- [x] P1.5 Recommend data repository layout approach. Child issue: #35.
 
 ## Phase 2: Metadata And Provenance Recovery
 
@@ -102,6 +102,7 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P1.5 by recommending the data repository layout approach.
-2. Use Phase 1 outputs to decide whether `fresh-hectaresbc-data` should preserve the rescued layout, introduce a canonical layout, or use a hybrid.
-3. Keep future parent issues (#6, #25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
+1. Mark PR #40 ready, merge Phase 1 to `main`, and close parent issue #34.
+2. Activate Phase 2 from updated `main` with a new parent issue and branch.
+3. Use Phase 1 outputs to seed Phase 2 metadata/provenance recovery child issues.
+4. Keep future parent issues (#6, #25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.

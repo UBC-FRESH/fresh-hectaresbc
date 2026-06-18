@@ -58,10 +58,11 @@ Use the FEMIC `external/` pattern as the reference design:
 1. Define the data repository contract.
 2. Initialize `UBC-FRESH/fresh-hectaresbc-data` as a DataLad/git-annex dataset.
 3. Choose and configure the storage remote for annexed payloads.
-4. Move or mirror validated HectaresBC payloads into the data repo.
-5. Add the data repo as a submodule under `external/fresh-hectaresbc-data`.
-6. Document clone, submodule initialization, and `datalad get` workflows.
-7. Validate cold-clone retrieval of representative payloads.
+4. Move or mirror validated HectaresBC payloads into the data repo under `raw/hectaresbc_2022_export/`, preserving the rescued export layout below that prefix.
+5. Add compact metadata/manifests under `metadata/archive_inventory/`.
+6. Add the data repo as a submodule under `external/fresh-hectaresbc-data`.
+7. Document clone, submodule initialization, and `datalad get` workflows.
+8. Validate cold-clone retrieval of representative payloads.
 
 ## Open Questions
 
@@ -71,10 +72,32 @@ Use the FEMIC `external/` pattern as the reference design:
 - Which files should use `text2git`-style tracking instead of annexing?
 - What minimum representative payload should be used for cold-clone validation?
 
+## Current Layout Recommendation
+
+Phase 1 recommends a hybrid layout:
+
+```text
+fresh-hectaresbc-data/
+  raw/
+    hectaresbc_2022_export/
+      data_layers/
+      virtual_layers/
+      data_layers.txt
+      virtual_layers.txt
+      virtual_layers_metadata_all.csv
+      hectaresbc_download_layers.ipynb
+  metadata/
+    archive_inventory/
+  derived/
+```
+
+The raw export layout should be preserved exactly below `raw/hectaresbc_2022_export/`. Canonical or derived layouts should be introduced later only with explicit provenance mappings.
+
+See `metadata/archive_inventory/data_repo_layout_recommendation.md`.
+
 ## Current Status
 
 - `UBC-FRESH/fresh-hectaresbc-data` exists as an empty public GitHub repository.
 - The data repo has not yet been initialized as a DataLad dataset.
 - The main repo has not yet added an `external/` submodule.
-- The immediate next step remains read-only archive reconnaissance under Phase 1.
-
+- Phase 1 archive reconnaissance is active and has produced compact inventory outputs.
