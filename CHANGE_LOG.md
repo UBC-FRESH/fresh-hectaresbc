@@ -33,3 +33,5 @@
 - Corrected the data-repository layout recommendation to exclude `hectaresbc_download_layers.ipynb` and `.ipynb_checkpoints/` from future public data distribution because the notebook was disposable 2022 acquisition tooling for an offline server.
 - Activated Phase 2 metadata and provenance recovery with parent issue #43, branch `feature/p2-metadata-provenance`, and child issues #45, #48, #47, #44, and #46.
 - Completed P2.1 with `planning/phase2_metadata_provenance_plan.md` and `metadata/catalog_schema/dataset_identity_model.md`, defining conservative dataset identity, provenance, verification, and uncertainty fields before broad metadata extraction.
+- Completed P2.2 by adding `scripts/recover_virtual_layer_records.py` and compact recovered virtual-layer outputs in `metadata/recovered_catalog/`.
+- Recovered 1,765 virtual-layer records with complete root listing, manifest, ZIP, and `metadata.txt` coverage; 1,753 records are `metadata_recovered`, and 12 have a source conflict where the root CSV priority is blank but ZIP metadata priority is `0`.
