@@ -99,9 +99,13 @@ See `metadata/archive_inventory/data_repo_layout_recommendation.md`.
 
 ## Current Status
 
-- `UBC-FRESH/fresh-hectaresbc-data` exists as an empty public GitHub repository.
-- The data repo has not yet been initialized as a DataLad dataset.
-- The main repo has not yet added an `external/` submodule.
+- `UBC-FRESH/fresh-hectaresbc-data` exists as a public GitHub repository with default branch `main`.
+- The data repo has been initialized as a DataLad/git-annex dataset, with `main` and `git-annex` branches pushed to GitHub.
+- The initial data-repo scaffold includes `raw/hectaresbc_2022_export/`, `metadata/`, `derived/`, `docs/annex_policy.md`, and `.gitattributes` rules for plain-Git metadata versus annexed ZIP and large non-text files.
+- The data repo has an Arbutus-backed S3 special remote named `arbutus-s3`, pointing to bucket `fresh-hectaresbc-data` with `embedcreds=no`.
+- Clean-clone retrieval of `metadata/validation/arbutus_s3_smoke_test.bin` from `arbutus-s3` has been validated with DataLad.
+- The main repo links the data repo as a Git submodule at `external/fresh-hectaresbc-data`.
+- The six representative HectaresBC ZIP payloads are annexed in the data repo, uploaded to `arbutus-s3`, and validated from a fresh main-repo clone.
 - Phase 1 archive reconnaissance produced compact inventory outputs and a layout recommendation.
 - Phase 4 storage planning now expects a DataLad/git-annex S3 special remote backed by a new Arbutus object-storage bucket, with user-local credentials kept outside the repo under `~/.config/fresh-hectaresbc/`.
 - Phase 3 validation identified six representative ZIP payloads for early cold-clone and annex retrieval checks. See `planning/phase3_ingestion_summary.md`.

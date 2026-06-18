@@ -4,13 +4,28 @@
 
 Capture the planned user-local credential and DataLad/git-annex special-remote pattern for publishing HectaresBC payloads to an Arbutus S3-compatible bucket.
 
-This is a Phase 4 planning note. Do not create storage remotes or credentials during Phase 2.
+This note records the Phase 4 user-local credential and DataLad/git-annex special-remote pattern for publishing HectaresBC payloads to Arbutus S3-compatible object storage.
 
 ## Intended Storage Role
 
 Phase 4 is expected to configure a DataLad/git-annex S3 special remote for `UBC-FRESH/fresh-hectaresbc-data`.
 
-The special remote should point to a new S3 bucket in the maintainer's DRAC Arbutus cloud project. The bucket does not exist yet and must be created during the active Phase 4 storage-remote task.
+The special remote points to a bucket in the maintainer's DRAC Arbutus cloud project.
+
+Current non-secret remote details:
+
+```text
+remote name: arbutus-s3
+bucket: fresh-hectaresbc-data
+endpoint host: object-arbutus.cloud.computecanada.ca
+region: ca-west-1
+protocol: https
+port: 443
+request style: path
+file prefix: annex/
+encryption: none
+embed credentials: no
+```
 
 ## User-Local Credential Pattern
 
@@ -51,13 +66,11 @@ Template shape:
 export AWS_ACCESS_KEY_ID="..."
 export AWS_SECRET_ACCESS_KEY="..."
 
-# Fill these from the actual Arbutus S3 bucket and endpoint contract.
-export FRESH_HECTARESBC_ARBUTUS_ENDPOINT_URL="..."
-export FRESH_HECTARESBC_ARBUTUS_BUCKET="..."
-export FRESH_HECTARESBC_ARBUTUS_REGION="..."
+export AWS_DEFAULT_REGION="ca-west-1"
+export S3_ENDPOINT_URL="https://object-arbutus.cloud.computecanada.ca"
 ```
 
-Exact variable names can be adjusted during Phase 4 if DataLad/git-annex commands require a different form. Keep project-specific helper variables prefixed with `FRESH_HECTARESBC_`.
+The working configuration uses standard AWS-compatible variables so that boto3, DataLad, and git-annex can share the same local environment.
 
 ## Repo Safety Rules
 
@@ -71,19 +84,22 @@ Exact variable names can be adjusted during Phase 4 if DataLad/git-annex command
 
 When Phase 4 is active, the storage-remote task should:
 
-1. Create or confirm the Arbutus S3 bucket for HectaresBC annexed payloads.
-2. Create `~/.config/fresh-hectaresbc/arbutus_env.sh` locally with private credentials.
-3. Source the credential file before running DataLad/git-annex S3 commands.
-4. Initialize the S3 special remote in `UBC-FRESH/fresh-hectaresbc-data`.
-5. Confirm that remote configuration does not store secrets.
-6. Publish representative annexed payloads to the special remote.
-7. Validate from a clean clone that representative payloads can be retrieved with documented commands.
+1. Created Arbutus S3 bucket `fresh-hectaresbc-data`.
+2. Created `~/.config/fresh-hectaresbc/arbutus_env.sh` locally with private credentials.
+3. Sourced the credential file before running DataLad/git-annex S3 commands.
+4. Initialized the S3 special remote in `UBC-FRESH/fresh-hectaresbc-data`.
+5. Confirmed that remote configuration uses `embedcreds=no` and stores credentials locally.
+6. Published `metadata/validation/arbutus_s3_smoke_test.bin` to the special remote.
+7. Validated clean-clone retrieval with `datalad get`.
+
+Smoke-test SHA-256:
+
+```text
+b9e0965b49a18d3e53d4476b7712662438be93f02ff253d8067da8cb777427cc
+```
 
 ## Deferred Decisions
 
-- Final bucket name.
-- Arbutus S3 endpoint URL and region value.
 - Whether Arbutus remains the primary public object store or is later mirrored to UBC ARC Chinook.
-- Exact git-annex/DataLad command sequence for special-remote initialization.
 - Whether anonymous read access is supported, credential-gated, or mediated by a later application layer.
-
+- Whether payload publication should begin with only the Phase 3 representative ZIPs or the full recovered archive payload.
