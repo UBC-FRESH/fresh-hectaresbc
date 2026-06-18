@@ -43,3 +43,4 @@
 - Completed P2.5 with `metadata/recovered_catalog/recovery_summary.md` and `planning/phase3_ingestion_inputs.md`, summarizing recovered metadata counts, unresolved gaps, and concrete Phase 3 ingestion-design boundaries.
 - Activated Phase 3 reproducible ingestion design with parent issue #50, branch `feature/p3-ingestion-design`, and child issues #54, #51, #52, and #53.
 - Completed P3.1 with `planning/phase3_reproducible_ingestion_plan.md`, choosing standard-library-first validation tooling and deferring geospatial/package/DataLad tooling until specific checks require them.
+- Completed P3.2 with `planning/ingestion_workflow_design.md`, defining recovered catalog validation, representative source payload inspection, catalog materialization deferral, nested ZIP handling, and DataLad metadata handoff boundaries.
