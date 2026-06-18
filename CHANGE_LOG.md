@@ -24,3 +24,5 @@
 - Completed the P1.1 archive inventory output contract in `planning/phase1_archive_reconnaissance_plan.md`.
 - Completed P1.2 by adding `scripts/archive_inventory.py` and generating compact tracked outputs in `metadata/archive_inventory/`.
 - Verified the generated archive summary and ZIP manifest parse successfully, cover 2,191 files and 2,183 ZIP rows, and report zero bad ZIP rows.
+- Completed P1.3 by adding `scripts/summarize_root_metadata.py` and generating `metadata/archive_inventory/root_metadata_files.md`.
+- Verified root listing and metadata counts: `data_layers.txt` matches 418 data-layer ZIPs, `virtual_layers.txt` matches 1,765 virtual-layer ZIPs, and `virtual_layers_metadata_all.csv` has 1,765 rows with no duplicate filenames or layer IDs.
