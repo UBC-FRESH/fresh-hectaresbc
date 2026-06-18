@@ -110,6 +110,8 @@ The archive includes several compact metadata/control files at the root:
 - `virtual_layers_metadata_all.csv`
 - `hectaresbc_download_layers.ipynb`
 
+`hectaresbc_download_layers.ipynb` was later clarified as a disposable 2022 download script for the original HectaresBC server, which has been offline for years. It should not be treated as a future data-distribution artifact.
+
 `virtual_layers_metadata_all.csv` has columns including:
 
 ```text
@@ -188,4 +190,3 @@ When Phase 1 is activated, create a parent issue and feature branch for archive 
 - representative ZIP integrity checks and payload-family classification;
 - compact tracked inventory format design;
 - decision on whether the data repo preserves the rescued layout exactly or adds a canonical layout with provenance mappings.
-

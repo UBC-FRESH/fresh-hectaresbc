@@ -58,11 +58,12 @@ Use the FEMIC `external/` pattern as the reference design:
 1. Define the data repository contract.
 2. Initialize `UBC-FRESH/fresh-hectaresbc-data` as a DataLad/git-annex dataset.
 3. Choose and configure the storage remote for annexed payloads.
-4. Move or mirror validated HectaresBC payloads into the data repo under `raw/hectaresbc_2022_export/`, preserving the rescued export layout below that prefix.
+4. Move or mirror validated HectaresBC payloads into the data repo under `raw/hectaresbc_2022_export/`, preserving the rescued data payload layout below that prefix.
 5. Add compact metadata/manifests under `metadata/archive_inventory/`.
-6. Add the data repo as a submodule under `external/fresh-hectaresbc-data`.
-7. Document clone, submodule initialization, and `datalad get` workflows.
-8. Validate cold-clone retrieval of representative payloads.
+6. Exclude disposable local acquisition tooling such as `hectaresbc_download_layers.ipynb` and `.ipynb_checkpoints/`.
+7. Add the data repo as a submodule under `external/fresh-hectaresbc-data`.
+8. Document clone, submodule initialization, and `datalad get` workflows.
+9. Validate cold-clone retrieval of representative payloads.
 
 ## Open Questions
 
@@ -85,13 +86,14 @@ fresh-hectaresbc-data/
       data_layers.txt
       virtual_layers.txt
       virtual_layers_metadata_all.csv
-      hectaresbc_download_layers.ipynb
   metadata/
     archive_inventory/
   derived/
 ```
 
-The raw export layout should be preserved exactly below `raw/hectaresbc_2022_export/`. Canonical or derived layouts should be introduced later only with explicit provenance mappings.
+The raw data payload and root control/metadata files should be preserved below `raw/hectaresbc_2022_export/`. Canonical or derived layouts should be introduced later only with explicit provenance mappings.
+
+Do not include `hectaresbc_download_layers.ipynb` or `.ipynb_checkpoints/` in the future public data repository. The notebook was disposable 2022 acquisition tooling for a server that is no longer online, not a reproducible distribution artifact.
 
 See `metadata/archive_inventory/data_repo_layout_recommendation.md`.
 
@@ -100,4 +102,4 @@ See `metadata/archive_inventory/data_repo_layout_recommendation.md`.
 - `UBC-FRESH/fresh-hectaresbc-data` exists as an empty public GitHub repository.
 - The data repo has not yet been initialized as a DataLad dataset.
 - The main repo has not yet added an `external/` submodule.
-- Phase 1 archive reconnaissance is active and has produced compact inventory outputs.
+- Phase 1 archive reconnaissance produced compact inventory outputs and a layout recommendation.
