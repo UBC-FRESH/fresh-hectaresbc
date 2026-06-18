@@ -52,11 +52,13 @@ Active branch: `feature/p3-ingestion-design`
 
 GitHub parent issue: #6
 
+Active branch: `feature/p4-datalad-data-repo`
+
 The HectaresBC archive is expected to include large files and a large total data payload. This repository will not track that payload directly with plain Git/GitHub. The planned pattern is to link a separate public DataLad/git-annex dataset repository, `UBC-FRESH/fresh-hectaresbc-data`, as a Git submodule under `external/fresh-hectaresbc-data`, following the established FEMIC `external/` pattern.
 
 Phase 4 storage work should configure a DataLad/git-annex S3 special remote pointing to a new Arbutus object-storage bucket. Credentials must use the user-local FEMIC-style pattern under `~/.config/fresh-hectaresbc/`, not tracked repo files. See `planning/arbutus_s3_special_remote_plan.md`.
 
-- [ ] P4.1 Define the data repository contract. Child issue: #8.
+- [x] P4.1 Define the data repository contract. Child issue: #8.
 - [ ] P4.2 Initialize `UBC-FRESH/fresh-hectaresbc-data` as a DataLad dataset. Child issue: #11.
 - [ ] P4.3 Configure storage remote for annexed payloads. Child issue: #9.
 - [ ] P4.4 Link the DataLad repo as a Git submodule at `external/fresh-hectaresbc-data`. Child issue: #7.
@@ -116,7 +118,8 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Mark draft PR #55 ready for review and merge Phase 3 to `main`.
-2. Close parent issue #50 only after PR #55 merges.
-3. Activate Phase 4 from updated `main` with the existing parent issue #6 and a new feature branch.
-4. Keep future parent issues (#25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
+1. Complete P4.2 by initializing `UBC-FRESH/fresh-hectaresbc-data` as a DataLad dataset.
+2. Complete P4.3 by configuring the Arbutus S3 special remote without committing credentials.
+3. Complete P4.4 by linking the data repo as `external/fresh-hectaresbc-data`.
+4. Complete P4.5 with cold-clone data access validation.
+5. Keep future parent issues (#25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
