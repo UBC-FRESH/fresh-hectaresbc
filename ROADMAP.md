@@ -97,8 +97,7 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Mark PR #32 ready for review and merge the Phase 0 governance baseline.
-2. Close parent issue #1 after PR #32 merges to `main`.
-3. Activate Phase 1 by creating a Phase 1 parent issue and branch from updated `main`.
-4. Use `planning/archive_reconnaissance_2026-06-18.md` to seed the Phase 1 child issues.
-5. Keep future parent issues (#6, #25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
+1. Close parent issue #1 after the Phase 0 closeout docs update merges.
+2. Activate Phase 1 by creating a Phase 1 parent issue and branch from updated `main`.
+3. Use `planning/archive_reconnaissance_2026-06-18.md` to seed the Phase 1 child issues.
+4. Keep future parent issues (#6, #25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
