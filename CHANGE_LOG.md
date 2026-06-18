@@ -26,3 +26,5 @@
 - Verified the generated archive summary and ZIP manifest parse successfully, cover 2,191 files and 2,183 ZIP rows, and report zero bad ZIP rows.
 - Completed P1.3 by adding `scripts/summarize_root_metadata.py` and generating `metadata/archive_inventory/root_metadata_files.md`.
 - Verified root listing and metadata counts: `data_layers.txt` matches 418 data-layer ZIPs, `virtual_layers.txt` matches 1,765 virtual-layer ZIPs, and `virtual_layers_metadata_all.csv` has 1,765 rows with no duplicate filenames or layer IDs.
+- Completed P1.4 by adding `scripts/summarize_zip_payloads.py` and generating `metadata/archive_inventory/zip_payload_families.md`.
+- Verified ZIP payload-family signals: all 418 data-layer ZIPs have TIFF and WMS XML entries, all 1,765 virtual-layer ZIPs have TIFF and TXT metadata entries, all ZIP central directories open successfully, and two data-layer ZIPs contain nested ZIP entries.
