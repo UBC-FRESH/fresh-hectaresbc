@@ -49,3 +49,4 @@
 - Completed P3.4 with `planning/phase3_ingestion_summary.md`, summarizing validation results, unresolved ingestion risks, metadata recommended for `fresh-hectaresbc-data`, and six representative payloads for Phase 4 DataLad cold-clone validation.
 - Activated Phase 4 DataLad-backed data repository work with parent issue #6 and branch `feature/p4-datalad-data-repo`.
 - Completed P4.1 with `planning/data_repository_contract.md`, defining main-repo/data-repo/object-store/local-archive roles, intended submodule path, DataLad layout, annex/plain-Git tracking rules, metadata handoff, representative retrieval payloads, and validation requirements.
+- Completed P4.2 by initializing sibling repository `UBC-FRESH/fresh-hectaresbc-data` as a DataLad/git-annex dataset, adding the initial raw/metadata/derived/docs scaffold and annex tracking policy, and pushing `main` plus `git-annex` branches to GitHub.

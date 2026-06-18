@@ -99,8 +99,9 @@ See `metadata/archive_inventory/data_repo_layout_recommendation.md`.
 
 ## Current Status
 
-- `UBC-FRESH/fresh-hectaresbc-data` exists as an empty public GitHub repository.
-- The data repo has not yet been initialized as a DataLad dataset.
+- `UBC-FRESH/fresh-hectaresbc-data` exists as a public GitHub repository with default branch `main`.
+- The data repo has been initialized as a DataLad/git-annex dataset, with `main` and `git-annex` branches pushed to GitHub.
+- The initial data-repo scaffold includes `raw/hectaresbc_2022_export/`, `metadata/`, `derived/`, `docs/annex_policy.md`, and `.gitattributes` rules for plain-Git metadata versus annexed ZIP and large non-text files.
 - The main repo has not yet added an `external/` submodule.
 - Phase 1 archive reconnaissance produced compact inventory outputs and a layout recommendation.
 - Phase 4 storage planning now expects a DataLad/git-annex S3 special remote backed by a new Arbutus object-storage bucket, with user-local credentials kept outside the repo under `~/.config/fresh-hectaresbc/`.
