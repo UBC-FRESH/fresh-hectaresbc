@@ -10,6 +10,7 @@ The files here are source-backed project metadata, not normalized final catalog 
 - `virtual_layer_recovery_summary.md`: counts, checks, and source-conflict notes for the virtual-layer recovery pass.
 - `data_layer_records.csv`: one recovered record for each data-layer ZIP listed by the archive.
 - `data_layer_recovery_summary.md`: counts, checks, and metadata notes for the data-layer recovery pass.
+- `recovery_summary.md`: Phase 2 recovery summary and Phase 3 handoff notes.
 
 ## Regeneration
 

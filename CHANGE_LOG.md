@@ -40,3 +40,4 @@
 - Recovered 418 data-layer records with complete root listing, ZIP, primary grid metadata HTML, raster member, and WMS XML coverage; all 418 records are `metadata_recovered`, 104 include category CSV metadata, and two ZIPs contain nested ZIP members.
 - Completed P2.4 with `metadata/catalog_schema/naming_and_provenance_conventions.md`, defining provisional ID rules, display-name/source-name handling, provenance citation fields, verification statuses, uncertainty fields, and allowed/blocked/deferred normalization rules.
 - Added Phase 4 planning for an Arbutus-backed DataLad/git-annex S3 special remote using user-local credentials under `~/.config/fresh-hectaresbc/`, following the FEMIC credential pattern without committing secrets.
+- Completed P2.5 with `metadata/recovered_catalog/recovery_summary.md` and `planning/phase3_ingestion_inputs.md`, summarizing recovered metadata counts, unresolved gaps, and concrete Phase 3 ingestion-design boundaries.
