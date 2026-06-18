@@ -31,3 +31,5 @@
 - Completed P1.5 with a hybrid data-repository layout recommendation in `metadata/archive_inventory/data_repo_layout_recommendation.md`.
 - Recommended preserving the rescued export layout exactly under `raw/hectaresbc_2022_export/` in `fresh-hectaresbc-data`, while keeping compact manifests and future canonical/derived products in separate paths with explicit provenance mappings.
 - Corrected the data-repository layout recommendation to exclude `hectaresbc_download_layers.ipynb` and `.ipynb_checkpoints/` from future public data distribution because the notebook was disposable 2022 acquisition tooling for an offline server.
+- Activated Phase 2 metadata and provenance recovery with parent issue #43, branch `feature/p2-metadata-provenance`, and child issues #45, #48, #47, #44, and #46.
+- Completed P2.1 with `planning/phase2_metadata_provenance_plan.md` and `metadata/catalog_schema/dataset_identity_model.md`, defining conservative dataset identity, provenance, verification, and uncertainty fields before broad metadata extraction.
