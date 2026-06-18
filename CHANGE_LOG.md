@@ -22,3 +22,5 @@
 - Merged Phase 0 governance baseline PR #32 and updated the roadmap closeout state so Phase 1 activation is the next workflow step.
 - Activated Phase 1 archive reconnaissance with parent issue #34, branch `feature/p1-archive-reconnaissance`, and child issues #36, #37, #38, #39, and #35.
 - Completed the P1.1 archive inventory output contract in `planning/phase1_archive_reconnaissance_plan.md`.
+- Completed P1.2 by adding `scripts/archive_inventory.py` and generating compact tracked outputs in `metadata/archive_inventory/`.
+- Verified the generated archive summary and ZIP manifest parse successfully, cover 2,191 files and 2,183 ZIP rows, and report zero bad ZIP rows.

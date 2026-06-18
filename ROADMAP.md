@@ -19,7 +19,7 @@ GitHub parent issue: #34
 Active branch: `feature/p1-archive-reconnaissance`
 
 - [x] P1.1 Define archive inventory output contract. Child issue: #36.
-- [ ] P1.2 Build root inventory and ZIP manifest. Child issue: #37.
+- [x] P1.2 Build root inventory and ZIP manifest. Child issue: #37.
 - [ ] P1.3 Parse root metadata and control files. Child issue: #38.
 - [ ] P1.4 Classify ZIP payload families and integrity signals. Child issue: #39.
 - [ ] P1.5 Recommend data repository layout approach. Child issue: #35.
@@ -102,6 +102,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P1.2 by producing the root inventory and ZIP manifest on branch `feature/p1-archive-reconnaissance`.
-2. Work Phase 1 child issues in order where practical: #37, #38, #39, then #35.
+1. Complete P1.3 by parsing and summarizing root metadata/control files.
+2. Continue Phase 1 child issues in order where practical: #38, #39, then #35.
 3. Keep future parent issues (#6, #25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.

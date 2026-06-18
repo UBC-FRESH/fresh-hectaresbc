@@ -1,0 +1,97 @@
+{
+  "directory_count_excluding_source_root": 4,
+  "extension_counts": {
+    "csv": 2,
+    "ipynb": 2,
+    "txt": 4,
+    "zip": 2183
+  },
+  "file_count": 2191,
+  "root_files": [
+    {
+      "extension": "txt",
+      "path": "data_layers.txt",
+      "size_bytes": 29677
+    },
+    {
+      "extension": "ipynb",
+      "path": "hectaresbc_download_layers.ipynb",
+      "size_bytes": 307740
+    },
+    {
+      "extension": "txt",
+      "path": "virtual_layers.txt",
+      "size_bytes": 349361
+    },
+    {
+      "extension": "csv",
+      "path": "virtual_layers_metadata_all.csv",
+      "size_bytes": 3699170
+    }
+  ],
+  "root_items": [
+    {
+      "dir_count": 0,
+      "file_count": 4,
+      "path": ".ipynb_checkpoints",
+      "size_bytes": 3944025,
+      "type": "directory"
+    },
+    {
+      "dir_count": 1,
+      "file_count": 418,
+      "path": "data_layers",
+      "size_bytes": 15196213458,
+      "type": "directory"
+    },
+    {
+      "dir_count": 0,
+      "extension": "txt",
+      "file_count": 1,
+      "path": "data_layers.txt",
+      "size_bytes": 29677,
+      "type": "file"
+    },
+    {
+      "dir_count": 0,
+      "extension": "ipynb",
+      "file_count": 1,
+      "path": "hectaresbc_download_layers.ipynb",
+      "size_bytes": 307740,
+      "type": "file"
+    },
+    {
+      "dir_count": 0,
+      "file_count": 1765,
+      "path": "virtual_layers",
+      "size_bytes": 2335378259,
+      "type": "directory"
+    },
+    {
+      "dir_count": 0,
+      "extension": "txt",
+      "file_count": 1,
+      "path": "virtual_layers.txt",
+      "size_bytes": 349361,
+      "type": "file"
+    },
+    {
+      "dir_count": 0,
+      "extension": "csv",
+      "file_count": 1,
+      "path": "virtual_layers_metadata_all.csv",
+      "size_bytes": 3699170,
+      "type": "file"
+    }
+  ],
+  "source_root": "tmp/shared-data/hectaresbc",
+  "total_size_bytes": 17539921690,
+  "zip_count": 2183,
+  "zip_family_counts": {
+    "data_layer": 418,
+    "virtual_layer": 1765
+  },
+  "zip_status_counts": {
+    "ok": 2183
+  }
+}
