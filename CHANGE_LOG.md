@@ -35,3 +35,4 @@
 - Completed P2.1 with `planning/phase2_metadata_provenance_plan.md` and `metadata/catalog_schema/dataset_identity_model.md`, defining conservative dataset identity, provenance, verification, and uncertainty fields before broad metadata extraction.
 - Completed P2.2 by adding `scripts/recover_virtual_layer_records.py` and compact recovered virtual-layer outputs in `metadata/recovered_catalog/`.
 - Recovered 1,765 virtual-layer records with complete root listing, manifest, ZIP, and `metadata.txt` coverage; 1,753 records are `metadata_recovered`, and 12 have a source conflict where the root CSV priority is blank but ZIP metadata priority is `0`.
+- Audited closed GitHub issues for unchecked body checklists, corrected completed and superseded closeout states, and updated `AGENTS.md` to require checklist completion or explicit superseded/not-applicable handling before closing child issues.

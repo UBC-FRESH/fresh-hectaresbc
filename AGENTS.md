@@ -115,7 +115,8 @@ Use this workflow for active development from the first phase boundary onward:
 - Create child issues for roadmap tasks under the parent issue.
 - Document roadmap subtasks as checklist steps inside the child issue body.
 - Work child issues one at a time where practical, usually in roadmap order.
-- Close each child issue only after its repo changes, documentation, and verification for that task are complete.
+- Before closing a child issue, update every issue-body checklist item to checked, or rewrite the issue body to make explicitly clear which items were superseded or are not applicable.
+- Close each child issue only after its repo changes, documentation, issue-body checklist, and verification for that task are complete.
 - Keep `ROADMAP.md`, `CHANGE_LOG.md`, and issue comments synchronized as task state changes.
 - Open a PR from the phase branch back to `main` when the parent issue's child issues are complete or explicitly deferred.
 - Close the parent issue only after the PR has merged back to `main`.
