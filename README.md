@@ -142,6 +142,18 @@ print([(item.check, item.status) for item in diagnostics])
 print(plan.status)
 ```
 
+Run the fuller Python API quickstart:
+
+```bash
+python3 examples/python_api_quickstart.py
+```
+
+Run the CLI quickstart:
+
+```bash
+bash examples/cli_quickstart.sh
+```
+
 In a source checkout, the catalog API reads compact tracked metadata from:
 
 ```text
@@ -156,6 +168,38 @@ fresh_hectaresbc/package_data/recovered_catalog/
 ```
 
 Catalog operations do not read bulky ZIP payloads, require the data submodule contents, or require Arbutus credentials. Resolution and status operations inspect only local filesystem metadata under `external/fresh-hectaresbc-data`; they do not retrieve annex content. Dry-run fetches validate the planned DataLad operation without network retrieval.
+
+## Browser Catalog Development
+
+Generate the static browser catalog artifact from the Python package API:
+
+```bash
+python3 scripts/generate_web_catalog.py
+python3 scripts/smoke_test_web_static_app.py
+node scripts/smoke_test_web_catalog_ui.js web/data/catalog.json
+node scripts/smoke_test_web_app_dom.js web/data/catalog.json
+```
+
+Serve the static app locally:
+
+```bash
+python3 -m http.server --directory web 8000
+```
+
+Then open:
+
+```text
+http://localhost:8000/
+```
+
+Representative detail views use stable hash routes:
+
+```text
+http://localhost:8000/#dl_adminunits_bcts
+http://localhost:8000/#vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
+```
+
+The generated `web/data/catalog.json` file is ignored because it is derived from packaged catalog metadata. Browser catalog development does not require raw HectaresBC payloads, DataLad network retrieval, Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access.
 
 ## DataLad Retrieval
 
