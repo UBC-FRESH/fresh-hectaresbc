@@ -50,7 +50,7 @@ Phase 5 validation reports are tracked in the data submodule:
 
 ## Python API Development
 
-The first Python package scaffold is available for local development. It currently provides the public `HectaresBC` entrypoint; catalog lookup, path resolution, and DataLad-backed retrieval are being implemented in the remaining Phase 6 issues.
+The first Python API is available for local development. It currently provides the public `HectaresBC` entrypoint and recovered-catalog lookup, search, and filtering. Path resolution and DataLad-backed retrieval are being implemented in the remaining Phase 6 issues.
 
 Install the package in editable mode:
 
@@ -69,6 +69,26 @@ Run the current test suite:
 ```bash
 python3 -m pytest
 ```
+
+Load and query the recovered catalog:
+
+```python
+from fresh_hectaresbc import HectaresBC
+
+hbc = HectaresBC()
+record = hbc.get("dl_adminunits_bcts")
+matches = hbc.search("bull trout", limit=5)
+virtual_layers = hbc.filter(family="virtual_layer")
+```
+
+The catalog API reads compact tracked metadata from:
+
+```text
+metadata/recovered_catalog/data_layer_records.csv
+metadata/recovered_catalog/virtual_layer_records.csv
+```
+
+It does not read bulky ZIP payloads, require the data submodule contents, or require Arbutus credentials.
 
 ## DataLad Retrieval
 

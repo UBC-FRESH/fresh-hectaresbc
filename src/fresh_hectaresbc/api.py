@@ -1,23 +1,22 @@
-"""Top-level public API facade.
-
-This scaffold intentionally exposes only the stable entrypoint. Catalog,
-resolution, and retrieval behavior are implemented in later P6.5 slices.
-"""
+"""Top-level public API facade."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 from typing import Optional
+
+from fresh_hectaresbc.catalog import Catalog
+from fresh_hectaresbc.models import DatasetRecord
 
 
 @dataclass(frozen=True)
 class HectaresBC:
     """Convenience entrypoint for HectaresBC catalog and data access.
 
-    Parameters are accepted now so callers can start wiring application code
-    against the public facade before the catalog and backend layers are filled
-    in by the next implementation issues.
+    The facade exposes catalog behavior now. Path resolution and backend
+    diagnostics are implemented in later P6.5 slices.
     """
 
     metadata_root: Optional[Path | str] = None
@@ -29,21 +28,37 @@ class HectaresBC:
         if self.data_repo_path is not None:
             object.__setattr__(self, "data_repo_path", Path(self.data_repo_path))
 
-    def get(self, dataset_id: str) -> object:
-        """Return one dataset record by ID.
+    @cached_property
+    def catalog(self) -> Catalog:
+        """Load the recovered catalog on first use."""
 
-        Implemented in P6.5.2.
-        """
+        if self.metadata_root is not None:
+            return Catalog.from_metadata_root(self.metadata_root)
+        return Catalog.from_default_paths()
 
-        raise NotImplementedError("Catalog lookup is planned for P6.5.2.")
+    def get(self, dataset_id: str) -> DatasetRecord:
+        """Return one dataset record by exact recovered ID."""
 
-    def search(self, query: str, *, limit: int | None = None) -> list[object]:
-        """Search recovered catalog records.
+        return self.catalog.get(dataset_id)
 
-        Implemented in P6.5.2.
-        """
+    def search(
+        self,
+        query: str,
+        *,
+        family: str | None = None,
+        limit: int | None = None,
+        allow_empty: bool = False,
+    ) -> list[DatasetRecord]:
+        """Search recovered catalog records."""
 
-        raise NotImplementedError("Catalog search is planned for P6.5.2.")
+        return self.catalog.search(
+            query, family=family, limit=limit, allow_empty=allow_empty
+        )
+
+    def filter(self, **filters: object) -> list[DatasetRecord]:
+        """Filter recovered catalog records."""
+
+        return self.catalog.filter(**filters)
 
     def resolve(self, dataset_id: str) -> object:
         """Resolve a dataset ID to a data-repository path.
