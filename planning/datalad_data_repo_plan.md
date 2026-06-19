@@ -65,13 +65,15 @@ Use the FEMIC `external/` pattern as the reference design:
 8. Document clone, submodule initialization, and `datalad get` workflows.
 9. Validate cold-clone retrieval of representative payloads.
 
-## Open Questions
+Phase 4 completed the architecture setup, submodule link, and representative-payload validation. Phase 5 is responsible for publishing the remaining recovered archive payloads and validating full inventory coverage.
 
-- What object storage remote should hold annexed payloads?
-- Which compact metadata should live in the main repo versus the data repo?
-- Should the DataLad dataset preserve the rescued archive layout exactly, or introduce a cleaned canonical layout with explicit provenance mappings?
-- Which files should use `text2git`-style tracking instead of annexing?
-- What minimum representative payload should be used for cold-clone validation?
+## Resolved Setup Decisions
+
+- Annexed payloads are stored in the Arbutus-backed `arbutus-s3` special remote.
+- The data repo preserves the rescued archive layout under `raw/hectaresbc_2022_export/`.
+- Compact metadata should be mirrored into the data repo during Phase 5 when useful for validation and data access.
+- ZIP payloads are annexed; compact documentation, manifests, schemas, and validation notes are Git-tracked where practical.
+- The Phase 4 cold-clone validation set used six representative ZIP payloads. Phase 5 adds full inventory validation and broader retrieval sampling.
 
 ## Current Layout Recommendation
 

@@ -102,4 +102,4 @@ b9e0965b49a18d3e53d4476b7712662438be93f02ff253d8067da8cb777427cc
 
 - Whether Arbutus remains the primary public object store or is later mirrored to UBC ARC Chinook.
 - Whether anonymous read access is supported, credential-gated, or mediated by a later application layer.
-- Whether payload publication should begin with only the Phase 3 representative ZIPs or the full recovered archive payload.
+- Whether payload publication should begin with only the Phase 3 representative ZIPs or the full recovered archive payload. Resolved: Phase 4 published the representative set; Phase 5 publishes the remaining recovered archive payloads.
