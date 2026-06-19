@@ -91,7 +91,7 @@ The core Python access library is the shared layer that should power both the CL
 - [x] P6.1 Define core access architecture. Child issue: #27.
 - [x] P6.2 Define catalog query API. Child issue: #30.
 - [x] P6.3 Define retrieval and cache API. Child issue: #28.
-- [ ] P6.4 Define backend abstraction for DataLad and object stores. Child issue: #29.
+- [x] P6.4 Define backend abstraction for DataLad and object stores. Child issue: #29.
 
 ## Phase 7: Typer CLI Interface
 
@@ -136,7 +136,7 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P6.4 by defining the backend abstraction for DataLad and object stores.
-2. Prepare PR #67 for review after all Phase 6 child issues close.
-3. Merge Phase 6 back to `main` after review.
+1. Prepare PR #67 for review after final verification.
+2. Merge Phase 6 back to `main` after review.
+3. Close parent issue #25 only after PR #67 merges.
 4. Keep future parent issues (#26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.

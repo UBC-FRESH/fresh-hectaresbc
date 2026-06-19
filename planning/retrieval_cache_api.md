@@ -10,6 +10,8 @@ This completes P6.3. It builds on:
 - `planning/catalog_query_api.md`;
 - the Phase 5 DataLad/git-annex publication and retrieval validation.
 
+Backend adapter details are defined separately in `planning/backend_abstraction.md`.
+
 The API should let callers request HectaresBC datasets by catalog identity and receive structured retrieval/cache results. Normal users should not need to know DataLad/git-annex command syntax.
 
 ## Retrieval Model
