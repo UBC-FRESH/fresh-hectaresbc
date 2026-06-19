@@ -85,6 +85,13 @@ fresh-hectaresbc catalog show dl_adminunits_bcts
 fresh-hectaresbc catalog list --family virtual_layer --limit 2
 ```
 
+Inspect local data paths and content status:
+
+```bash
+fresh-hectaresbc data path dl_adminunits_bcts
+fresh-hectaresbc data status dl_adminunits_bcts
+```
+
 Load and query the recovered catalog:
 
 ```python

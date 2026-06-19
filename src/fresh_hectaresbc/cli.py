@@ -11,7 +11,7 @@ import typer
 
 from fresh_hectaresbc import HectaresBC
 from fresh_hectaresbc.catalog import DatasetNotFound, QueryInvalid
-from fresh_hectaresbc.models import DatasetRecord
+from fresh_hectaresbc.models import ContentStatus, DatasetRecord, ResolvedDatasetPath
 
 
 VALID_FAMILIES = {"data_layer", "virtual_layer"}
@@ -123,6 +123,36 @@ def _emit_record_text(record: DatasetRecord) -> None:
             else record.field(field)
         )
         typer.echo(f"{field}: {value}")
+
+
+def _resolved_path_dict(resolved: ResolvedDatasetPath) -> dict[str, object]:
+    return {
+        "dataset_id": resolved.dataset_id,
+        "source_zip_path": resolved.source_zip_path,
+        "data_repo_path": str(resolved.data_repo_path),
+        "raw_relative_path": str(resolved.raw_relative_path),
+        "absolute_path": str(resolved.absolute_path),
+        "submodule_initialized": resolved.submodule_initialized,
+        "path_metadata_exists": resolved.path_metadata_exists,
+        "content_present": resolved.content_present,
+    }
+
+
+def _content_status_dict(status: ContentStatus) -> dict[str, object]:
+    return {
+        "dataset_id": status.dataset_id,
+        "status": status.status,
+        "local_path": str(status.local_path),
+        "submodule_initialized": status.submodule_initialized,
+        "path_metadata_exists": status.path_metadata_exists,
+        "content_present": status.content_present,
+        "message": status.message,
+    }
+
+
+def _emit_mapping_text(data: dict[str, object]) -> None:
+    for key, value in data.items():
+        typer.echo(f"{key}: {value}")
 
 
 @catalog_app.command("search")
@@ -248,3 +278,70 @@ def catalog_list(
         _emit_records_json(records)
     else:
         _emit_summary_table(records)
+
+
+@data_app.command("path")
+def data_path(
+    dataset_id: Annotated[str, typer.Argument(help="Recovered dataset ID.")],
+    output_format: Annotated[
+        str,
+        typer.Option("--format", help="Output format: text or json."),
+    ] = "text",
+    metadata_root: Annotated[
+        Path | None,
+        typer.Option("--metadata-root", help="Override recovered catalog metadata root."),
+    ] = None,
+    data_repo_path: Annotated[
+        Path | None,
+        typer.Option("--data-repo-path", help="Override linked data repository path."),
+    ] = None,
+) -> None:
+    """Resolve a dataset to its expected data-repository path."""
+
+    if output_format not in {"text", "json"}:
+        _fail(f"Invalid output format: {output_format}", code=2)
+    try:
+        resolved = _hbc(metadata_root, data_repo_path).resolve(dataset_id)
+    except DatasetNotFound as error:
+        _fail(_error_message(error), code=3)
+
+    data = _resolved_path_dict(resolved)
+    if output_format == "json":
+        typer.echo(json.dumps(data, indent=2))
+    else:
+        _emit_mapping_text(data)
+
+
+@data_app.command("status")
+def data_status(
+    dataset_id: Annotated[str, typer.Argument(help="Recovered dataset ID.")],
+    output_format: Annotated[
+        str,
+        typer.Option("--format", help="Output format: text or json."),
+    ] = "text",
+    metadata_root: Annotated[
+        Path | None,
+        typer.Option("--metadata-root", help="Override recovered catalog metadata root."),
+    ] = None,
+    data_repo_path: Annotated[
+        Path | None,
+        typer.Option("--data-repo-path", help="Override linked data repository path."),
+    ] = None,
+) -> None:
+    """Inspect local content status without fetching data."""
+
+    if output_format not in {"text", "json"}:
+        _fail(f"Invalid output format: {output_format}", code=2)
+    try:
+        status = _hbc(metadata_root, data_repo_path).content_status(dataset_id)
+    except DatasetNotFound as error:
+        _fail(_error_message(error), code=3)
+
+    data = _content_status_dict(status)
+    if output_format == "json":
+        typer.echo(json.dumps(data, indent=2))
+    else:
+        _emit_mapping_text(data)
+
+    if status.status in {"missing_submodule", "missing_path"}:
+        raise typer.Exit(4)
