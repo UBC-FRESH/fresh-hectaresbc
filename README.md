@@ -48,6 +48,68 @@ Phase 5 validation reports are tracked in the data submodule:
 - `external/fresh-hectaresbc-data/metadata/validation/full_zip_inventory_coverage.md`
 - `external/fresh-hectaresbc-data/metadata/validation/full_publication_retrieval_sampling.md`
 
+## Python API Development
+
+The first Python API is available for local development. It currently provides the public `HectaresBC` entrypoint, recovered-catalog lookup/search/filtering, dataset path resolution, local content-status checks, backend diagnostics, and DataLad-backed fetch result objects.
+
+Install the package in editable mode:
+
+```bash
+python3 -m pip install -e . --no-deps
+```
+
+Smoke-test the import:
+
+```bash
+python3 -c "from fresh_hectaresbc import HectaresBC; print(HectaresBC().__class__.__name__)"
+```
+
+Run the current test suite:
+
+```bash
+python3 -m pytest
+```
+
+Load and query the recovered catalog:
+
+```python
+from fresh_hectaresbc import HectaresBC
+
+hbc = HectaresBC()
+record = hbc.get("dl_adminunits_bcts")
+matches = hbc.search("bull trout", limit=5)
+virtual_layers = hbc.filter(family="virtual_layer")
+```
+
+Resolve a catalog record to the linked data repository and inspect local content status without fetching:
+
+```python
+resolved = hbc.resolve("dl_adminunits_bcts")
+status = hbc.content_status("dl_adminunits_bcts")
+
+print(resolved.raw_relative_path)
+print(status.status)
+```
+
+Inspect backend readiness and plan retrieval without fetching content:
+
+```python
+diagnostics = hbc.diagnostics()
+plan = hbc.fetch("dl_adminunits_bcts", dry_run=True)
+
+print([(item.check, item.status) for item in diagnostics])
+print(plan.status)
+```
+
+The catalog API reads compact tracked metadata from:
+
+```text
+metadata/recovered_catalog/data_layer_records.csv
+metadata/recovered_catalog/virtual_layer_records.csv
+```
+
+Catalog operations do not read bulky ZIP payloads, require the data submodule contents, or require Arbutus credentials. Resolution and status operations inspect only local filesystem metadata under `external/fresh-hectaresbc-data`; they do not retrieve annex content. Dry-run fetches validate the planned DataLad operation without network retrieval.
+
 ## DataLad Retrieval
 
 To retrieve annexed data from the Arbutus-backed special remote, source local credentials first:
