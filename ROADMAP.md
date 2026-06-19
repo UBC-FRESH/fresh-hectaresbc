@@ -68,17 +68,17 @@ Phase 4 storage work should configure a DataLad/git-annex S3 special remote poin
 
 GitHub parent issue: #57
 
+Active branch: `feature/p5-full-data-publication`
+
 Phase 4 proved the DataLad/git-annex, submodule, and Arbutus S3 special-remote architecture with six representative ZIP payloads. Phase 5 publishes the remaining rescued HectaresBC archive payloads into `UBC-FRESH/fresh-hectaresbc-data` so API, CLI, package, and web-app work can build against the actual full data repository.
 
-Expected active branch when this phase starts: `feature/p5-full-data-publication`.
-
-- [ ] P5.1 Define full archive publication contract. Child issue: #58.
-- [ ] P5.2 Mirror compact metadata and root control files into the data repo. Child issue: #59.
-- [ ] P5.3 Annex all remaining raw HectaresBC ZIP payloads. Child issue: #60.
-- [ ] P5.4 Upload all annexed payloads to `arbutus-s3`. Child issue: #61.
-- [ ] P5.5 Validate full ZIP inventory coverage. Child issue: #62.
-- [ ] P5.6 Validate cold-clone retrieval sampling. Child issue: #63.
-- [ ] P5.7 Update submodule pointer and full-data documentation. Child issue: #64.
+- [x] P5.1 Define full archive publication contract. Child issue: #58.
+- [x] P5.2 Mirror compact metadata and root control files into the data repo. Child issue: #59.
+- [x] P5.3 Annex all remaining raw HectaresBC ZIP payloads. Child issue: #60.
+- [x] P5.4 Upload all annexed payloads to `arbutus-s3`. Child issue: #61.
+- [x] P5.5 Validate full ZIP inventory coverage. Child issue: #62.
+- [x] P5.6 Validate cold-clone retrieval sampling. Child issue: #63.
+- [x] P5.7 Update submodule pointer and full-data documentation. Child issue: #64.
 
 ## Phase 6: Core Python Access Library
 
@@ -134,5 +134,7 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Activate Phase 5 with parent issue #57 and branch `feature/p5-full-data-publication`.
-2. Keep future parent issues (#25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
+1. Mark PR #66 ready for review after final verification.
+2. Merge Phase 5 back to `main` after review.
+3. Close parent issue #57 only after PR #66 merges.
+4. Keep future parent issues (#25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.

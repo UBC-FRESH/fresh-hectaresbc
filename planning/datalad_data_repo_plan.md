@@ -67,6 +67,8 @@ Use the FEMIC `external/` pattern as the reference design:
 
 Phase 4 completed the architecture setup, submodule link, and representative-payload validation. Phase 5 is responsible for publishing the remaining recovered archive payloads and validating full inventory coverage.
 
+The Phase 5 execution contract is `planning/full_data_publication_contract.md`.
+
 ## Resolved Setup Decisions
 
 - Annexed payloads are stored in the Arbutus-backed `arbutus-s3` special remote.
@@ -108,6 +110,12 @@ See `metadata/archive_inventory/data_repo_layout_recommendation.md`.
 - Clean-clone retrieval of `metadata/validation/arbutus_s3_smoke_test.bin` from `arbutus-s3` has been validated with DataLad.
 - The main repo links the data repo as a Git submodule at `external/fresh-hectaresbc-data`.
 - The six representative HectaresBC ZIP payloads are annexed in the data repo, uploaded to `arbutus-s3`, and validated from a fresh main-repo clone.
+- Compact metadata and root control files have been mirrored into the data repo as Git-tracked files.
+- All 2,183 expected raw HectaresBC ZIP payloads are represented as git-annex files in the data repo as of commit `b16b83bfaabc0563291c72c716d5278c430f1245`.
+- All 2,183 expected raw HectaresBC ZIP payloads are available from `arbutus-s3` as of data-repo commit `5bc5874cc969233460751cccfba547a79d3e1645`, with validation recorded in `metadata/validation/full_publication_whereis.md`.
+- Full ZIP inventory coverage has been validated against the recovered archive manifest as of data-repo commit `b3a6e3efab770cd7cb5e60d10a11e209bc5ed5de`, with validation recorded in `metadata/validation/full_zip_inventory_coverage.md`.
+- Cold-clone retrieval sampling has been validated as of data-repo commit `c36fde5a2da2569922c4435e7b5eae7a1d3733cd`, with validation recorded in `metadata/validation/full_publication_retrieval_sampling.md`.
+- The final Phase 5 data-repo documentation state is commit `360d277f723f7dd946c1dde19160a32efc7b74e7`; the main repo submodule pointer should reference this commit for Phase 5 closeout.
 - Phase 1 archive reconnaissance produced compact inventory outputs and a layout recommendation.
 - Phase 4 storage planning now expects a DataLad/git-annex S3 special remote backed by a new Arbutus object-storage bucket, with user-local credentials kept outside the repo under `~/.config/fresh-hectaresbc/`.
 - Phase 3 validation identified six representative ZIP payloads for early cold-clone and annex retrieval checks. See `planning/phase3_ingestion_summary.md`.
