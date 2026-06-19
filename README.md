@@ -142,6 +142,12 @@ print([(item.check, item.status) for item in diagnostics])
 print(plan.status)
 ```
 
+Run the fuller Python API quickstart:
+
+```bash
+python3 examples/python_api_quickstart.py
+```
+
 In a source checkout, the catalog API reads compact tracked metadata from:
 
 ```text
