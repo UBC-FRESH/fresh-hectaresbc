@@ -67,6 +67,8 @@ Use the FEMIC `external/` pattern as the reference design:
 
 Phase 4 completed the architecture setup, submodule link, and representative-payload validation. Phase 5 is responsible for publishing the remaining recovered archive payloads and validating full inventory coverage.
 
+The Phase 5 execution contract is `planning/full_data_publication_contract.md`.
+
 ## Resolved Setup Decisions
 
 - Annexed payloads are stored in the Arbutus-backed `arbutus-s3` special remote.
