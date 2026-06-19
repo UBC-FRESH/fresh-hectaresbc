@@ -94,12 +94,12 @@ The core Python access library is the shared layer that should power both the CL
 - [x] P6.2 Define catalog query API. Child issue: #30.
 - [x] P6.3 Define retrieval and cache API. Child issue: #28.
 - [x] P6.4 Define backend abstraction for DataLad and object stores. Child issue: #29.
-- [ ] P6.5 Implement initial core Python API. Coordinating child issue: #68.
+- [x] P6.5 Implement initial core Python API. Coordinating child issue: #68.
   - [x] P6.5.1 Add package scaffold and public API entrypoint. Implementation issue: #70.
   - [x] P6.5.2 Implement catalog records, lookup, search, and filters. Implementation issue: #71.
   - [x] P6.5.3 Implement dataset path resolution and local content status. Implementation issue: #72.
   - [x] P6.5.4 Implement DataLad backend diagnostics and fetch result objects. Implementation issue: #73.
-  - [ ] P6.5.5 Verify, document, and close the initial core API slice. Implementation issue: #74.
+  - [x] P6.5.5 Verify, document, and close the initial core API slice. Implementation issue: #74.
 
 ## Phase 7: Typer CLI Interface
 
@@ -144,7 +144,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P6.5.5 by verifying, documenting, and closing the initial core API slice.
-2. Close coordinating issue #68 only after #74 is complete and all implementation child issue bodies are checked or explicitly superseded.
-3. Merge the Phase 6 implementation branch back to `main` after #68 and its implementation children are complete.
-4. Activate Phase 7 Typer CLI interface work only after the core API exists.
+1. Merge the Phase 6 implementation branch back to `main`.
+2. Close parent issue #25 after PR #69 merges.
+3. Activate Phase 7 Typer CLI interface work only after the Phase 6 parent issue is closed.
