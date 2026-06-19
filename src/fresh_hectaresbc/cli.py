@@ -508,3 +508,7 @@ def data_status(
 
     if status.status in {"missing_submodule", "missing_path"}:
         raise typer.Exit(4)
+
+
+if __name__ == "__main__":
+    app()

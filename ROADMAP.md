@@ -160,6 +160,7 @@ Phase 10 must produce a real runnable browser app surface, not another planning 
 
 - [x] P10.1 Add web app scaffold and catalog artifact generator. Child issue: #88.
 - [x] P10.1a Add Python API quickstart example. Child issue: #94.
+- [x] P10.1b Add CLI quickstart example. Child issue: #95.
 - [ ] P10.2 Implement catalog search, filter, and list UI. Child issue: #89.
 - [ ] P10.3 Implement dataset detail and provenance UI. Child issue: #90.
 - [ ] P10.4 Add browser app smoke verification. Child issue: #91.

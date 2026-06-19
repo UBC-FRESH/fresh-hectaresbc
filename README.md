@@ -148,6 +148,12 @@ Run the fuller Python API quickstart:
 python3 examples/python_api_quickstart.py
 ```
 
+Run the CLI quickstart:
+
+```bash
+bash examples/cli_quickstart.sh
+```
+
 In a source checkout, the catalog API reads compact tracked metadata from:
 
 ```text
