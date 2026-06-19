@@ -103,9 +103,16 @@ The core Python access library is the shared layer that should power both the CL
 
 GitHub parent issue: #26
 
-The CLI should be a thin, user-friendly interface over the core Python access library. It should expose catalog search, metadata inspection, retrieval, cache, and diagnostics workflows without requiring normal users to understand DataLad/git-annex operations.
+The CLI should be a thin, user-friendly interface over the completed core Python access library. It should expose catalog search, metadata inspection, data path/status, backend diagnostics, and fetch workflows without requiring normal users to understand DataLad/git-annex operations.
 
-- [ ] P7.1 Define Typer CLI workflows. Child issue: #18.
+Phase 7 must be implementation-oriented. Command handlers should call `fresh_hectaresbc.HectaresBC` rather than reimplementing catalog, resolver, or backend behavior. Default verification must avoid credentials and network retrieval; use dry-run fetch and simulated backend states for routine tests.
+
+- [ ] P7.1 Define CLI command contract and output rules. Child issue: #18.
+- [ ] P7.2 Add Typer CLI scaffold and console entrypoint. Child issue: #75.
+- [ ] P7.3 Implement catalog CLI commands. Child issue: #76.
+- [ ] P7.4 Implement local data path and status CLI commands. Child issue: #77.
+- [ ] P7.5 Implement diagnostics and fetch CLI commands. Child issue: #78.
+- [ ] P7.6 Verify, document, and close the CLI phase. Child issue: #79.
 
 ## Phase 8: Package Distribution and Install Workflow
 
@@ -142,6 +149,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Activate Phase 7 Typer CLI interface work with its parent issue and feature branch.
-2. Keep the CLI thin over the completed core Python API.
-3. Defer package distribution and browser app work until the CLI/API boundary is exercised.
+1. Activate Phase 7 with parent issue #26 and a dedicated feature branch.
+2. Complete P7.1 before implementing commands so the CLI command tree, output formats, exit codes, and safety rules are explicit.
+3. Work P7.2 through P7.6 one child issue at a time, closing each only after its checklist and verification are complete.
