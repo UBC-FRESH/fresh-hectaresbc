@@ -157,6 +157,28 @@ fresh_hectaresbc/package_data/recovered_catalog/
 
 Catalog operations do not read bulky ZIP payloads, require the data submodule contents, or require Arbutus credentials. Resolution and status operations inspect only local filesystem metadata under `external/fresh-hectaresbc-data`; they do not retrieve annex content. Dry-run fetches validate the planned DataLad operation without network retrieval.
 
+## Browser Catalog Development
+
+Generate the static browser catalog artifact from the Python package API:
+
+```bash
+python3 scripts/generate_web_catalog.py
+```
+
+Serve the static app locally:
+
+```bash
+python3 -m http.server --directory web 8000
+```
+
+Then open:
+
+```text
+http://localhost:8000/
+```
+
+The generated `web/data/catalog.json` file is ignored because it is derived from packaged catalog metadata. Browser catalog development does not require raw HectaresBC payloads, DataLad network retrieval, Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access.
+
 ## DataLad Retrieval
 
 To retrieve annexed data from the Arbutus-backed special remote, source local credentials first:

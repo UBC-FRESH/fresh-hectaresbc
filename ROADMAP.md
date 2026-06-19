@@ -158,7 +158,7 @@ Active branch: `feature/p10-browser-catalog-app`
 
 Phase 10 must produce a real runnable browser app surface, not another planning layer. The first useful implementation should be a catalog/search/detail browser over generated catalog data from the existing `fresh_hectaresbc` package. Default verification must not require raw ZIP/TIFF payloads, DataLad network retrieval, Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access.
 
-- [ ] P10.1 Add web app scaffold and catalog artifact generator. Child issue: #88.
+- [x] P10.1 Add web app scaffold and catalog artifact generator. Child issue: #88.
 - [ ] P10.2 Implement catalog search, filter, and list UI. Child issue: #89.
 - [ ] P10.3 Implement dataset detail and provenance UI. Child issue: #90.
 - [ ] P10.4 Add browser app smoke verification. Child issue: #91.
@@ -177,6 +177,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P10.1 by adding the first runnable web app scaffold and package-backed catalog artifact generator.
-2. Work P10.2 through P10.5 one child issue at a time, closing each only after its checklist and verification are complete.
+1. Complete P10.2 by implementing catalog search, filter, and list UI over the generated browser catalog artifact.
+2. Work P10.3 through P10.5 one child issue at a time, closing each only after its checklist and verification are complete.
 3. Merge the Phase 10 branch back to `main` after #87 and its children are complete or explicitly deferred.

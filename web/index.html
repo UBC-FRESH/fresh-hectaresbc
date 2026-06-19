@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>fresh-hectaresbc catalog</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">fresh-hectaresbc</p>
+        <h1>Recovered HectaresBC Catalog</h1>
+      </div>
+      <div id="status" class="status" role="status">Loading catalog...</div>
+    </header>
+
+    <main class="app-main">
+      <section class="summary-band" aria-labelledby="summary-heading">
+        <h2 id="summary-heading">Catalog Summary</h2>
+        <dl class="summary-grid">
+          <div>
+            <dt>Total records</dt>
+            <dd id="record-count">-</dd>
+          </div>
+          <div>
+            <dt>Data layers</dt>
+            <dd id="data-layer-count">-</dd>
+          </div>
+          <div>
+            <dt>Virtual layers</dt>
+            <dd id="virtual-layer-count">-</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="preview-band" aria-labelledby="preview-heading">
+        <h2 id="preview-heading">First Records</h2>
+        <div id="record-list" class="record-list"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
