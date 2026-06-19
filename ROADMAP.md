@@ -127,7 +127,7 @@ The envisioned local user workflow is `pip install fresh-hectaresbc`, followed b
 Phase 8 must make installed-package behavior real. Catalog lookup/search/filter should work outside a source checkout using compact packaged metadata, while raw HectaresBC ZIP payloads remain external in the DataLad data repository.
 
 - [x] P8.1 Define package distribution contract. Child issue: #16.
-- [ ] P8.2 Define package install and smoke-test plan. Child issue: #15.
+- [x] P8.2 Define package install and smoke-test plan. Child issue: #15.
 - [ ] P8.3 Embed compact catalog metadata in package data. Child issue: #81.
 - [ ] P8.4 Validate wheel and source distribution artifacts. Child issue: #82.
 - [ ] P8.5 Add clean install smoke-test workflow. Child issue: #83.
@@ -159,6 +159,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P8.2 by defining package install and smoke-test commands.
-2. Work P8.3 through P8.6 one child issue at a time, closing each only after its checklist and verification are complete.
+1. Complete P8.3 by embedding compact catalog metadata in package data and adding installed-package fallback loading.
+2. Work P8.4 through P8.6 one child issue at a time, closing each only after its checklist and verification are complete.
 3. Merge the Phase 8 branch back to `main` after #12 and its children are complete or explicitly deferred.
