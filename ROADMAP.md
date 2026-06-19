@@ -163,7 +163,7 @@ Phase 10 must produce a real runnable browser app surface, not another planning 
 - [x] P10.1b Add CLI quickstart example. Child issue: #95.
 - [x] P10.2 Implement catalog search, filter, and list UI. Child issue: #89.
 - [x] P10.3 Implement dataset detail and provenance UI. Child issue: #90.
-- [ ] P10.4 Add browser app smoke verification. Child issue: #91.
+- [x] P10.4 Add browser app smoke verification. Child issue: #91.
 - [ ] P10.5 Verify, document, and close browser catalog implementation phase. Child issue: #92.
 
 ## Phase 11: Future Workflow Hardening
@@ -179,6 +179,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P10.4 by broadening browser app smoke verification now that scaffold, search/list, and detail/provenance views exist.
-2. Work P10.5 after P10.4, closing each child issue only after its checklist and verification are complete.
+1. Complete P10.5 by auditing Phase 10 documentation, verification commands, issue checklists, and PR readiness.
+2. Close P10.5 only after its checklist and verification are complete.
 3. Merge the Phase 10 branch back to `main` after #87 and its children are complete or explicitly deferred.
