@@ -69,3 +69,4 @@
 - Activated Phase 6 core Python access library work with parent issue #25 and branch `feature/p6-core-python-access`.
 - Completed P6.1 with `planning/core_access_library_architecture.md`, defining the core library's source inputs, concepts, package-shape direction, result/error model, backend boundaries, diagnostics expectations, and verification gates for later P6 tasks.
 - Completed P6.2 with `planning/catalog_query_api.md`, defining catalog loading precedence, lookup/search/filter semantics, result/detail shapes, error categories, source-preservation rules, and verification expectations for recovered catalog metadata.
+- Completed P6.3 with `planning/retrieval_cache_api.md`, defining dataset resolution, fetch/fetch-many behavior, data-submodule cache status semantics, credential boundaries, integrity-check expectations, optional drop behavior, and retrieval result categories.

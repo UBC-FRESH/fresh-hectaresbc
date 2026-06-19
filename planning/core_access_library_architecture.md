@@ -222,7 +222,7 @@ result = hbc.fetch(record.dataset_id)
 
 That example is illustrative, not final. P6.2 should define catalog methods. P6.3 should define retrieval/cache methods. P6.4 should define backend configuration and diagnostics.
 
-P6.2 catalog query decisions are recorded in `planning/catalog_query_api.md`.
+P6.2 catalog query decisions are recorded in `planning/catalog_query_api.md`. P6.3 retrieval/cache decisions are recorded in `planning/retrieval_cache_api.md`.
 
 ## Configuration Direction
 
