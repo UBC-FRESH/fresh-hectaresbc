@@ -72,3 +72,4 @@
 - Completed P6.3 with `planning/retrieval_cache_api.md`, defining dataset resolution, fetch/fetch-many behavior, data-submodule cache status semantics, credential boundaries, integrity-check expectations, optional drop behavior, and retrieval result categories.
 - Completed P6.4 with `planning/backend_abstraction.md`, defining backend adapter responsibilities, DataLad/git-annex backend operations, direct S3 backend deferrals, backend selection rules, credential boundaries, structured result fields, and verification expectations.
 - Merged Phase 6 PR #67 to `main` and closed parent issue #25 after all child issues were completed with checked issue-body checklists.
+- Reopened Phase 6 with implementation child issue #68 after recognizing that the merged Phase 6 work defined contracts but did not yet deliver an importable core Python API.

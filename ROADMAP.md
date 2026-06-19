@@ -86,12 +86,15 @@ GitHub parent issue: #25
 
 Merged PR: #67
 
+Active branch: `feature/p6-core-api-implementation`
+
 The core Python access library is the shared layer that should power both the CLI and the browser app. It should expose catalog search, metadata lookup, dataset resolution, retrieval/cache behavior, and backend diagnostics. DataLad/git-annex and S3-compatible object stores should be internal backends, not the user-facing abstraction.
 
 - [x] P6.1 Define core access architecture. Child issue: #27.
 - [x] P6.2 Define catalog query API. Child issue: #30.
 - [x] P6.3 Define retrieval and cache API. Child issue: #28.
 - [x] P6.4 Define backend abstraction for DataLad and object stores. Child issue: #29.
+- [ ] P6.5 Implement initial core Python API. Child issue: #68.
 
 ## Phase 7: Typer CLI Interface
 
@@ -136,6 +139,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Activate Phase 7 Typer CLI interface work with parent issue #26 and a new feature branch.
-2. Complete P7.1 by defining CLI workflows over the core access contracts.
-3. Keep package distribution and browser app parent issues (#12, #13) as inactive planning placeholders until their phases are explicitly activated.
+1. Complete P6.5 by implementing an importable core Python API.
+2. Merge the Phase 6 implementation branch back to `main` after verification.
+3. Activate Phase 7 Typer CLI interface work only after the core API exists.
