@@ -55,7 +55,7 @@ The first Python API is available for local development. It currently provides t
 Install the package in editable mode:
 
 ```bash
-python3 -m pip install -e . --no-deps
+python3 -m pip install -e .
 ```
 
 Smoke-test the import:
