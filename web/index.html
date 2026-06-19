@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>fresh-hectaresbc catalog</title>
-    <link rel="stylesheet" href="styles.css?v=20260619-p10-3">
+    <link rel="stylesheet" href="styles.css?v=20260619-p11-3">
   </head>
   <body>
     <header class="app-header">
@@ -110,9 +110,19 @@
           <p class="empty-detail">Select a catalog record to inspect provenance and usage commands.</p>
         </div>
       </section>
+
+      <section class="map-band" aria-labelledby="map-heading">
+        <div class="section-heading">
+          <h2 id="map-heading">Map Preview</h2>
+          <p id="map-status" class="result-count">No layer selected</p>
+        </div>
+        <div id="map-preview" class="map-preview" aria-live="polite">
+          <p class="empty-detail">Open a map preview from a dataset detail route.</p>
+        </div>
+      </section>
     </main>
 
-    <script src="catalog.js?v=20260619-p10-3"></script>
-    <script src="app.js?v=20260619-p10-3"></script>
+    <script src="catalog.js?v=20260619-p11-3"></script>
+    <script src="app.js?v=20260619-p11-3"></script>
   </body>
 </html>

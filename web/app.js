@@ -7,13 +7,25 @@ const recordListNode = document.querySelector("#record-list");
 const emptyStateNode = document.querySelector("#empty-state");
 const detailStatusNode = document.querySelector("#detail-status");
 const recordDetailNode = document.querySelector("#record-detail");
+const mapStatusNode = document.querySelector("#map-status");
+const mapPreviewNode = document.querySelector("#map-preview");
 const controlsNode = document.querySelector("#catalog-controls");
 const searchInputNode = document.querySelector("#search-input");
 const sortSelectNode = document.querySelector("#sort-select");
 const pageSizeSelectNode = document.querySelector("#page-size-select");
 
+const DEFAULT_LAYER_OPTIONS = {
+  visible: true,
+  opacity: 0.85,
+};
+
 const state = {
   catalog: null,
+  previewManifest: null,
+  previewManifestStatus: "loading",
+  previewArtifactCache: new Map(),
+  previewRenderToken: 0,
+  mapLayerOptions: new Map(),
   query: "",
   family: "all",
   sort: "title",
@@ -28,9 +40,10 @@ async function loadCatalog() {
     }
     const catalog = await response.json();
     state.catalog = catalog;
+    await loadPreviewManifest();
     renderCatalogSummary(catalog);
     renderResults();
-    renderSelectedRecord();
+    renderRoute();
   } catch (error) {
     statusNode.textContent = "Catalog data unavailable. Run the generator first.";
     emptyStateNode.hidden = false;
@@ -39,6 +52,20 @@ async function loadCatalog() {
       <code>python3 scripts/generate_web_catalog.py</code>, then serve the
       <code>web/</code> directory with a local static server.
     `;
+  }
+}
+
+async function loadPreviewManifest() {
+  try {
+    const response = await fetch("data/map_previews/manifest.json");
+    if (!response.ok) {
+      throw new Error(`Preview manifest request failed with ${response.status}`);
+    }
+    state.previewManifest = await response.json();
+    state.previewManifestStatus = "available";
+  } catch (error) {
+    state.previewManifest = null;
+    state.previewManifestStatus = "unavailable";
   }
 }
 
@@ -133,7 +160,22 @@ function selectedDatasetId() {
   if (!window.location.hash || window.location.hash === "#") {
     return "";
   }
+  if (window.location.hash.startsWith("#map=")) {
+    return "";
+  }
   return decodeURIComponent(window.location.hash.slice(1));
+}
+
+function selectedMapDatasetId() {
+  if (!window.location.hash.startsWith("#map=")) {
+    return "";
+  }
+  return decodeURIComponent(window.location.hash.slice("#map=".length));
+}
+
+function renderRoute() {
+  renderSelectedRecord();
+  void renderMapPreview();
 }
 
 function renderDetail(record) {
@@ -160,6 +202,7 @@ function renderDetail(record) {
       ["Source ZIP", record.source_zip_path],
       ["Verification", record.verification_status],
       ["Preview", CatalogBrowser.previewLabel(record)],
+      ["Map route", mapRouteLink(record)],
       ["Manifest size", CatalogBrowser.formatBytes(record.manifest_size_bytes)],
     ])
   );
@@ -179,6 +222,429 @@ function renderDetail(record) {
 
   wrapper.append(summary, metadata, provenance, notes, commands);
   return wrapper;
+}
+
+function mapRouteLink(record) {
+  const wrapper = document.createElement("span");
+  const link = document.createElement("a");
+  link.href = `#map=${encodeURIComponent(record.dataset_id)}`;
+  link.textContent = "Open map preview";
+  wrapper.append(link);
+
+  const status = document.createElement("span");
+  status.className = "inline-status";
+  status.textContent = ` ${previewStatusLabel(record)}`;
+  wrapper.append(status);
+  return wrapper;
+}
+
+async function renderMapPreview() {
+  if (!state.catalog) {
+    return;
+  }
+
+  const renderToken = state.previewRenderToken + 1;
+  state.previewRenderToken = renderToken;
+  const datasetId = selectedMapDatasetId();
+  if (!datasetId) {
+    mapStatusNode.textContent = "No layer selected";
+    mapPreviewNode.className = "map-preview";
+    mapPreviewNode.innerHTML = `
+      <p class="empty-detail">Open a map preview from a dataset detail route.</p>
+    `;
+    return;
+  }
+
+  const record = CatalogBrowser.findRecord(state.catalog.records, datasetId);
+  if (!record) {
+    mapStatusNode.textContent = "Record not found";
+    mapPreviewNode.className = "map-preview";
+    mapPreviewNode.innerHTML = `
+      <p class="empty-detail">No recovered catalog record matches <code></code>.</p>
+    `;
+    mapPreviewNode.querySelector("code").textContent = datasetId;
+    return;
+  }
+
+  const artifact = findPreviewArtifact(record.dataset_id);
+  if (!artifact) {
+    mapStatusNode.textContent = "Preview unavailable";
+    mapPreviewNode.className = "map-preview";
+    mapPreviewNode.replaceChildren(renderUnavailableMap(record));
+    return;
+  }
+
+  mapStatusNode.textContent = record.dataset_id;
+  mapPreviewNode.className = "map-preview has-record";
+  mapPreviewNode.replaceChildren(renderMapScaffold(record, artifact, {status: "loading"}));
+
+  try {
+    const geojson = await loadPreviewArtifact(artifact);
+    if (state.previewRenderToken !== renderToken) {
+      return;
+    }
+    mapPreviewNode.replaceChildren(renderMapScaffold(record, artifact, {geojson}));
+  } catch (error) {
+    if (state.previewRenderToken !== renderToken) {
+      return;
+    }
+    mapStatusNode.textContent = "Preview artifact missing";
+    mapPreviewNode.replaceChildren(renderMapScaffold(record, artifact, {error}));
+  }
+}
+
+function findPreviewArtifact(datasetId) {
+  const artifacts = state.previewManifest?.artifacts || [];
+  return artifacts.find((artifact) => artifact.dataset_id === datasetId) || null;
+}
+
+async function loadPreviewArtifact(artifact) {
+  const path = `data/map_previews/${artifact.artifact_path}`;
+  if (state.previewArtifactCache.has(path)) {
+    return state.previewArtifactCache.get(path);
+  }
+
+  const response = await fetch(path);
+  if (!response.ok) {
+    throw new Error(`Preview artifact request failed with ${response.status}`);
+  }
+  const geojson = await response.json();
+  validateGeoJson(geojson, path);
+  state.previewArtifactCache.set(path, geojson);
+  return geojson;
+}
+
+function validateGeoJson(geojson, path) {
+  if (
+    !geojson ||
+    geojson.type !== "FeatureCollection" ||
+    !Array.isArray(geojson.features)
+  ) {
+    throw new Error(`Preview artifact is not a GeoJSON FeatureCollection: ${path}`);
+  }
+}
+
+function renderMapScaffold(record, artifact, options = {}) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "map-layout";
+
+  const viewport = document.createElement("section");
+  viewport.className = "map-viewport";
+  viewport.setAttribute("aria-label", `Map preview for ${record.title}`);
+  const grid = document.createElement("div");
+  grid.className = "map-grid";
+  const label = document.createElement("div");
+  label.className = "map-placeholder-label";
+  if (options.geojson) {
+    viewport.append(grid, renderGeoJsonLayer(options.geojson, artifact), label);
+    label.textContent = "Rendered preview artifact";
+  } else if (options.error) {
+    viewport.append(grid, renderMapError(options.error), label);
+    label.textContent = "Preview artifact missing";
+  } else {
+    viewport.append(grid, label);
+    label.textContent = "Loading preview artifact";
+  }
+
+  const panel = document.createElement("aside");
+  panel.id = "map-layer-panel";
+  panel.className = "map-layer-panel";
+  const bounds = renderBounds(artifact, options.geojson);
+  panel.append(
+    mapPanelHeading(record, options.geojson ? "Rendered" : "Available"),
+    mapLayerControls(record),
+    definitionList([
+      ["Dataset ID", record.dataset_id],
+      ["Title", record.title],
+      ["Source ZIP", record.source_zip_path],
+      ["Artifact", artifact.artifact_path],
+      ["Artifact status", artifact.artifact_status],
+      ["Artifact kind", artifact.artifact_kind],
+      ["CRS", artifact.crs],
+      ["Bounds", bounds],
+      ["Feature count", featureCount(options.geojson)],
+      ["Source content", artifact.source_content_status],
+      ["Preview eligibility", artifact.preview_eligibility_status],
+      ["Preview blockers", artifact.preview_eligibility_blockers?.join(", ") || "none"],
+      ["Generated by", artifact.provenance?.generated_by],
+      ["Catalog detail", detailRouteLink(record)],
+    ])
+  );
+
+  const warning = document.createElement("p");
+  warning.className = "map-warning";
+  warning.textContent = artifact.fixture_warning;
+  panel.append(warning);
+
+  wrapper.append(viewport, panel);
+  return wrapper;
+}
+
+function renderGeoJsonLayer(geojson, artifact) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.className = "map-geojson-layer";
+  svg.setAttribute("viewBox", "0 0 100 100");
+  svg.setAttribute("preserveAspectRatio", "none");
+  svg.setAttribute("aria-label", `${artifact.dataset_id} preview geometry`);
+  svg.dataset.layerDatasetId = artifact.dataset_id;
+  applyLayerOptionsToNode(svg, layerOptions(artifact.dataset_id));
+
+  const bounds = validBounds(artifact.bounds) || geoJsonBounds(geojson);
+  for (const feature of geojson.features) {
+    for (const line of lineStrings(feature.geometry)) {
+      const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+      polyline.className = "map-feature-line";
+      polyline.setAttribute(
+        "points",
+        line.map((coordinate) => projectCoordinate(coordinate, bounds)).join(" ")
+      );
+      svg.append(polyline);
+    }
+  }
+  return svg;
+}
+
+function mapLayerControls(record) {
+  const controls = document.createElement("section");
+  controls.className = "map-layer-controls";
+  controls.setAttribute("aria-label", "Map layer controls");
+
+  const options = layerOptions(record.dataset_id);
+
+  const heading = document.createElement("h4");
+  heading.textContent = "Layer controls";
+
+  const visibleLabel = document.createElement("label");
+  visibleLabel.className = "map-checkbox-control";
+  const visibleInput = document.createElement("input");
+  visibleInput.id = "map-layer-visible";
+  visibleInput.type = "checkbox";
+  visibleInput.checked = options.visible;
+  visibleInput.dataset.mapControl = "visibility";
+  visibleInput.dataset.datasetId = record.dataset_id;
+  const visibleText = document.createElement("span");
+  visibleText.textContent = "Layer visible";
+  visibleLabel.append(visibleInput, visibleText);
+
+  const opacityLabel = document.createElement("label");
+  opacityLabel.className = "map-range-control";
+  opacityLabel.setAttribute("for", "map-layer-opacity");
+  opacityLabel.textContent = "Opacity";
+  const opacityInput = document.createElement("input");
+  opacityInput.id = "map-layer-opacity";
+  opacityInput.type = "range";
+  opacityInput.min = "0";
+  opacityInput.max = "1";
+  opacityInput.step = "0.05";
+  opacityInput.value = String(options.opacity);
+  opacityInput.dataset.mapControl = "opacity";
+  opacityInput.dataset.datasetId = record.dataset_id;
+  const opacityValue = document.createElement("output");
+  opacityValue.id = "map-layer-opacity-value";
+  opacityValue.setAttribute("for", "map-layer-opacity");
+  opacityValue.textContent = opacityLabelText(options.opacity);
+
+  controls.append(heading, visibleLabel, opacityLabel, opacityInput, opacityValue);
+  return controls;
+}
+
+function layerOptions(datasetId) {
+  if (!state.mapLayerOptions.has(datasetId)) {
+    state.mapLayerOptions.set(datasetId, {...DEFAULT_LAYER_OPTIONS});
+  }
+  return state.mapLayerOptions.get(datasetId);
+}
+
+function applyLayerControl(input) {
+  const datasetId = input.dataset.datasetId;
+  if (!datasetId) {
+    return;
+  }
+  const options = layerOptions(datasetId);
+  if (input.dataset.mapControl === "visibility") {
+    options.visible = input.checked;
+  }
+  if (input.dataset.mapControl === "opacity") {
+    options.opacity = boundedOpacity(input.value);
+    input.value = String(options.opacity);
+    const output = mapPreviewNode.querySelector("#map-layer-opacity-value");
+    if (output) {
+      output.textContent = opacityLabelText(options.opacity);
+    }
+  }
+  const layer = mapPreviewNode.querySelector(".map-geojson-layer");
+  if (layer?.dataset.layerDatasetId === datasetId) {
+    applyLayerOptionsToNode(layer, options);
+  }
+}
+
+function applyLayerOptionsToNode(node, options) {
+  node.setAttribute("opacity", options.visible ? String(options.opacity) : "0");
+  node.setAttribute("data-visible", String(options.visible));
+  node.setAttribute("data-opacity", String(options.opacity));
+}
+
+function boundedOpacity(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return DEFAULT_LAYER_OPTIONS.opacity;
+  }
+  return Math.min(1, Math.max(0, Math.round(parsed * 100) / 100));
+}
+
+function opacityLabelText(opacity) {
+  return `${Math.round(opacity * 100)}%`;
+}
+
+function renderMapError(error) {
+  const message = document.createElement("div");
+  message.className = "map-error";
+  const heading = document.createElement("strong");
+  heading.textContent = "Preview artifact could not be loaded.";
+  const detail = document.createElement("span");
+  detail.textContent = ` ${error.message}`;
+  message.append(heading, detail);
+  return message;
+}
+
+function lineStrings(geometry) {
+  if (!geometry) {
+    return [];
+  }
+  if (geometry.type === "LineString") {
+    return [geometry.coordinates];
+  }
+  if (geometry.type === "MultiLineString") {
+    return geometry.coordinates;
+  }
+  if (geometry.type === "Polygon") {
+    return geometry.coordinates;
+  }
+  if (geometry.type === "MultiPolygon") {
+    return geometry.coordinates.flat();
+  }
+  return [];
+}
+
+function projectCoordinate(coordinate, bounds) {
+  const [minLon, minLat, maxLon, maxLat] = bounds;
+  const [lon, lat] = coordinate;
+  const width = maxLon - minLon || 1;
+  const height = maxLat - minLat || 1;
+  const padding = 8;
+  const x = padding + ((lon - minLon) / width) * (100 - padding * 2);
+  const y = 100 - padding - ((lat - minLat) / height) * (100 - padding * 2);
+  return `${x.toFixed(2)},${y.toFixed(2)}`;
+}
+
+function renderBounds(artifact, geojson) {
+  const bounds = validBounds(artifact.bounds) || geoJsonBounds(geojson);
+  return bounds.map((value) => Number(value).toFixed(4)).join(", ");
+}
+
+function validBounds(bounds) {
+  if (
+    Array.isArray(bounds) &&
+    bounds.length === 4 &&
+    bounds.every((value) => Number.isFinite(Number(value)))
+  ) {
+    return bounds.map(Number);
+  }
+  return null;
+}
+
+function geoJsonBounds(geojson) {
+  const coordinates = [];
+  for (const feature of geojson?.features || []) {
+    collectCoordinates(feature.geometry?.coordinates, coordinates);
+  }
+  if (coordinates.length === 0) {
+    return [0, 0, 1, 1];
+  }
+  const lons = coordinates.map((coordinate) => Number(coordinate[0]));
+  const lats = coordinates.map((coordinate) => Number(coordinate[1]));
+  return [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)];
+}
+
+function collectCoordinates(value, output) {
+  if (!Array.isArray(value)) {
+    return;
+  }
+  if (
+    value.length >= 2 &&
+    Number.isFinite(Number(value[0])) &&
+    Number.isFinite(Number(value[1]))
+  ) {
+    output.push(value);
+    return;
+  }
+  for (const item of value) {
+    collectCoordinates(item, output);
+  }
+}
+
+function featureCount(geojson) {
+  if (!geojson) {
+    return "not loaded";
+  }
+  return geojson.features.length.toLocaleString();
+}
+
+function renderUnavailableMap(record) {
+  const panel = document.createElement("div");
+  panel.className = "map-unavailable";
+  panel.append(
+    mapPanelHeading(record, "Unavailable"),
+    definitionList([
+      ["Dataset ID", record.dataset_id],
+      ["Source ZIP", record.source_zip_path],
+      ["Eligibility", record.preview?.eligibility_status || "unknown"],
+      ["Reason", unavailableReason(record)],
+      ["Blockers", (record.preview?.eligibility_blockers || []).join(", ") || "none"],
+      ["Catalog detail", detailRouteLink(record)],
+    ])
+  );
+
+  if (state.previewManifestStatus === "unavailable") {
+    const missing = document.createElement("p");
+    missing.className = "map-warning";
+    missing.textContent = "Preview manifest unavailable. Generate it with python scripts/generate_map_preview_artifacts.py.";
+    panel.append(missing);
+  }
+  return panel;
+}
+
+function mapPanelHeading(record, status) {
+  const heading = document.createElement("div");
+  heading.className = "map-panel-heading";
+  const title = document.createElement("h3");
+  title.textContent = record.title;
+  const badge = document.createElement("span");
+  badge.className = "map-status-badge";
+  badge.textContent = status;
+  heading.append(title, badge);
+  return heading;
+}
+
+function detailRouteLink(record) {
+  const link = document.createElement("a");
+  link.href = `#${encodeURIComponent(record.dataset_id)}`;
+  link.textContent = "Open catalog detail";
+  return link;
+}
+
+function unavailableReason(record) {
+  return (
+    record.preview?.eligibility_reason ||
+    "No generated preview artifact is available for this record."
+  );
+}
+
+function previewStatusLabel(record) {
+  if (findPreviewArtifact(record.dataset_id)) {
+    return "(preview artifact available)";
+  }
+  return `(${record.preview?.eligibility_status || "preview unavailable"})`;
 }
 
 function detailPanel(title, contentNode) {
@@ -230,6 +696,10 @@ function renderValue(node, value) {
   }
 
   if (value && typeof value === "object") {
+    if (value.nodeType || value.tagName) {
+      node.append(value);
+      return;
+    }
     node.append(definitionList(Object.entries(value), "nested-list"));
     return;
   }
@@ -357,7 +827,7 @@ controlsNode.addEventListener("input", () => {
   renderResults();
 });
 
-window.addEventListener("hashchange", renderSelectedRecord);
+window.addEventListener("hashchange", renderRoute);
 
 recordDetailNode.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-copy]");
@@ -375,6 +845,20 @@ recordDetailNode.addEventListener("click", async (event) => {
   window.setTimeout(() => {
     button.textContent = originalText;
   }, 1600);
+});
+
+mapPreviewNode.addEventListener("input", (event) => {
+  const input = event.target.closest("[data-map-control]");
+  if (input) {
+    applyLayerControl(input);
+  }
+});
+
+mapPreviewNode.addEventListener("change", (event) => {
+  const input = event.target.closest("[data-map-control]");
+  if (input) {
+    applyLayerControl(input);
+  }
 });
 
 loadCatalog();

@@ -21,6 +21,7 @@ DEFAULT_WEB_ROOT = REPO_ROOT / "web"
 DEFAULT_CATALOG = DEFAULT_WEB_ROOT / "data" / "catalog.json"
 REPRESENTATIVE_IDS = {
     "dl_adminunits_bcts",
+    "dl_water_cwb_canals",
     "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135",
 }
 FORBIDDEN_CATALOG_FRAGMENTS = (
@@ -93,6 +94,8 @@ def _check_static_assets(web_root: Path) -> None:
         "record-list",
         "record-detail",
         "detail-status",
+        "map-status",
+        "map-preview",
     }
     missing_ids = sorted(expected_ids.difference(parser.ids))
     _require(not missing_ids, f"missing expected DOM ids: {missing_ids}")
@@ -121,6 +124,25 @@ def _check_catalog(catalog_path: Path) -> dict[str, object]:
     family_counts = catalog.get("family_counts") or {}
     _require(family_counts.get("data_layer") == 418, "unexpected data-layer count")
     _require(family_counts.get("virtual_layer") == 1765, "unexpected virtual-layer count")
+    preview_counts = catalog.get("preview_eligibility_counts") or {}
+    _require(
+        preview_counts.get("candidate_missing_crs") == 418,
+        "unexpected candidate_missing_crs count",
+    )
+    _require(
+        preview_counts.get("not_supported") == 1765,
+        "unexpected not_supported count",
+    )
+    representatives = catalog.get("representative_preview_records") or {}
+    _require(
+        representatives.get("data_layer_candidate") == "dl_water_cwb_canals",
+        "unexpected representative data-layer candidate",
+    )
+    _require(
+        representatives.get("unavailable_record")
+        == "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135",
+        "unexpected representative unavailable record",
+    )
 
     by_id = {record.get("dataset_id"): record for record in records if isinstance(record, dict)}
     for dataset_id in REPRESENTATIVE_IDS:
@@ -138,6 +160,15 @@ def _check_catalog(catalog_path: Path) -> dict[str, object]:
             "uncertainty_notes",
         ):
             _require(key in record, f"{dataset_id} missing catalog key: {key}")
+        preview = record.get("preview") or {}
+        for key in (
+            "eligibility_status",
+            "eligibility_reason",
+            "eligibility_blockers",
+            "has_crs_metadata",
+            "has_extent_metadata",
+        ):
+            _require(key in preview, f"{dataset_id} missing preview key: {key}")
 
     return catalog
 

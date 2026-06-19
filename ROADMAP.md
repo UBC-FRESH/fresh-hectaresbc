@@ -154,7 +154,7 @@ Phase 9 produced planning contracts only. It did not implement the browser app. 
 
 GitHub parent issue: #87
 
-Active branch: `feature/p10-browser-catalog-app`
+Merged PR: #93
 
 Phase 10 must produce a real runnable browser app surface, not another planning layer. The first useful implementation should be a catalog/search/detail browser over generated catalog data from the existing `fresh_hectaresbc` package. Default verification must not require raw ZIP/TIFF payloads, DataLad network retrieval, Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access.
 
@@ -166,19 +166,37 @@ Phase 10 must produce a real runnable browser app surface, not another planning 
 - [x] P10.4 Add browser app smoke verification. Child issue: #91.
 - [x] P10.5 Verify, document, and close browser catalog implementation phase. Child issue: #92.
 
-## Phase 11: Future Workflow Hardening
+## Phase 11: Browser Map Preview Implementation
+
+GitHub parent issue: #96
+
+Active branch: `feature/p11-map-preview-implementation`
+
+Draft PR: #103
+
+Phase 11 must produce a real runnable browser map-preview surface, not another planning layer. The first useful implementation should let users identify previewable recovered data layers, open a representative layer in a map view, inspect preview provenance, and control layer visibility/opacity. Default verification must not require Arbutus/Chinook credentials, UBC CWL, hosted workers, object-store retrieval, or AOI/download processing.
+
+- [x] P11.0 Establish repo-local `.venv` workflow. Child issue: #104.
+- [x] P11.1 Audit preview eligibility and representative layers. Child issue: #97.
+- [x] P11.2 Add derived preview artifact workflow. Child issue: #98.
+- [x] P11.3 Implement browser map view scaffold. Child issue: #99.
+- [x] P11.4 Render representative data layer on the map. Child issue: #100.
+- [x] P11.5 Add map layer controls and catalog linkback. Child issue: #101.
+- [x] P11.6 Verify, document, and close map preview phase. Child issue: #102.
+
+## Phase 12: Future Workflow Hardening
 
 These are planned but not active requirements yet.
 
-- [ ] P11.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
-- [ ] P11.2 Add linting, formatting, tests, and pre-commit once code exists.
-- [ ] P11.3 Add CI once there are stable commands to run.
-- [ ] P11.4 Add documentation build checks once formal docs exist.
-- [ ] P11.5 Add machine-readable catalog schemas once the metadata model stabilizes.
-- [ ] P11.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
+- [ ] P12.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
+- [ ] P12.2 Add linting, formatting, tests, and pre-commit once code exists.
+- [ ] P12.3 Add CI once there are stable commands to run.
+- [ ] P12.4 Add documentation build checks once formal docs exist.
+- [ ] P12.5 Add machine-readable catalog schemas once the metadata model stabilizes.
+- [ ] P12.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
 
 ## Current Next Steps
 
-1. Merge Phase 10 PR #93 back to `main`.
-2. Close parent issue #87 only after PR #93 is merged.
-3. Do not activate the next roadmap phase until the maintainer explicitly selects the next parent issue and branch.
+1. Merge Phase 11 PR #103 back to `main`.
+2. Close parent issue #96 only after PR #103 is merged.
+3. Do not activate Phase 12 until the maintainer selects it as the next roadmap phase.

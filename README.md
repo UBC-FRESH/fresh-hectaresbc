@@ -52,32 +52,34 @@ Phase 5 validation reports are tracked in the data submodule:
 
 The first Python API is available for local development. It currently provides the public `HectaresBC` entrypoint, recovered-catalog lookup/search/filtering, dataset path resolution, local content-status checks, backend diagnostics, and DataLad-backed fetch result objects.
 
-Install the package in editable mode:
+Create and activate the repo-local development environment:
 
 ```bash
-python3 -m pip install -e .
+bash scripts/setup_dev_venv.sh
+source .venv/bin/activate
 ```
+
+The setup script creates `.venv/`, installs the package in editable mode with `.[dev]`, and smoke-checks package import, pytest, and Python-side DataLad availability. The `.venv/` directory is ignored and must not be committed.
 
 Smoke-test the import:
 
 ```bash
-python3 -c "from fresh_hectaresbc import HectaresBC; print(HectaresBC().__class__.__name__)"
+python -c "from fresh_hectaresbc import HectaresBC; print(HectaresBC().__class__.__name__)"
 ```
 
 Run the current test suite:
 
 ```bash
-python3 -m pytest
+python -m pytest
 ```
 
 Build and inspect local distribution artifacts:
 
 ```bash
-python3 -m pip install -e .[dev]
 rm -rf dist/
-python3 -m build
-python3 scripts/inspect_distribution_artifacts.py dist
-python3 scripts/smoke_test_wheel_install.py dist
+python -m build
+python scripts/inspect_distribution_artifacts.py dist
+python scripts/smoke_test_wheel_install.py dist
 ```
 
 Smoke-test the CLI:
@@ -145,7 +147,7 @@ print(plan.status)
 Run the fuller Python API quickstart:
 
 ```bash
-python3 examples/python_api_quickstart.py
+python examples/python_api_quickstart.py
 ```
 
 Run the CLI quickstart:
@@ -174,8 +176,10 @@ Catalog operations do not read bulky ZIP payloads, require the data submodule co
 Generate the static browser catalog artifact from the Python package API:
 
 ```bash
-python3 scripts/generate_web_catalog.py
-python3 scripts/smoke_test_web_static_app.py
+python scripts/generate_web_catalog.py
+python scripts/generate_map_preview_artifacts.py
+python scripts/smoke_test_web_static_app.py
+python scripts/smoke_test_map_preview_artifacts.py
 node scripts/smoke_test_web_catalog_ui.js web/data/catalog.json
 node scripts/smoke_test_web_app_dom.js web/data/catalog.json
 ```
@@ -183,7 +187,7 @@ node scripts/smoke_test_web_app_dom.js web/data/catalog.json
 Serve the static app locally:
 
 ```bash
-python3 -m http.server --directory web 8000
+python -m http.server --directory web 8000
 ```
 
 Then open:
@@ -199,9 +203,18 @@ http://localhost:8000/#dl_adminunits_bcts
 http://localhost:8000/#vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
 ```
 
-The generated `web/data/catalog.json` file is ignored because it is derived from packaged catalog metadata. Browser catalog development does not require raw HectaresBC payloads, DataLad network retrieval, Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access.
+Representative map preview routes use `#map=<dataset_id>`:
+
+```text
+http://localhost:8000/#map=dl_water_cwb_canals
+http://localhost:8000/#map=vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
+```
+
+The `dl_water_cwb_canals` route loads and renders the generated GeoJSON preview artifact from `web/data/map_previews/dl_water_cwb_canals/preview.geojson`. The layer panel includes visibility and opacity controls, preview eligibility metadata, and a link back to the recovered catalog detail route. The generated `web/data/catalog.json` file is ignored because it is derived from packaged catalog metadata. Generated map-preview artifacts under `web/data/map_previews/` are also ignored. The initial map-preview GeoJSON is a labelled UI fixture pending derivation from recovered payload content, not recovered HectaresBC geometry. Browser catalog development does not require raw HectaresBC payloads, DataLad network retrieval, Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access. Node is still a system prerequisite for the browser smoke scripts; it is not installed by the Python `.venv` setup.
 
 ## DataLad Retrieval
+
+The development extra installs Python-side DataLad support through `datalad[full]`. Real retrieval may still require the external `git-annex` binary, initialized submodules, configured storage remotes, and user-local credentials.
 
 To retrieve annexed data from the Arbutus-backed special remote, source local credentials first:
 

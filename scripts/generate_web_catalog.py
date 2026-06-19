@@ -13,6 +13,10 @@ from fresh_hectaresbc import DatasetRecord, HectaresBC
 
 
 DEFAULT_OUTPUT = Path("web/data/catalog.json")
+REPRESENTATIVE_PREVIEW_RECORDS = {
+    "data_layer_candidate": "dl_water_cwb_canals",
+    "unavailable_record": "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135",
+}
 FORBIDDEN_FRAGMENTS = (
     "tmp/",
     "secret",
@@ -79,12 +83,17 @@ def build_catalog_payload() -> dict[str, Any]:
     catalog = HectaresBC().catalog
     records = [record_to_web(record) for record in catalog]
     family_counts = Counter(record["source_family"] for record in records)
+    preview_eligibility_counts = Counter(
+        record["preview"]["eligibility_status"] for record in records
+    )
 
     payload: dict[str, Any] = {
         "schema_version": 1,
         "generated_at": datetime.now(UTC).replace(microsecond=0).isoformat(),
         "record_count": len(records),
         "family_counts": dict(sorted(family_counts.items())),
+        "preview_eligibility_counts": dict(sorted(preview_eligibility_counts.items())),
+        "representative_preview_records": REPRESENTATIVE_PREVIEW_RECORDS,
         "records": records,
     }
     _validate_payload(payload)
@@ -102,6 +111,7 @@ def write_catalog_payload(payload: dict[str, Any], output: Path) -> None:
 def record_to_web(record: DatasetRecord) -> dict[str, Any]:
     raster_members = _parsed_list(record.field("raster_member_paths"))
     wms_members = _parsed_list(record.field("wms_member_paths"))
+    preview_eligibility = _preview_eligibility(record, raster_members, wms_members)
 
     return {
         "dataset_id": record.dataset_id,
@@ -120,9 +130,69 @@ def record_to_web(record: DatasetRecord) -> dict[str, Any]:
             "raster_member_count": len(raster_members),
             "wms_member_count": len(wms_members),
             "preview_status": "metadata_candidate" if raster_members else "not_evaluated",
+            "eligibility_status": preview_eligibility["status"],
+            "eligibility_reason": preview_eligibility["reason"],
+            "eligibility_blockers": preview_eligibility["blockers"],
+            "has_crs_metadata": preview_eligibility["has_crs_metadata"],
+            "has_extent_metadata": preview_eligibility["has_extent_metadata"],
         },
         "metadata": _field_group(record, SUMMARY_FIELDS),
         "provenance": _field_group(record, PROVENANCE_FIELDS, public_sources=True),
+    }
+
+
+def _preview_eligibility(
+    record: DatasetRecord, raster_members: list[Any], wms_members: list[Any]
+) -> dict[str, Any]:
+    crs = bool((record.field("crs") or "").strip())
+    extent = bool((record.field("spatial_extent") or "").strip())
+
+    if record.source_family != "data_layer":
+        return {
+            "status": "not_supported",
+            "reason": "Phase 11 map preview starts with recovered data layers; virtual-layer preview is deferred.",
+            "blockers": ["unsupported_family"],
+            "has_crs_metadata": crs,
+            "has_extent_metadata": extent,
+        }
+    if not raster_members:
+        return {
+            "status": "metadata_only",
+            "reason": "No raster member was recovered for this data-layer record.",
+            "blockers": ["missing_raster"],
+            "has_crs_metadata": crs,
+            "has_extent_metadata": extent,
+        }
+    if not crs:
+        blockers = ["missing_crs"]
+        if not extent:
+            blockers.append("missing_extent")
+        if not wms_members:
+            blockers.append("missing_wms")
+        return {
+            "status": "candidate_missing_crs",
+            "reason": "Raster/WMS metadata identifies a candidate, but recovered metadata does not provide authoritative CRS.",
+            "blockers": blockers,
+            "has_crs_metadata": crs,
+            "has_extent_metadata": extent,
+        }
+    if not extent:
+        blockers = ["missing_extent"]
+        if not wms_members:
+            blockers.append("missing_wms")
+        return {
+            "status": "candidate_missing_extent",
+            "reason": "Raster/WMS metadata identifies a candidate, but recovered metadata does not provide authoritative map bounds.",
+            "blockers": blockers,
+            "has_crs_metadata": crs,
+            "has_extent_metadata": extent,
+        }
+    return {
+        "status": "preview_ready",
+        "reason": "Recovered metadata includes raster, CRS, and spatial extent signals.",
+        "blockers": [] if wms_members else ["missing_wms"],
+        "has_crs_metadata": crs,
+        "has_extent_metadata": extent,
     }
 
 
