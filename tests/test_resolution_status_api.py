@@ -51,6 +51,19 @@ def test_local_path_returns_expected_path_without_fetching() -> None:
     ).absolute_path
 
 
+def test_default_data_repo_path_falls_back_outside_source_checkout(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+
+    resolved = HectaresBC().resolve("dl_adminunits_bcts")
+
+    assert resolved.data_repo_path == tmp_path / "external" / "fresh-hectaresbc-data"
+    assert resolved.submodule_initialized is False
+    assert resolved.path_metadata_exists is False
+    assert resolved.content_present is False
+
+
 def test_missing_submodule_is_status_not_exception(tmp_path: Path) -> None:
     status = HectaresBC(data_repo_path=tmp_path / "missing-data-repo").content_status(
         "dl_adminunits_bcts"

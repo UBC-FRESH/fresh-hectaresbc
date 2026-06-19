@@ -29,6 +29,8 @@ EXPECTED_SDIST_SUFFIXES = (
     "/src/fresh_hectaresbc/backends/datalad.py",
     "/src/fresh_hectaresbc/package_data/recovered_catalog/data_layer_records.csv",
     "/src/fresh_hectaresbc/package_data/recovered_catalog/virtual_layer_records.csv",
+    "/scripts/inspect_distribution_artifacts.py",
+    "/scripts/smoke_test_wheel_install.py",
 )
 
 FORBIDDEN_FRAGMENTS = (

@@ -77,6 +77,7 @@ python3 -m pip install -e .[dev]
 rm -rf dist/
 python3 -m build
 python3 scripts/inspect_distribution_artifacts.py dist
+python3 scripts/smoke_test_wheel_install.py dist
 ```
 
 Smoke-test the CLI:
