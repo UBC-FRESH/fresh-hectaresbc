@@ -48,6 +48,28 @@ Phase 5 validation reports are tracked in the data submodule:
 - `external/fresh-hectaresbc-data/metadata/validation/full_zip_inventory_coverage.md`
 - `external/fresh-hectaresbc-data/metadata/validation/full_publication_retrieval_sampling.md`
 
+## Python API Development
+
+The first Python package scaffold is available for local development. It currently provides the public `HectaresBC` entrypoint; catalog lookup, path resolution, and DataLad-backed retrieval are being implemented in the remaining Phase 6 issues.
+
+Install the package in editable mode:
+
+```bash
+python3 -m pip install -e . --no-deps
+```
+
+Smoke-test the import:
+
+```bash
+python3 -c "from fresh_hectaresbc import HectaresBC; print(HectaresBC().__class__.__name__)"
+```
+
+Run the current test suite:
+
+```bash
+python3 -m pytest
+```
+
 ## DataLad Retrieval
 
 To retrieve annexed data from the Arbutus-backed special remote, source local credentials first:

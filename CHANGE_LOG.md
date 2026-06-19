@@ -74,3 +74,4 @@
 - Merged Phase 6 PR #67 to `main` and closed parent issue #25 after all child issues were completed with checked issue-body checklists.
 - Reopened Phase 6 with implementation child issue #68 after recognizing that the merged Phase 6 work defined contracts but did not yet deliver an importable core Python API.
 - Split P6.5 into narrower implementation issues #70 through #74 so the package scaffold, catalog API, path/status API, DataLad backend wrapper, and final docs/verification closeout can be implemented and reviewed one slice at a time.
+- Completed P6.5.1 by adding the `fresh-hectaresbc` package scaffold, importable `fresh_hectaresbc` module, public `HectaresBC` facade, pytest smoke tests, and README development commands without introducing catalog or DataLad behavior ahead of the narrower implementation issues.
