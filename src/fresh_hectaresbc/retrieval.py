@@ -5,8 +5,15 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from fresh_hectaresbc.backends import BackendAdapter, DataladBackend
 from fresh_hectaresbc.catalog import Catalog
-from fresh_hectaresbc.models import ContentStatus, DatasetRecord, ResolvedDatasetPath
+from fresh_hectaresbc.models import (
+    BackendDiagnostic,
+    ContentStatus,
+    DatasetRecord,
+    FetchResult,
+    ResolvedDatasetPath,
+)
 from fresh_hectaresbc.paths import default_data_repo_path, raw_relative_path
 
 
@@ -17,6 +24,7 @@ class Resolver:
         self,
         catalog: Catalog,
         data_repo_path: Path | str | None = None,
+        backend: BackendAdapter | None = None,
     ) -> None:
         self.catalog = catalog
         self.data_repo_path = (
@@ -24,6 +32,7 @@ class Resolver:
             if data_repo_path is not None
             else default_data_repo_path()
         )
+        self.backend = backend or DataladBackend(self.data_repo_path)
 
     def resolve(self, dataset: str | DatasetRecord) -> ResolvedDatasetPath:
         """Resolve a dataset ID or record to the expected raw ZIP path."""
@@ -50,50 +59,41 @@ class Resolver:
         """Report local availability without fetching content."""
 
         resolved = self.resolve(dataset)
-        if not resolved.submodule_initialized:
-            return ContentStatus(
-                dataset_id=resolved.dataset_id,
-                status="missing_submodule",
-                local_path=resolved.absolute_path,
-                submodule_initialized=False,
-                path_metadata_exists=False,
-                content_present=False,
-                message="Data repository submodule is missing or not initialized.",
-            )
-        if not resolved.path_metadata_exists:
-            return ContentStatus(
-                dataset_id=resolved.dataset_id,
-                status="missing_path",
-                local_path=resolved.absolute_path,
-                submodule_initialized=True,
-                path_metadata_exists=False,
-                content_present=False,
-                message="Expected raw ZIP path is missing from the data repository.",
-            )
-        if not resolved.content_present:
-            return ContentStatus(
-                dataset_id=resolved.dataset_id,
-                status="missing_content",
-                local_path=resolved.absolute_path,
-                submodule_initialized=True,
-                path_metadata_exists=True,
-                content_present=False,
-                message="Annex path metadata exists, but file content is not local.",
-            )
-        return ContentStatus(
-            dataset_id=resolved.dataset_id,
-            status="present",
-            local_path=resolved.absolute_path,
-            submodule_initialized=True,
-            path_metadata_exists=True,
-            content_present=True,
-            message="File content is present locally.",
-        )
+        return self.backend.content_status(resolved)
 
     def local_path(self, dataset: str | DatasetRecord) -> Path:
         """Return the expected local filesystem path for a dataset."""
 
         return self.resolve(dataset).absolute_path
+
+    def diagnostics(self) -> tuple[BackendDiagnostic, ...]:
+        """Return backend diagnostics."""
+
+        return self.backend.diagnostics()
+
+    def fetch(
+        self,
+        dataset: str | DatasetRecord,
+        *,
+        force: bool = False,
+        dry_run: bool = False,
+    ) -> FetchResult:
+        """Retrieve or plan retrieval for one dataset."""
+
+        return self.backend.fetch(self.resolve(dataset), force=force, dry_run=dry_run)
+
+    def fetch_many(
+        self,
+        datasets: list[str | DatasetRecord] | tuple[str | DatasetRecord, ...],
+        *,
+        force: bool = False,
+        dry_run: bool = False,
+    ) -> tuple[FetchResult, ...]:
+        """Retrieve or plan retrieval for multiple datasets in input order."""
+
+        return tuple(
+            self.fetch(dataset, force=force, dry_run=dry_run) for dataset in datasets
+        )
 
     def _coerce_record(self, dataset: str | DatasetRecord) -> DatasetRecord:
         if isinstance(dataset, DatasetRecord):

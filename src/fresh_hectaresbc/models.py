@@ -109,3 +109,31 @@ class ContentStatus:
     path_metadata_exists: bool
     content_present: bool
     message: str
+
+
+@dataclass(frozen=True)
+class BackendDiagnostic:
+    """One backend readiness diagnostic check."""
+
+    backend: str
+    check: str
+    status: str
+    message: str
+    command_summary: str | None = None
+    remediation: str | None = None
+    secret_safe: bool = True
+
+
+@dataclass(frozen=True)
+class FetchResult:
+    """Structured result for a dataset retrieval request."""
+
+    dataset_id: str
+    status: str
+    backend: str
+    local_path: Path
+    message: str
+    diagnostics: tuple[BackendDiagnostic, ...] = ()
+    command_summary: str | None = None
+    verification_performed: bool = False
+    secret_safe: bool = True

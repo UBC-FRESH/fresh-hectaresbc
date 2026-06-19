@@ -7,8 +7,15 @@ from functools import cached_property
 from pathlib import Path
 from typing import Optional
 
+from fresh_hectaresbc.backends import BackendAdapter
 from fresh_hectaresbc.catalog import Catalog
-from fresh_hectaresbc.models import ContentStatus, DatasetRecord, ResolvedDatasetPath
+from fresh_hectaresbc.models import (
+    BackendDiagnostic,
+    ContentStatus,
+    DatasetRecord,
+    FetchResult,
+    ResolvedDatasetPath,
+)
 from fresh_hectaresbc.retrieval import Resolver
 
 
@@ -16,12 +23,13 @@ from fresh_hectaresbc.retrieval import Resolver
 class HectaresBC:
     """Convenience entrypoint for HectaresBC catalog and data access.
 
-    The facade exposes catalog and local path/status behavior now. Backend
-    diagnostics are implemented in a later P6.5 slice.
+    The facade exposes catalog, local path/status, diagnostics, and fetch
+    behavior through structured result objects.
     """
 
     metadata_root: Optional[Path | str] = None
     data_repo_path: Optional[Path | str] = None
+    backend: Optional[BackendAdapter] = None
 
     def __post_init__(self) -> None:
         if self.metadata_root is not None:
@@ -41,7 +49,11 @@ class HectaresBC:
     def resolver(self) -> Resolver:
         """Create the read-only data repository resolver on first use."""
 
-        return Resolver(catalog=self.catalog, data_repo_path=self.data_repo_path)
+        return Resolver(
+            catalog=self.catalog,
+            data_repo_path=self.data_repo_path,
+            backend=self.backend,
+        )
 
     def get(self, dataset_id: str) -> DatasetRecord:
         """Return one dataset record by exact recovered ID."""
@@ -82,10 +94,29 @@ class HectaresBC:
 
         return self.resolver.local_path(dataset)
 
-    def diagnostics(self) -> list[object]:
-        """Return backend diagnostics.
+    def diagnostics(self) -> tuple[BackendDiagnostic, ...]:
+        """Return backend diagnostics."""
 
-        Implemented in P6.5.4.
-        """
+        return self.resolver.diagnostics()
 
-        raise NotImplementedError("Backend diagnostics are planned for P6.5.4.")
+    def fetch(
+        self,
+        dataset: str | DatasetRecord,
+        *,
+        force: bool = False,
+        dry_run: bool = False,
+    ) -> FetchResult:
+        """Retrieve or plan retrieval for one dataset."""
+
+        return self.resolver.fetch(dataset, force=force, dry_run=dry_run)
+
+    def fetch_many(
+        self,
+        datasets: list[str | DatasetRecord] | tuple[str | DatasetRecord, ...],
+        *,
+        force: bool = False,
+        dry_run: bool = False,
+    ) -> tuple[FetchResult, ...]:
+        """Retrieve or plan retrieval for multiple datasets."""
+
+        return self.resolver.fetch_many(datasets, force=force, dry_run=dry_run)

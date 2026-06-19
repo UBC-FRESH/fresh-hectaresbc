@@ -16,17 +16,3 @@ def test_public_facade_accepts_paths_without_side_effects(tmp_path: Path) -> Non
 
     assert api.metadata_root == tmp_path / "metadata"
     assert api.data_repo_path == tmp_path / "external" / "fresh-hectaresbc-data"
-
-
-def test_unimplemented_methods_fail_explicitly() -> None:
-    api = HectaresBC()
-
-    for method, args in [
-        (api.diagnostics, ()),
-    ]:
-        try:
-            method(*args)
-        except NotImplementedError as error:
-            assert "P6.5" in str(error)
-        else:
-            raise AssertionError(f"{method.__name__} should not be implemented yet")
