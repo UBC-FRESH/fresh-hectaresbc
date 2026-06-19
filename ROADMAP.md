@@ -64,59 +64,75 @@ Phase 4 storage work should configure a DataLad/git-annex S3 special remote poin
 - [x] P4.4 Link the DataLad repo as a Git submodule at `external/fresh-hectaresbc-data`. Child issue: #7.
 - [x] P4.5 Validate cold-clone data access workflow. Child issue: #10.
 
-## Phase 5: Core Python Access Library
+## Phase 5: Full HectaresBC Data Publication
+
+GitHub parent issue: #57
+
+Phase 4 proved the DataLad/git-annex, submodule, and Arbutus S3 special-remote architecture with six representative ZIP payloads. Phase 5 publishes the remaining rescued HectaresBC archive payloads into `UBC-FRESH/fresh-hectaresbc-data` so API, CLI, package, and web-app work can build against the actual full data repository.
+
+Expected active branch when this phase starts: `feature/p5-full-data-publication`.
+
+- [ ] P5.1 Define full archive publication contract. Child issue: #58.
+- [ ] P5.2 Mirror compact metadata and root control files into the data repo. Child issue: #59.
+- [ ] P5.3 Annex all remaining raw HectaresBC ZIP payloads. Child issue: #60.
+- [ ] P5.4 Upload all annexed payloads to `arbutus-s3`. Child issue: #61.
+- [ ] P5.5 Validate full ZIP inventory coverage. Child issue: #62.
+- [ ] P5.6 Validate cold-clone retrieval sampling. Child issue: #63.
+- [ ] P5.7 Update submodule pointer and full-data documentation. Child issue: #64.
+
+## Phase 6: Core Python Access Library
 
 GitHub parent issue: #25
 
 The core Python access library is the shared layer that should power both the CLI and the browser app. It should expose catalog search, metadata lookup, dataset resolution, retrieval/cache behavior, and backend diagnostics. DataLad/git-annex and S3-compatible object stores should be internal backends, not the user-facing abstraction.
 
-- [ ] P5.1 Define core access architecture. Child issue: #27.
-- [ ] P5.2 Define catalog query API. Child issue: #30.
-- [ ] P5.3 Define retrieval and cache API. Child issue: #28.
-- [ ] P5.4 Define backend abstraction for DataLad and object stores. Child issue: #29.
+- [ ] P6.1 Define core access architecture. Child issue: #27.
+- [ ] P6.2 Define catalog query API. Child issue: #30.
+- [ ] P6.3 Define retrieval and cache API. Child issue: #28.
+- [ ] P6.4 Define backend abstraction for DataLad and object stores. Child issue: #29.
 
-## Phase 6: Typer CLI Interface
+## Phase 7: Typer CLI Interface
 
 GitHub parent issue: #26
 
 The CLI should be a thin, user-friendly interface over the core Python access library. It should expose catalog search, metadata inspection, retrieval, cache, and diagnostics workflows without requiring normal users to understand DataLad/git-annex operations.
 
-- [ ] P6.1 Define Typer CLI workflows. Child issue: #18.
+- [ ] P7.1 Define Typer CLI workflows. Child issue: #18.
 
-## Phase 7: Package Distribution and Install Workflow
+## Phase 8: Package Distribution and Install Workflow
 
 GitHub parent issue: #12
 
 The envisioned local user workflow is `pip install fresh-hectaresbc`, followed by Python API or CLI access to HectaresBC catalog and data workflows. Packaging should support the core library and CLI layers without mixing their responsibilities.
 
-- [ ] P7.1 Define package distribution contract. Child issue: #16.
-- [ ] P7.2 Package install and smoke-test plan. Child issue: #15.
+- [ ] P8.1 Define package distribution contract. Child issue: #16.
+- [ ] P8.2 Package install and smoke-test plan. Child issue: #15.
 
-## Phase 8: Browser Catalog, Map, and Download Web App
+## Phase 9: Browser Catalog, Map, and Download Web App
 
 GitHub parent issue: #13
 
 The envisioned browser app would revive useful parts of the original HectaresBC service: browse layer lists and metadata, preview layers on a map, define an area of interest by drawing or selecting standard tiles, submit custom download requests, and collect prepared outputs. The initial hosted deployment may require UBC CWL or another access-control layer to manage abuse risk and hosting costs. Others could self-host if deployment recipes are published.
 
-- [ ] P8.1 Define web app product and access-control contract. Child issue: #20.
-- [ ] P8.2 Specify catalog and metadata browser. Child issue: #22.
-- [ ] P8.3 Specify map preview workflow. Child issue: #19.
-- [ ] P8.4 Specify AOI and tile-selection workflow. Child issue: #23.
-- [ ] P8.5 Specify custom download request workflow. Child issue: #24.
-- [ ] P8.6 Define web app hosting and deployment plan. Child issue: #21.
+- [ ] P9.1 Define web app product and access-control contract. Child issue: #20.
+- [ ] P9.2 Specify catalog and metadata browser. Child issue: #22.
+- [ ] P9.3 Specify map preview workflow. Child issue: #19.
+- [ ] P9.4 Specify AOI and tile-selection workflow. Child issue: #23.
+- [ ] P9.5 Specify custom download request workflow. Child issue: #24.
+- [ ] P9.6 Define web app hosting and deployment plan. Child issue: #21.
 
-## Phase 9: Future Workflow Hardening
+## Phase 10: Future Workflow Hardening
 
 These are planned but not active requirements yet.
 
-- [ ] P9.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
-- [ ] P9.2 Add linting, formatting, tests, and pre-commit once code exists.
-- [ ] P9.3 Add CI once there are stable commands to run.
-- [ ] P9.4 Add documentation build checks once formal docs exist.
-- [ ] P9.5 Add machine-readable catalog schemas once the metadata model stabilizes.
-- [ ] P9.6 Add full data publication/storage contracts once the DataLad architecture is proven.
+- [ ] P10.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
+- [ ] P10.2 Add linting, formatting, tests, and pre-commit once code exists.
+- [ ] P10.3 Add CI once there are stable commands to run.
+- [ ] P10.4 Add documentation build checks once formal docs exist.
+- [ ] P10.5 Add machine-readable catalog schemas once the metadata model stabilizes.
+- [ ] P10.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
 
 ## Current Next Steps
 
-1. Merge Phase 4 PR #56 back to `main`, then close parent issue #6.
+1. Activate Phase 5 with parent issue #57 and branch `feature/p5-full-data-publication`.
 2. Keep future parent issues (#25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
