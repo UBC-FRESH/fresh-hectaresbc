@@ -84,12 +84,14 @@ Phase 4 proved the DataLad/git-annex, submodule, and Arbutus S3 special-remote a
 
 GitHub parent issue: #25
 
+Active branch: `feature/p6-core-python-access`
+
 The core Python access library is the shared layer that should power both the CLI and the browser app. It should expose catalog search, metadata lookup, dataset resolution, retrieval/cache behavior, and backend diagnostics. DataLad/git-annex and S3-compatible object stores should be internal backends, not the user-facing abstraction.
 
-- [ ] P6.1 Define core access architecture. Child issue: #27.
-- [ ] P6.2 Define catalog query API. Child issue: #30.
-- [ ] P6.3 Define retrieval and cache API. Child issue: #28.
-- [ ] P6.4 Define backend abstraction for DataLad and object stores. Child issue: #29.
+- [x] P6.1 Define core access architecture. Child issue: #27.
+- [x] P6.2 Define catalog query API. Child issue: #30.
+- [x] P6.3 Define retrieval and cache API. Child issue: #28.
+- [x] P6.4 Define backend abstraction for DataLad and object stores. Child issue: #29.
 
 ## Phase 7: Typer CLI Interface
 
@@ -134,7 +136,7 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Mark PR #66 ready for review after final verification.
-2. Merge Phase 5 back to `main` after review.
-3. Close parent issue #57 only after PR #66 merges.
-4. Keep future parent issues (#25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
+1. Prepare PR #67 for review after final verification.
+2. Merge Phase 6 back to `main` after review.
+3. Close parent issue #25 only after PR #67 merges.
+4. Keep future parent issues (#26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.

@@ -6,6 +6,8 @@ Frame the dependency order for the future `fresh-hectaresbc` access system.
 
 The project should avoid building separate data access paths for the CLI and browser app. Both should sit on top of a shared core Python access library.
 
+Phase 6 turns this high-level framing into a concrete core-library contract in `planning/core_access_library_architecture.md`.
+
 ## Layer Model
 
 ```text
@@ -63,4 +65,3 @@ It may need service-side workflows for map previews, AOI selection, queued clipp
 ## Planning Rule
 
 Do not implement CLI or web app data access logic until the shared catalog and core access-library contracts are clear enough to prevent duplication.
-
