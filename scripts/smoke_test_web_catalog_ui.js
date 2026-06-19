@@ -10,13 +10,23 @@ const browser = require(path.join("..", "web", "catalog.js"));
 
 const records = catalog.records;
 const dataLayerDetail = browser.findRecord(records, "dl_adminunits_bcts");
+const previewCandidate = browser.findRecord(records, "dl_water_cwb_canals");
 const virtualLayerDetail = browser.findRecord(
   records,
   "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135"
 );
 
 assert.strictEqual(catalog.record_count, 2183);
+assert.deepStrictEqual(catalog.preview_eligibility_counts, {
+  candidate_missing_crs: 418,
+  not_supported: 1765,
+});
+assert.deepStrictEqual(catalog.representative_preview_records, {
+  data_layer_candidate: "dl_water_cwb_canals",
+  unavailable_record: "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135",
+});
 assert(dataLayerDetail);
+assert(previewCandidate);
 assert(virtualLayerDetail);
 
 const bullTrout = browser.filterRecords(records, {
@@ -63,10 +73,24 @@ assert(
   )
 );
 
+assert.strictEqual(previewCandidate.title, "Canals");
+assert.strictEqual(previewCandidate.source_zip_path, "data_layers/water_cwb_canals.zip");
+assert.strictEqual(previewCandidate.preview.eligibility_status, "candidate_missing_crs");
+assert.deepStrictEqual(previewCandidate.preview.eligibility_blockers, [
+  "missing_crs",
+  "missing_extent",
+]);
+assert.strictEqual(previewCandidate.preview.has_crs_metadata, false);
+assert.strictEqual(previewCandidate.preview.has_extent_metadata, false);
+
 assert.strictEqual(
   virtualLayerDetail.source_zip_path,
   "virtual_layers/virtualspecies.bulltroutsalvelinusconfluentus.1135.zip"
 );
+assert.strictEqual(virtualLayerDetail.preview.eligibility_status, "not_supported");
+assert.deepStrictEqual(virtualLayerDetail.preview.eligibility_blockers, [
+  "unsupported_family",
+]);
 assert.strictEqual(
   virtualLayerDetail.metadata.layer_name,
   "Bull Trout (Salvelinus confluentus)"

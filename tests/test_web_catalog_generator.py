@@ -10,10 +10,32 @@ def test_web_catalog_payload_uses_package_catalog() -> None:
     assert payload["schema_version"] == 1
     assert payload["record_count"] == 2183
     assert payload["family_counts"] == {"data_layer": 418, "virtual_layer": 1765}
+    assert payload["preview_eligibility_counts"] == {
+        "candidate_missing_crs": 418,
+        "not_supported": 1765,
+    }
+    assert payload["representative_preview_records"] == {
+        "data_layer_candidate": "dl_water_cwb_canals",
+        "unavailable_record": "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135",
+    }
 
     records = {record["dataset_id"]: record for record in payload["records"]}
     assert records["dl_adminunits_bcts"]["title"] == "BCTS Operating Areas"
     assert records["dl_adminunits_bcts"]["preview"]["has_wms"] is True
+    assert (
+        records["dl_water_cwb_canals"]["preview"]["eligibility_status"]
+        == "candidate_missing_crs"
+    )
+    assert records["dl_water_cwb_canals"]["preview"]["eligibility_blockers"] == [
+        "missing_crs",
+        "missing_extent",
+    ]
+    assert (
+        records["vl_virtualspecies_bulltroutsalvelinusconfluentus_1135"]["preview"][
+            "eligibility_status"
+        ]
+        == "not_supported"
+    )
     assert (
         records["vl_virtualspecies_bulltroutsalvelinusconfluentus_1135"]["title"]
         == "Bull Trout (Salvelinus confluentus)"
