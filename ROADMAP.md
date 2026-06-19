@@ -172,7 +172,7 @@ GitHub parent issue: #96
 
 Active branch: `feature/p11-map-preview-implementation`
 
-Draft PR: TBD
+Draft PR: #103
 
 Phase 11 must produce a real runnable browser map-preview surface, not another planning layer. The first useful implementation should let users identify previewable recovered data layers, open a representative layer in a map view, inspect preview provenance, and control layer visibility/opacity. Default verification must not require Arbutus/Chinook credentials, UBC CWL, hosted workers, object-store retrieval, or AOI/download processing.
 
