@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Mapping
 
 
@@ -81,3 +82,30 @@ class DatasetRecord:
         data: dict[str, object] = dict(self.fields)
         data["manifest_size_bytes"] = self.manifest_size_bytes
         return data
+
+
+@dataclass(frozen=True)
+class ResolvedDatasetPath:
+    """Filesystem resolution for a catalog record's raw ZIP payload."""
+
+    dataset_id: str
+    source_zip_path: str
+    data_repo_path: Path
+    raw_relative_path: Path
+    absolute_path: Path
+    submodule_initialized: bool
+    path_metadata_exists: bool
+    content_present: bool
+
+
+@dataclass(frozen=True)
+class ContentStatus:
+    """Local content status for a resolved raw ZIP payload."""
+
+    dataset_id: str
+    status: str
+    local_path: Path
+    submodule_initialized: bool
+    path_metadata_exists: bool
+    content_present: bool
+    message: str

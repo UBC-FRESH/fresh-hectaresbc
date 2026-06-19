@@ -22,7 +22,6 @@ def test_unimplemented_methods_fail_explicitly() -> None:
     api = HectaresBC()
 
     for method, args in [
-        (api.resolve, ("dl_adminunits_bcts",)),
         (api.diagnostics, ()),
     ]:
         try:

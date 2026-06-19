@@ -8,15 +8,16 @@ from pathlib import Path
 from typing import Optional
 
 from fresh_hectaresbc.catalog import Catalog
-from fresh_hectaresbc.models import DatasetRecord
+from fresh_hectaresbc.models import ContentStatus, DatasetRecord, ResolvedDatasetPath
+from fresh_hectaresbc.retrieval import Resolver
 
 
 @dataclass(frozen=True)
 class HectaresBC:
     """Convenience entrypoint for HectaresBC catalog and data access.
 
-    The facade exposes catalog behavior now. Path resolution and backend
-    diagnostics are implemented in later P6.5 slices.
+    The facade exposes catalog and local path/status behavior now. Backend
+    diagnostics are implemented in a later P6.5 slice.
     """
 
     metadata_root: Optional[Path | str] = None
@@ -35,6 +36,12 @@ class HectaresBC:
         if self.metadata_root is not None:
             return Catalog.from_metadata_root(self.metadata_root)
         return Catalog.from_default_paths()
+
+    @cached_property
+    def resolver(self) -> Resolver:
+        """Create the read-only data repository resolver on first use."""
+
+        return Resolver(catalog=self.catalog, data_repo_path=self.data_repo_path)
 
     def get(self, dataset_id: str) -> DatasetRecord:
         """Return one dataset record by exact recovered ID."""
@@ -60,13 +67,20 @@ class HectaresBC:
 
         return self.catalog.filter(**filters)
 
-    def resolve(self, dataset_id: str) -> object:
-        """Resolve a dataset ID to a data-repository path.
+    def resolve(self, dataset: str | DatasetRecord) -> ResolvedDatasetPath:
+        """Resolve a dataset ID or record to a data-repository path."""
 
-        Implemented in P6.5.3.
-        """
+        return self.resolver.resolve(dataset)
 
-        raise NotImplementedError("Dataset path resolution is planned for P6.5.3.")
+    def content_status(self, dataset: str | DatasetRecord) -> ContentStatus:
+        """Report local content status without fetching data."""
+
+        return self.resolver.content_status(dataset)
+
+    def local_path(self, dataset: str | DatasetRecord) -> Path:
+        """Return the expected local filesystem path for a dataset."""
+
+        return self.resolver.local_path(dataset)
 
     def diagnostics(self) -> list[object]:
         """Return backend diagnostics.
