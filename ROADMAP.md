@@ -170,9 +170,9 @@ Phase 10 must produce a real runnable browser app surface, not another planning 
 
 GitHub parent issue: #96
 
-Active branch: `feature/p11-map-preview-implementation`
+Merged branch: `feature/p11-map-preview-implementation`
 
-Draft PR: #103
+Merged PR: #103
 
 Phase 11 must produce a real runnable browser map-preview surface, not another planning layer. The first useful implementation should let users identify previewable recovered data layers, open a representative layer in a map view, inspect preview provenance, and control layer visibility/opacity. Default verification must not require Arbutus/Chinook credentials, UBC CWL, hosted workers, object-store retrieval, or AOI/download processing.
 
@@ -197,6 +197,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Merge Phase 11 PR #103 back to `main`.
-2. Close parent issue #96 only after PR #103 is merged.
-3. Do not activate Phase 12 until the maintainer selects it as the next roadmap phase.
+1. Close parent issue #96 after recording the Phase 11 merge.
+2. Do not activate Phase 12 until the maintainer selects it as the next roadmap phase.
+3. Keep future work out of a new branch/parent issue until the next roadmap phase is explicitly activated.
