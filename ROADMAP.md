@@ -122,8 +122,14 @@ GitHub parent issue: #12
 
 The envisioned local user workflow is `pip install fresh-hectaresbc`, followed by Python API or CLI access to HectaresBC catalog and data workflows. Packaging should support the core library and CLI layers without mixing their responsibilities.
 
+Phase 8 must make installed-package behavior real. Catalog lookup/search/filter should work outside a source checkout using compact packaged metadata, while raw HectaresBC ZIP payloads remain external in the DataLad data repository.
+
 - [ ] P8.1 Define package distribution contract. Child issue: #16.
-- [ ] P8.2 Package install and smoke-test plan. Child issue: #15.
+- [ ] P8.2 Define package install and smoke-test plan. Child issue: #15.
+- [ ] P8.3 Embed compact catalog metadata in package data. Child issue: #81.
+- [ ] P8.4 Validate wheel and source distribution artifacts. Child issue: #82.
+- [ ] P8.5 Add clean install smoke-test workflow. Child issue: #83.
+- [ ] P8.6 Verify, document, and close package distribution phase. Child issue: #84.
 
 ## Phase 9: Browser Catalog, Map, and Download Web App
 
@@ -151,6 +157,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Activate Phase 8 package distribution planning with parent issue #12 and a dedicated feature branch.
-2. Keep packaging focused on install, entrypoint, dependency, and smoke-test behavior before broader release decisions.
-3. Defer browser app work until the package/API/CLI installation path is clear.
+1. Activate Phase 8 with parent issue #12 and a dedicated feature branch.
+2. Complete P8.1 and P8.2 before package-data implementation so package contents and install checks are explicit.
+3. Work P8.3 through P8.6 one child issue at a time, closing each only after its checklist and verification are complete.
