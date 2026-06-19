@@ -113,7 +113,7 @@ Phase 7 must be implementation-oriented. Command handlers should call `fresh_hec
 - [x] P7.2 Add Typer CLI scaffold and console entrypoint. Child issue: #75.
 - [x] P7.3 Implement catalog CLI commands. Child issue: #76.
 - [x] P7.4 Implement local data path and status CLI commands. Child issue: #77.
-- [ ] P7.5 Implement diagnostics and fetch CLI commands. Child issue: #78.
+- [x] P7.5 Implement diagnostics and fetch CLI commands. Child issue: #78.
 - [ ] P7.6 Verify, document, and close the CLI phase. Child issue: #79.
 
 ## Phase 8: Package Distribution and Install Workflow
@@ -151,6 +151,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P7.5 by implementing diagnostics and fetch CLI commands.
-2. Complete P7.6 after all CLI behavior is documented, verified, and synchronized.
+1. Complete P7.6 after all CLI behavior is documented, verified, and synchronized.
+2. Merge the Phase 7 branch back to `main` after #26 and its children are complete or explicitly deferred.
 3. Merge the Phase 7 branch back to `main` after #26 and its children are complete or explicitly deferred.

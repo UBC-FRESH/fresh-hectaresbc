@@ -92,6 +92,15 @@ fresh-hectaresbc data path dl_adminunits_bcts
 fresh-hectaresbc data status dl_adminunits_bcts
 ```
 
+Inspect backend readiness and plan a fetch without retrieving content:
+
+```bash
+fresh-hectaresbc diagnostics
+fresh-hectaresbc fetch dl_adminunits_bcts --dry-run
+```
+
+Real non-dry-run fetches delegate to DataLad/git-annex and may require local Arbutus credential setup.
+
 Load and query the recovered catalog:
 
 ```python

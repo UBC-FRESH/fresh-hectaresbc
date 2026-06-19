@@ -11,7 +11,13 @@ import typer
 
 from fresh_hectaresbc import HectaresBC
 from fresh_hectaresbc.catalog import DatasetNotFound, QueryInvalid
-from fresh_hectaresbc.models import ContentStatus, DatasetRecord, ResolvedDatasetPath
+from fresh_hectaresbc.models import (
+    BackendDiagnostic,
+    ContentStatus,
+    DatasetRecord,
+    FetchResult,
+    ResolvedDatasetPath,
+)
 
 
 VALID_FAMILIES = {"data_layer", "virtual_layer"}
@@ -27,6 +33,22 @@ SHOW_FIELDS = (
     "known_gaps",
     "uncertainty_notes",
 )
+DIAGNOSTIC_FIELDS = ("check", "status", "message")
+FETCH_FIELDS = (
+    "dataset_id",
+    "status",
+    "backend",
+    "local_path",
+    "message",
+    "command_summary",
+    "verification_performed",
+)
+SETUP_FAILURE_STATUSES = {
+    "not_initialized",
+    "backend_unavailable",
+    "credentials_required",
+}
+BACKEND_FAILURE_STATUSES = {"backend_error", "validation_error"}
 
 
 def _package_version() -> str:
@@ -150,9 +172,150 @@ def _content_status_dict(status: ContentStatus) -> dict[str, object]:
     }
 
 
+def _diagnostic_dict(diagnostic: BackendDiagnostic) -> dict[str, object]:
+    return {
+        "backend": diagnostic.backend,
+        "check": diagnostic.check,
+        "status": diagnostic.status,
+        "message": diagnostic.message,
+        "command_summary": diagnostic.command_summary,
+        "remediation": diagnostic.remediation,
+        "secret_safe": diagnostic.secret_safe,
+    }
+
+
+def _fetch_result_dict(result: FetchResult) -> dict[str, object]:
+    return {
+        "dataset_id": result.dataset_id,
+        "status": result.status,
+        "backend": result.backend,
+        "local_path": str(result.local_path),
+        "message": result.message,
+        "diagnostics": [_diagnostic_dict(item) for item in result.diagnostics],
+        "command_summary": result.command_summary,
+        "verification_performed": result.verification_performed,
+        "secret_safe": result.secret_safe,
+    }
+
+
 def _emit_mapping_text(data: dict[str, object]) -> None:
     for key, value in data.items():
         typer.echo(f"{key}: {value}")
+
+
+def _emit_diagnostics_table(diagnostics: tuple[BackendDiagnostic, ...]) -> None:
+    typer.echo("\t".join(DIAGNOSTIC_FIELDS))
+    for diagnostic in diagnostics:
+        row = _diagnostic_dict(diagnostic)
+        typer.echo("\t".join(str(row[field]) for field in DIAGNOSTIC_FIELDS))
+
+
+def _emit_fetch_text(result: FetchResult) -> None:
+    data = _fetch_result_dict(result)
+    for field in FETCH_FIELDS:
+        typer.echo(f"{field}: {data[field]}")
+    if result.diagnostics:
+        typer.echo("diagnostics:")
+        for diagnostic in result.diagnostics:
+            typer.echo(f"  {diagnostic.check}: {diagnostic.status}")
+
+
+def _diagnostics_exit_code(diagnostics: tuple[BackendDiagnostic, ...]) -> int:
+    statuses = {diagnostic.status for diagnostic in diagnostics}
+    if "backend_error" in statuses:
+        return 5
+    if statuses.intersection({"backend_unavailable", "not_initialized"}):
+        return 4
+    return 0
+
+
+def _fetch_exit_code(result: FetchResult) -> int:
+    if result.status in {"ok", "already_present", "dry_run"}:
+        return 0
+    if result.status in SETUP_FAILURE_STATUSES:
+        return 4
+    if result.status in BACKEND_FAILURE_STATUSES:
+        return 5
+    if result.status == "unsupported":
+        return 6
+    return 1
+
+
+@app.command("diagnostics")
+def diagnostics(
+    output_format: Annotated[
+        str,
+        typer.Option("--format", help="Output format: table or json."),
+    ] = "table",
+    metadata_root: Annotated[
+        Path | None,
+        typer.Option("--metadata-root", help="Override recovered catalog metadata root."),
+    ] = None,
+    data_repo_path: Annotated[
+        Path | None,
+        typer.Option("--data-repo-path", help="Override linked data repository path."),
+    ] = None,
+) -> None:
+    """Inspect local backend readiness."""
+
+    if output_format not in {"table", "json"}:
+        _fail(f"Invalid output format: {output_format}", code=2)
+    checks = _hbc(metadata_root, data_repo_path).diagnostics()
+    if output_format == "json":
+        typer.echo(json.dumps([_diagnostic_dict(item) for item in checks], indent=2))
+    else:
+        _emit_diagnostics_table(checks)
+
+    exit_code = _diagnostics_exit_code(checks)
+    if exit_code:
+        raise typer.Exit(exit_code)
+
+
+@app.command("fetch")
+def fetch(
+    dataset_id: Annotated[str, typer.Argument(help="Recovered dataset ID.")],
+    dry_run: Annotated[
+        bool,
+        typer.Option("--dry-run", help="Plan retrieval without running datalad get."),
+    ] = False,
+    force: Annotated[
+        bool,
+        typer.Option("--force", help="Attempt retrieval even if content is local."),
+    ] = False,
+    output_format: Annotated[
+        str,
+        typer.Option("--format", help="Output format: text or json."),
+    ] = "text",
+    metadata_root: Annotated[
+        Path | None,
+        typer.Option("--metadata-root", help="Override recovered catalog metadata root."),
+    ] = None,
+    data_repo_path: Annotated[
+        Path | None,
+        typer.Option("--data-repo-path", help="Override linked data repository path."),
+    ] = None,
+) -> None:
+    """Fetch, or dry-run fetch, one dataset payload."""
+
+    if output_format not in {"text", "json"}:
+        _fail(f"Invalid output format: {output_format}", code=2)
+    try:
+        result = _hbc(metadata_root, data_repo_path).fetch(
+            dataset_id,
+            dry_run=dry_run,
+            force=force,
+        )
+    except DatasetNotFound as error:
+        _fail(_error_message(error), code=3)
+
+    if output_format == "json":
+        typer.echo(json.dumps(_fetch_result_dict(result), indent=2))
+    else:
+        _emit_fetch_text(result)
+
+    exit_code = _fetch_exit_code(result)
+    if exit_code:
+        raise typer.Exit(exit_code)
 
 
 @catalog_app.command("search")
