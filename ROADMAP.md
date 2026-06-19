@@ -103,7 +103,7 @@ The core Python access library is the shared layer that should power both the CL
 
 GitHub parent issue: #26
 
-Active branch: `feature/p7-typer-cli-interface`
+Merged PR: #80
 
 The CLI should be a thin, user-friendly interface over the completed core Python access library. It should expose catalog search, metadata inspection, data path/status, backend diagnostics, and fetch workflows without requiring normal users to understand DataLad/git-annex operations.
 
@@ -151,6 +151,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Merge the Phase 7 branch back to `main`.
-2. Close parent issue #26 after PR #80 merges.
-3. Activate Phase 8 package distribution planning only after the Phase 7 parent issue is closed.
+1. Activate Phase 8 package distribution planning with parent issue #12 and a dedicated feature branch.
+2. Keep packaging focused on install, entrypoint, dependency, and smoke-test behavior before broader release decisions.
+3. Defer browser app work until the package/API/CLI installation path is clear.
