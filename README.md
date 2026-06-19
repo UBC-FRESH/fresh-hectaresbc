@@ -177,7 +177,9 @@ Generate the static browser catalog artifact from the Python package API:
 
 ```bash
 python scripts/generate_web_catalog.py
+python scripts/generate_map_preview_artifacts.py
 python scripts/smoke_test_web_static_app.py
+python scripts/smoke_test_map_preview_artifacts.py
 node scripts/smoke_test_web_catalog_ui.js web/data/catalog.json
 node scripts/smoke_test_web_app_dom.js web/data/catalog.json
 ```
@@ -201,7 +203,7 @@ http://localhost:8000/#dl_adminunits_bcts
 http://localhost:8000/#vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
 ```
 
-The generated `web/data/catalog.json` file is ignored because it is derived from packaged catalog metadata. Browser catalog development does not require raw HectaresBC payloads, DataLad network retrieval, Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access. Node is still a system prerequisite for the browser smoke scripts; it is not installed by the Python `.venv` setup.
+The generated `web/data/catalog.json` file is ignored because it is derived from packaged catalog metadata. Generated map-preview artifacts under `web/data/map_previews/` are also ignored. The initial map-preview GeoJSON is a labelled UI fixture pending derivation from recovered payload content, not recovered HectaresBC geometry. Browser catalog development does not require raw HectaresBC payloads, DataLad network retrieval, Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access. Node is still a system prerequisite for the browser smoke scripts; it is not installed by the Python `.venv` setup.
 
 ## DataLad Retrieval
 

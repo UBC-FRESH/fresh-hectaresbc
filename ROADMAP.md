@@ -178,7 +178,7 @@ Phase 11 must produce a real runnable browser map-preview surface, not another p
 
 - [x] P11.0 Establish repo-local `.venv` workflow. Child issue: #104.
 - [x] P11.1 Audit preview eligibility and representative layers. Child issue: #97.
-- [ ] P11.2 Add derived preview artifact workflow. Child issue: #98.
+- [x] P11.2 Add derived preview artifact workflow. Child issue: #98.
 - [ ] P11.3 Implement browser map view scaffold. Child issue: #99.
 - [ ] P11.4 Render representative data layer on the map. Child issue: #100.
 - [ ] P11.5 Add map layer controls and catalog linkback. Child issue: #101.
@@ -197,6 +197,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P11.2 by adding a derived preview artifact workflow for the selected representative data-layer candidate.
-2. Work P11.3 through P11.6 one child issue at a time, closing each only after its checklist and verification are complete.
+1. Complete P11.3 by implementing a browser map view scaffold with available and unavailable preview states.
+2. Work P11.4 through P11.6 one child issue at a time, closing each only after its checklist and verification are complete.
 3. Merge the Phase 11 branch back to `main` after #96 and its children are complete or explicitly deferred.
