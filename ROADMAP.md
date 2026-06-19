@@ -75,7 +75,7 @@ Phase 4 proved the DataLad/git-annex, submodule, and Arbutus S3 special-remote a
 - [x] P5.1 Define full archive publication contract. Child issue: #58.
 - [x] P5.2 Mirror compact metadata and root control files into the data repo. Child issue: #59.
 - [x] P5.3 Annex all remaining raw HectaresBC ZIP payloads. Child issue: #60.
-- [ ] P5.4 Upload all annexed payloads to `arbutus-s3`. Child issue: #61.
+- [x] P5.4 Upload all annexed payloads to `arbutus-s3`. Child issue: #61.
 - [ ] P5.5 Validate full ZIP inventory coverage. Child issue: #62.
 - [ ] P5.6 Validate cold-clone retrieval sampling. Child issue: #63.
 - [ ] P5.7 Update submodule pointer and full-data documentation. Child issue: #64.
@@ -134,7 +134,7 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P5.4 by uploading all annexed payloads to `arbutus-s3`.
-2. Complete P5.5 by validating full ZIP inventory coverage.
-3. Complete P5.6 by validating cold-clone retrieval sampling.
+1. Complete P5.5 by validating full ZIP inventory coverage.
+2. Complete P5.6 by validating cold-clone retrieval sampling.
+3. Complete P5.7 by updating the submodule pointer and full-data documentation.
 4. Keep future parent issues (#25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
