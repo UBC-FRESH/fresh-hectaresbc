@@ -131,7 +131,7 @@ Phase 8 must make installed-package behavior real. Catalog lookup/search/filter 
 - [x] P8.3 Embed compact catalog metadata in package data. Child issue: #81.
 - [x] P8.4 Validate wheel and source distribution artifacts. Child issue: #82.
 - [x] P8.5 Add clean install smoke-test workflow. Child issue: #83.
-- [ ] P8.6 Verify, document, and close package distribution phase. Child issue: #84.
+- [x] P8.6 Verify, document, and close package distribution phase. Child issue: #84.
 
 ## Phase 9: Browser Catalog, Map, and Download Web App
 
@@ -159,6 +159,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P8.6 by auditing Phase 8 documentation, running final verification, and preparing the PR for merge.
-2. Do not close parent issue #12 until the Phase 8 PR has merged back to `main`.
-3. Merge the Phase 8 branch back to `main` after #12 and its children are complete or explicitly deferred.
+1. Merge Phase 8 PR #85 back to `main`.
+2. Close parent issue #12 only after PR #85 has merged.
+3. After Phase 8 is closed, activate the next roadmap phase only with a new parent issue/branch or explicit maintainer-approved parallel lane.
