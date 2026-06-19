@@ -34,12 +34,75 @@
         </dl>
       </section>
 
-      <section class="preview-band" aria-labelledby="preview-heading">
-        <h2 id="preview-heading">First Records</h2>
-        <div id="record-list" class="record-list"></div>
+      <section class="catalog-band" aria-labelledby="catalog-heading">
+        <div class="section-heading">
+          <h2 id="catalog-heading">Catalog Records</h2>
+          <p id="result-count" class="result-count">-</p>
+        </div>
+
+        <form id="catalog-controls" class="catalog-controls">
+          <label class="search-field">
+            <span>Search</span>
+            <input id="search-input" type="search" name="q" autocomplete="off">
+          </label>
+
+          <fieldset class="segmented-control">
+            <legend>Family</legend>
+            <label>
+              <input type="radio" name="family" value="all" checked>
+              <span>All</span>
+            </label>
+            <label>
+              <input type="radio" name="family" value="data_layer">
+              <span>Data layers</span>
+            </label>
+            <label>
+              <input type="radio" name="family" value="virtual_layer">
+              <span>Virtual layers</span>
+            </label>
+          </fieldset>
+
+          <label class="select-field">
+            <span>Sort</span>
+            <select id="sort-select" name="sort">
+              <option value="title">Title</option>
+              <option value="dataset_id">Dataset ID</option>
+              <option value="family">Family</option>
+              <option value="size_desc">Size</option>
+            </select>
+          </label>
+
+          <label class="select-field">
+            <span>Rows</span>
+            <select id="page-size-select" name="limit">
+              <option value="25">25</option>
+              <option value="50" selected>50</option>
+              <option value="100">100</option>
+              <option value="all">All</option>
+            </select>
+          </label>
+        </form>
+
+        <div class="table-wrap">
+          <table class="record-table">
+            <thead>
+              <tr>
+                <th scope="col">Title</th>
+                <th scope="col">Family</th>
+                <th scope="col">Dataset ID</th>
+                <th scope="col">Preview</th>
+                <th scope="col">Size</th>
+              </tr>
+            </thead>
+            <tbody id="record-list"></tbody>
+          </table>
+        </div>
+
+        <p id="empty-state" class="empty-state" hidden>No matching records.</p>
       </section>
     </main>
 
+    <script src="catalog.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

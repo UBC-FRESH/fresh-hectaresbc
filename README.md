@@ -175,6 +175,7 @@ Generate the static browser catalog artifact from the Python package API:
 
 ```bash
 python3 scripts/generate_web_catalog.py
+node scripts/smoke_test_web_catalog_ui.js web/data/catalog.json
 ```
 
 Serve the static app locally:

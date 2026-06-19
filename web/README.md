@@ -6,6 +6,12 @@ Generate the browser catalog artifact:
 python3 scripts/generate_web_catalog.py
 ```
 
+Run the catalog UI logic smoke check:
+
+```bash
+node scripts/smoke_test_web_catalog_ui.js web/data/catalog.json
+```
+
 Serve the static app locally:
 
 ```bash
