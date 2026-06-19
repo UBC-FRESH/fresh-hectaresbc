@@ -137,14 +137,18 @@ Phase 8 must make installed-package behavior real. Catalog lookup/search/filter 
 
 GitHub parent issue: #13
 
+Active branch: `feature/p9-browser-web-app`
+
 The envisioned browser app would revive useful parts of the original HectaresBC service: browse layer lists and metadata, preview layers on a map, define an area of interest by drawing or selecting standard tiles, submit custom download requests, and collect prepared outputs. The initial hosted deployment may require UBC CWL or another access-control layer to manage abuse risk and hosting costs. Others could self-host if deployment recipes are published.
 
-- [ ] P9.1 Define web app product and access-control contract. Child issue: #20.
-- [ ] P9.2 Specify catalog and metadata browser. Child issue: #22.
-- [ ] P9.3 Specify map preview workflow. Child issue: #19.
-- [ ] P9.4 Specify AOI and tile-selection workflow. Child issue: #23.
-- [ ] P9.5 Specify custom download request workflow. Child issue: #24.
-- [ ] P9.6 Define web app hosting and deployment plan. Child issue: #21.
+Phase 9 should proceed from product and service boundaries to concrete browser surfaces before implementation. The first useful browser experience should be catalog/search oriented, with raw payload retrieval, AOI processing, authentication, and hosted job execution added only after their constraints are explicit.
+
+- [x] P9.1 Define web app product and access-control contract. Child issue: #20.
+- [x] P9.2 Specify catalog and metadata browser. Child issue: #22.
+- [x] P9.3 Specify map preview workflow. Child issue: #19.
+- [x] P9.4 Specify AOI and tile-selection workflow. Child issue: #23.
+- [x] P9.5 Specify custom download request workflow. Child issue: #24.
+- [x] P9.6 Define web app hosting and deployment plan. Child issue: #21.
 
 ## Phase 10: Future Workflow Hardening
 
@@ -159,6 +163,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Merge Phase 8 PR #85 back to `main`.
-2. Close parent issue #12 only after PR #85 has merged.
-3. After Phase 8 is closed, activate the next roadmap phase only with a new parent issue/branch or explicit maintainer-approved parallel lane.
+1. Merge Phase 9 PR #86 back to `main`.
+2. Close parent issue #13 only after PR #86 has merged.
+3. After Phase 9 is closed, activate the next roadmap phase only with a new parent issue/branch or explicit maintainer-approved parallel lane.
