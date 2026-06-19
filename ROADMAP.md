@@ -103,11 +103,13 @@ The core Python access library is the shared layer that should power both the CL
 
 GitHub parent issue: #26
 
+Active branch: `feature/p7-typer-cli-interface`
+
 The CLI should be a thin, user-friendly interface over the completed core Python access library. It should expose catalog search, metadata inspection, data path/status, backend diagnostics, and fetch workflows without requiring normal users to understand DataLad/git-annex operations.
 
 Phase 7 must be implementation-oriented. Command handlers should call `fresh_hectaresbc.HectaresBC` rather than reimplementing catalog, resolver, or backend behavior. Default verification must avoid credentials and network retrieval; use dry-run fetch and simulated backend states for routine tests.
 
-- [ ] P7.1 Define CLI command contract and output rules. Child issue: #18.
+- [x] P7.1 Define CLI command contract and output rules. Child issue: #18.
 - [ ] P7.2 Add Typer CLI scaffold and console entrypoint. Child issue: #75.
 - [ ] P7.3 Implement catalog CLI commands. Child issue: #76.
 - [ ] P7.4 Implement local data path and status CLI commands. Child issue: #77.
@@ -149,6 +151,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Activate Phase 7 with parent issue #26 and a dedicated feature branch.
-2. Complete P7.1 before implementing commands so the CLI command tree, output formats, exit codes, and safety rules are explicit.
-3. Work P7.2 through P7.6 one child issue at a time, closing each only after its checklist and verification are complete.
+1. Complete P7.2 by adding the Typer CLI scaffold and console entrypoint.
+2. Work P7.3 through P7.6 one child issue at a time, closing each only after its checklist and verification are complete.
+3. Merge the Phase 7 branch back to `main` after #26 and its children are complete or explicitly deferred.

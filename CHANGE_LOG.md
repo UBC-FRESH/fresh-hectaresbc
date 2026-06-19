@@ -81,3 +81,4 @@
 - Completed P6.5.5 by verifying the initial core API slice end to end, confirming README API examples and development commands, validating install/test/smoke workflows, auditing closed child issue checklists, and preparing the Phase 6 implementation PR for merge.
 - Merged Phase 6 implementation PR #69 to `main` and closed parent issue #25 after all planning and implementation children were complete.
 - Expanded Phase 7 from a vague Typer CLI placeholder into concrete child issues #18 and #75 through #79 for command contracts, CLI scaffold, catalog commands, path/status commands, diagnostics/fetch commands, and final verification/documentation closeout.
+- Activated Phase 7 on branch `feature/p7-typer-cli-interface` and completed P7.1 with `planning/cli_command_contract.md`, defining concrete command names, options, output formats, exit codes, secret-safety rules, and the minimum CLI test matrix before implementation begins.
