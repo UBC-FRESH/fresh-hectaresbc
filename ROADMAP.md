@@ -78,7 +78,7 @@ Phase 4 proved the DataLad/git-annex, submodule, and Arbutus S3 special-remote a
 - [x] P5.4 Upload all annexed payloads to `arbutus-s3`. Child issue: #61.
 - [x] P5.5 Validate full ZIP inventory coverage. Child issue: #62.
 - [x] P5.6 Validate cold-clone retrieval sampling. Child issue: #63.
-- [ ] P5.7 Update submodule pointer and full-data documentation. Child issue: #64.
+- [x] P5.7 Update submodule pointer and full-data documentation. Child issue: #64.
 
 ## Phase 6: Core Python Access Library
 
@@ -134,7 +134,7 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P5.7 by updating the submodule pointer and full-data documentation.
-2. Mark PR #66 ready for review after P5.7 closes.
-3. Merge Phase 5 back to `main` after review.
+1. Mark PR #66 ready for review after final verification.
+2. Merge Phase 5 back to `main` after review.
+3. Close parent issue #57 only after PR #66 merges.
 4. Keep future parent issues (#25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.

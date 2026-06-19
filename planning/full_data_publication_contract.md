@@ -190,3 +190,14 @@ Before Phase 5 closes:
 4. A fresh main-repo clone must initialize the data submodule and retrieve documented representative plus sampled payloads.
 5. The main repo must update its submodule pointer to the final Phase 5 data-repo commit.
 6. `ROADMAP.md`, `CHANGE_LOG.md`, PR #66, and parent issue #57 must reflect the final publication state.
+
+## Phase 5 Closeout Status
+
+Phase 5 publication requirements have been satisfied as of data-repo commit `360d277f723f7dd946c1dde19160a32efc7b74e7` and the corresponding main-repo Phase 5 branch update.
+
+Validation reports:
+
+- `metadata/validation/full_annex_import.md`
+- `metadata/validation/full_publication_whereis.md`
+- `metadata/validation/full_zip_inventory_coverage.md`
+- `metadata/validation/full_publication_retrieval_sampling.md`

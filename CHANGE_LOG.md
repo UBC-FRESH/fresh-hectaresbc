@@ -65,3 +65,4 @@
 - Recorded the full ZIP inventory coverage validation in the data repo at commit `b3a6e3efab770cd7cb5e60d10a11e209bc5ed5de` and updated the main-repo submodule pointer.
 - Completed P5.6 by validating cold-clone retrieval from `arbutus-s3` for the six Phase 4 representative payloads plus four additional full-publication samples, covering 10 files and 1,009,720,196 retrieved bytes.
 - Recorded the retrieval sampling validation in the data repo at commit `c36fde5a2da2569922c4435e7b5eae7a1d3733cd`, with all sampled SHA-256 values matching their git-annex keys and `git annex fsck` reporting checksum `ok`.
+- Completed P5.7 by updating the final data-repo README, advancing the main-repo submodule pointer to data-repo commit `360d277f723f7dd946c1dde19160a32efc7b74e7`, and documenting full-data retrieval status in the main README and planning notes.
