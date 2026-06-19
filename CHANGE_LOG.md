@@ -56,3 +56,4 @@
 - Inserted a new Phase 5 full HectaresBC data publication lane before API/CLI work, with parent issue #57 and child issues #58 through #64 for full archive contract, metadata mirroring, ZIP annexing, Arbutus upload, inventory validation, cold-clone sampling, and submodule/documentation closeout.
 - Activated Phase 5 full data publication with parent issue #57 and branch `feature/p5-full-data-publication`.
 - Completed P5.1 with `planning/full_data_publication_contract.md`, defining full archive scope, source-to-data-repo path mapping, annex and Git tracking rules, resumable import/upload behavior, validation outputs, and failure handling before bulk data publication begins.
+- Completed P5.2 by mirroring compact archive inventory, recovered catalog, schema, validation metadata, and root HectaresBC control files into `fresh-hectaresbc-data` as Git-tracked files, documenting exclusions in the data repo, and updating the main-repo submodule pointer.

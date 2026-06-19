@@ -110,6 +110,7 @@ See `metadata/archive_inventory/data_repo_layout_recommendation.md`.
 - Clean-clone retrieval of `metadata/validation/arbutus_s3_smoke_test.bin` from `arbutus-s3` has been validated with DataLad.
 - The main repo links the data repo as a Git submodule at `external/fresh-hectaresbc-data`.
 - The six representative HectaresBC ZIP payloads are annexed in the data repo, uploaded to `arbutus-s3`, and validated from a fresh main-repo clone.
+- Compact metadata and root control files have been mirrored into the data repo as Git-tracked files.
 - Phase 1 archive reconnaissance produced compact inventory outputs and a layout recommendation.
 - Phase 4 storage planning now expects a DataLad/git-annex S3 special remote backed by a new Arbutus object-storage bucket, with user-local credentials kept outside the repo under `~/.config/fresh-hectaresbc/`.
 - Phase 3 validation identified six representative ZIP payloads for early cold-clone and annex retrieval checks. See `planning/phase3_ingestion_summary.md`.

@@ -73,7 +73,7 @@ Active branch: `feature/p5-full-data-publication`
 Phase 4 proved the DataLad/git-annex, submodule, and Arbutus S3 special-remote architecture with six representative ZIP payloads. Phase 5 publishes the remaining rescued HectaresBC archive payloads into `UBC-FRESH/fresh-hectaresbc-data` so API, CLI, package, and web-app work can build against the actual full data repository.
 
 - [x] P5.1 Define full archive publication contract. Child issue: #58.
-- [ ] P5.2 Mirror compact metadata and root control files into the data repo. Child issue: #59.
+- [x] P5.2 Mirror compact metadata and root control files into the data repo. Child issue: #59.
 - [ ] P5.3 Annex all remaining raw HectaresBC ZIP payloads. Child issue: #60.
 - [ ] P5.4 Upload all annexed payloads to `arbutus-s3`. Child issue: #61.
 - [ ] P5.5 Validate full ZIP inventory coverage. Child issue: #62.
@@ -134,7 +134,7 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P5.2 by mirroring compact metadata and root control files into the data repo.
-2. Complete P5.3 by annexing all remaining raw HectaresBC ZIP payloads.
-3. Complete P5.4 by uploading all annexed payloads to `arbutus-s3`.
+1. Complete P5.3 by annexing all remaining raw HectaresBC ZIP payloads.
+2. Complete P5.4 by uploading all annexed payloads to `arbutus-s3`.
+3. Complete P5.5 by validating full ZIP inventory coverage.
 4. Keep future parent issues (#25, #26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
