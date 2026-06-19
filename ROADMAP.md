@@ -133,15 +133,15 @@ Phase 8 must make installed-package behavior real. Catalog lookup/search/filter 
 - [x] P8.5 Add clean install smoke-test workflow. Child issue: #83.
 - [x] P8.6 Verify, document, and close package distribution phase. Child issue: #84.
 
-## Phase 9: Browser Catalog, Map, and Download Web App
+## Phase 9: Browser Catalog, Map, and Download Web App Planning
 
 GitHub parent issue: #13
 
-Active branch: `feature/p9-browser-web-app`
+Merged PR: #86
 
 The envisioned browser app would revive useful parts of the original HectaresBC service: browse layer lists and metadata, preview layers on a map, define an area of interest by drawing or selecting standard tiles, submit custom download requests, and collect prepared outputs. The initial hosted deployment may require UBC CWL or another access-control layer to manage abuse risk and hosting costs. Others could self-host if deployment recipes are published.
 
-Phase 9 should proceed from product and service boundaries to concrete browser surfaces before implementation. The first useful browser experience should be catalog/search oriented, with raw payload retrieval, AOI processing, authentication, and hosted job execution added only after their constraints are explicit.
+Phase 9 produced planning contracts only. It did not implement the browser app. Phase 10 is the implementation phase for the first working browser catalog surface.
 
 - [x] P9.1 Define web app product and access-control contract. Child issue: #20.
 - [x] P9.2 Specify catalog and metadata browser. Child issue: #22.
@@ -150,19 +150,33 @@ Phase 9 should proceed from product and service boundaries to concrete browser s
 - [x] P9.5 Specify custom download request workflow. Child issue: #24.
 - [x] P9.6 Define web app hosting and deployment plan. Child issue: #21.
 
-## Phase 10: Future Workflow Hardening
+## Phase 10: Browser Catalog App Implementation
+
+GitHub parent issue: #87
+
+Active branch: `feature/p10-browser-catalog-app`
+
+Phase 10 must produce a real runnable browser app surface, not another planning layer. The first useful implementation should be a catalog/search/detail browser over generated catalog data from the existing `fresh_hectaresbc` package. Default verification must not require raw ZIP/TIFF payloads, DataLad network retrieval, Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access.
+
+- [ ] P10.1 Add web app scaffold and catalog artifact generator. Child issue: #88.
+- [ ] P10.2 Implement catalog search, filter, and list UI. Child issue: #89.
+- [ ] P10.3 Implement dataset detail and provenance UI. Child issue: #90.
+- [ ] P10.4 Add browser app smoke verification. Child issue: #91.
+- [ ] P10.5 Verify, document, and close browser catalog implementation phase. Child issue: #92.
+
+## Phase 11: Future Workflow Hardening
 
 These are planned but not active requirements yet.
 
-- [ ] P10.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
-- [ ] P10.2 Add linting, formatting, tests, and pre-commit once code exists.
-- [ ] P10.3 Add CI once there are stable commands to run.
-- [ ] P10.4 Add documentation build checks once formal docs exist.
-- [ ] P10.5 Add machine-readable catalog schemas once the metadata model stabilizes.
-- [ ] P10.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
+- [ ] P11.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
+- [ ] P11.2 Add linting, formatting, tests, and pre-commit once code exists.
+- [ ] P11.3 Add CI once there are stable commands to run.
+- [ ] P11.4 Add documentation build checks once formal docs exist.
+- [ ] P11.5 Add machine-readable catalog schemas once the metadata model stabilizes.
+- [ ] P11.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
 
 ## Current Next Steps
 
-1. Merge Phase 9 PR #86 back to `main`.
-2. Close parent issue #13 only after PR #86 has merged.
-3. After Phase 9 is closed, activate the next roadmap phase only with a new parent issue/branch or explicit maintainer-approved parallel lane.
+1. Complete P10.1 by adding the first runnable web app scaffold and package-backed catalog artifact generator.
+2. Work P10.2 through P10.5 one child issue at a time, closing each only after its checklist and verification are complete.
+3. Merge the Phase 10 branch back to `main` after #87 and its children are complete or explicitly deferred.
