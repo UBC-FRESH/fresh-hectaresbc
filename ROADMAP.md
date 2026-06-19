@@ -181,7 +181,7 @@ Phase 11 must produce a real runnable browser map-preview surface, not another p
 - [x] P11.2 Add derived preview artifact workflow. Child issue: #98.
 - [x] P11.3 Implement browser map view scaffold. Child issue: #99.
 - [x] P11.4 Render representative data layer on the map. Child issue: #100.
-- [ ] P11.5 Add map layer controls and catalog linkback. Child issue: #101.
+- [x] P11.5 Add map layer controls and catalog linkback. Child issue: #101.
 - [ ] P11.6 Verify, document, and close map preview phase. Child issue: #102.
 
 ## Phase 12: Future Workflow Hardening
@@ -197,6 +197,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P11.5 by adding map layer controls and catalog linkback behavior for the rendered preview.
-2. Complete P11.6 only after final Phase 11 verification, documentation, issue cleanup, and PR readiness checks are done.
-3. Merge the Phase 11 branch back to `main` after #96 and its children are complete or explicitly deferred.
+1. Complete P11.6 only after final Phase 11 verification, documentation, issue cleanup, and PR readiness checks are done.
+2. Merge the Phase 11 branch back to `main` after #96 and its children are complete or explicitly deferred.
+3. Close parent issue #96 only after the Phase 11 PR is merged.

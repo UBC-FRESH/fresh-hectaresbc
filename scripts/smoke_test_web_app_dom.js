@@ -109,8 +109,14 @@ class Element {
     if (selector.startsWith("#")) {
       return findDescendant(this, (node) => node.id === selector.slice(1));
     }
+    if (selector.startsWith(".")) {
+      return findDescendant(this, (node) => hasClass(node, selector.slice(1)));
+    }
     if (selector === "[data-copy]") {
       return findDescendant(this, (node) => Boolean(node.dataset.copy));
+    }
+    if (selector === "[data-map-control]") {
+      return findDescendant(this, (node) => Boolean(node.dataset.mapControl));
     }
     return findDescendant(this, (node) => node.tagName === selector.toLowerCase());
   }
@@ -119,6 +125,9 @@ class Element {
     let node = this;
     while (node) {
       if (selector === "[data-copy]" && node.dataset.copy) {
+        return node;
+      }
+      if (selector === "[data-map-control]" && node.dataset.mapControl) {
         return node;
       }
       node = node.parentNode;
@@ -322,7 +331,37 @@ setImmediate(async () => {
     assert(availableMap.includes("dl_water_cwb_canals/preview.geojson"));
     assert(availableMap.includes("fixture_pending_source_derivation"));
     assert(availableMap.includes("Feature count1"));
+    assert(availableMap.includes("Layer controls"));
+    assert(availableMap.includes("Preview eligibilitycandidate_missing_crs"));
+    assert(availableMap.includes("Preview blockersmissing_crs, missing_extent"));
     assert(availableMap.includes("not recovered HectaresBC canal geometry"));
+    const renderedLayer = document.querySelector("#map-preview").querySelector(".map-geojson-layer");
+    assert.strictEqual(renderedLayer.getAttribute("opacity"), "0.85");
+    assert.strictEqual(renderedLayer.getAttribute("data-visible"), "true");
+
+    const opacityInput = document.querySelector("#map-preview").querySelector("#map-layer-opacity");
+    opacityInput.value = "0.35";
+    document.querySelector("#map-preview").dispatchEvent({type: "input", target: opacityInput});
+    assert.strictEqual(renderedLayer.getAttribute("opacity"), "0.35");
+    assert.strictEqual(renderedLayer.getAttribute("data-opacity"), "0.35");
+    assert.strictEqual(
+      document.querySelector("#map-preview").querySelector("#map-layer-opacity-value").textContent,
+      "35%"
+    );
+
+    const visibilityInput = document
+      .querySelector("#map-preview")
+      .querySelector("#map-layer-visible");
+    visibilityInput.checked = false;
+    document.querySelector("#map-preview").dispatchEvent({type: "change", target: visibilityInput});
+    assert.strictEqual(renderedLayer.getAttribute("opacity"), "0");
+    assert.strictEqual(renderedLayer.getAttribute("data-visible"), "false");
+
+    window.location.hash = "#dl_water_cwb_canals";
+    window.dispatchEvent({type: "hashchange"});
+    const linkedDetail = document.querySelector("#record-detail").textContent;
+    assert.strictEqual(document.querySelector("#detail-status").textContent, "dl_water_cwb_canals");
+    assert(linkedDetail.includes("Canals"));
 
     window.location.hash = "#map=vl_virtualspecies_bulltroutsalvelinusconfluentus_1135";
     window.dispatchEvent({type: "hashchange"});
@@ -376,4 +415,11 @@ function findDescendant(root, predicate) {
 
 function stripTags(value) {
   return value.replace(/<[^>]+>/g, "");
+}
+
+function hasClass(node, className) {
+  return String(node.className || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .includes(className);
 }

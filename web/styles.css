@@ -501,6 +501,51 @@ pre {
   transform: translate(-50%, -50%);
 }
 
+.map-layer-controls {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px 12px;
+  align-items: center;
+  margin: 0 0 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
+}
+
+.map-layer-controls h4 {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.map-checkbox-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.map-range-control {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.map-layer-controls input[type="range"] {
+  width: 100%;
+  min-width: 0;
+  accent-color: var(--accent);
+}
+
+.map-layer-controls output {
+  min-width: 44px;
+  color: var(--accent-dark);
+  font-weight: 700;
+  text-align: right;
+}
+
 .map-layer-panel,
 .map-unavailable {
   min-width: 0;
