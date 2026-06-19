@@ -77,6 +77,14 @@ fresh-hectaresbc --help
 fresh-hectaresbc --version
 ```
 
+Query the catalog from the CLI:
+
+```bash
+fresh-hectaresbc catalog search "bull trout" --limit 1
+fresh-hectaresbc catalog show dl_adminunits_bcts
+fresh-hectaresbc catalog list --family virtual_layer --limit 2
+```
+
 Load and query the recovered catalog:
 
 ```python
