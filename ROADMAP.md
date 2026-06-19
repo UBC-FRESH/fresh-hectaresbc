@@ -68,9 +68,9 @@ Phase 4 storage work should configure a DataLad/git-annex S3 special remote poin
 
 GitHub parent issue: #57
 
-Phase 4 proved the DataLad/git-annex, submodule, and Arbutus S3 special-remote architecture with six representative ZIP payloads. Phase 5 publishes the remaining rescued HectaresBC archive payloads into `UBC-FRESH/fresh-hectaresbc-data` so API, CLI, package, and web-app work can build against the actual full data repository.
+Active branch: `feature/p5-full-data-publication`
 
-Expected active branch when this phase starts: `feature/p5-full-data-publication`.
+Phase 4 proved the DataLad/git-annex, submodule, and Arbutus S3 special-remote architecture with six representative ZIP payloads. Phase 5 publishes the remaining rescued HectaresBC archive payloads into `UBC-FRESH/fresh-hectaresbc-data` so API, CLI, package, and web-app work can build against the actual full data repository.
 
 - [ ] P5.1 Define full archive publication contract. Child issue: #58.
 - [ ] P5.2 Mirror compact metadata and root control files into the data repo. Child issue: #59.
