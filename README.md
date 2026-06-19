@@ -70,6 +70,15 @@ Run the current test suite:
 python3 -m pytest
 ```
 
+Build and inspect local distribution artifacts:
+
+```bash
+python3 -m pip install -e .[dev]
+rm -rf dist/
+python3 -m build
+python3 scripts/inspect_distribution_artifacts.py dist
+```
+
 Smoke-test the CLI:
 
 ```bash
