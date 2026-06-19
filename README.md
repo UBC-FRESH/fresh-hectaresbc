@@ -55,7 +55,7 @@ The first Python API is available for local development. It currently provides t
 Install the package in editable mode:
 
 ```bash
-python3 -m pip install -e . --no-deps
+python3 -m pip install -e .
 ```
 
 Smoke-test the import:
@@ -69,6 +69,37 @@ Run the current test suite:
 ```bash
 python3 -m pytest
 ```
+
+Smoke-test the CLI:
+
+```bash
+fresh-hectaresbc --help
+fresh-hectaresbc --version
+```
+
+Query the catalog from the CLI:
+
+```bash
+fresh-hectaresbc catalog search "bull trout" --limit 1
+fresh-hectaresbc catalog show dl_adminunits_bcts
+fresh-hectaresbc catalog list --family virtual_layer --limit 2
+```
+
+Inspect local data paths and content status:
+
+```bash
+fresh-hectaresbc data path dl_adminunits_bcts
+fresh-hectaresbc data status dl_adminunits_bcts
+```
+
+Inspect backend readiness and plan a fetch without retrieving content:
+
+```bash
+fresh-hectaresbc diagnostics
+fresh-hectaresbc fetch dl_adminunits_bcts --dry-run
+```
+
+Real non-dry-run fetches delegate to DataLad/git-annex and may require local Arbutus credential setup.
 
 Load and query the recovered catalog:
 

@@ -12,7 +12,12 @@ license = { text = "MIT" }
 authors = [
   { name = "UBC FRESH" },
 ]
-dependencies = []
+dependencies = [
+  "typer>=0.12",
+]
+
+[project.scripts]
+fresh-hectaresbc = "fresh_hectaresbc.cli:app"
 
 [project.optional-dependencies]
 dev = [
