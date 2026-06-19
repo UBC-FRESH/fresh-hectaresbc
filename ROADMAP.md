@@ -176,6 +176,7 @@ Draft PR: #103
 
 Phase 11 must produce a real runnable browser map-preview surface, not another planning layer. The first useful implementation should let users identify previewable recovered data layers, open a representative layer in a map view, inspect preview provenance, and control layer visibility/opacity. Default verification must not require Arbutus/Chinook credentials, UBC CWL, hosted workers, object-store retrieval, or AOI/download processing.
 
+- [x] P11.0 Establish repo-local `.venv` workflow. Child issue: #104.
 - [ ] P11.1 Audit preview eligibility and representative layers. Child issue: #97.
 - [ ] P11.2 Add derived preview artifact workflow. Child issue: #98.
 - [ ] P11.3 Implement browser map view scaffold. Child issue: #99.

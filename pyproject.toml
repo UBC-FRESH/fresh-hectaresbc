@@ -22,6 +22,7 @@ fresh-hectaresbc = "fresh_hectaresbc.cli:app"
 [project.optional-dependencies]
 dev = [
   "build>=1",
+  "datalad[full]>=1",
   "pytest>=8",
 ]
 
