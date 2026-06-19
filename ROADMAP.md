@@ -146,7 +146,7 @@ Phase 9 should proceed from product and service boundaries to concrete browser s
 - [x] P9.1 Define web app product and access-control contract. Child issue: #20.
 - [x] P9.2 Specify catalog and metadata browser. Child issue: #22.
 - [x] P9.3 Specify map preview workflow. Child issue: #19.
-- [ ] P9.4 Specify AOI and tile-selection workflow. Child issue: #23.
+- [x] P9.4 Specify AOI and tile-selection workflow. Child issue: #23.
 - [ ] P9.5 Specify custom download request workflow. Child issue: #24.
 - [ ] P9.6 Define web app hosting and deployment plan. Child issue: #21.
 
@@ -163,6 +163,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P9.4 by specifying the AOI and tile-selection workflow, including geometry/grid validation and limits.
-2. Work P9.5 through P9.6 one child issue at a time, closing each only after its checklist and verification are complete.
+1. Complete P9.5 by specifying the custom download request workflow, including request state, output boundaries, and cost controls.
+2. Complete P9.6 only after P9.5 is closed and hosting/deployment boundaries can account for the full browser workflow.
 3. Merge the Phase 9 branch back to `main` after #13 and its children are complete or explicitly deferred.
