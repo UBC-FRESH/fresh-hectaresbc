@@ -90,6 +90,14 @@
     return records.slice(0, Number.isFinite(limit) ? limit : 50);
   }
 
+  function findRecord(records, datasetId) {
+    const normalizedId = String(datasetId || "").trim();
+    if (!normalizedId) {
+      return null;
+    }
+    return records.find((record) => record.dataset_id === normalizedId) || null;
+  }
+
   function formatBytes(value) {
     if (!Number.isFinite(value) || value < 0) {
       return "unknown";
@@ -125,6 +133,7 @@
     filterRecords,
     sortRecords,
     limitRecords,
+    findRecord,
     formatBytes,
     previewLabel,
   };

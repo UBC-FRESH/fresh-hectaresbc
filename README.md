@@ -190,6 +190,13 @@ Then open:
 http://localhost:8000/
 ```
 
+Representative detail views use stable hash routes:
+
+```text
+http://localhost:8000/#dl_adminunits_bcts
+http://localhost:8000/#vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
+```
+
 The generated `web/data/catalog.json` file is ignored because it is derived from packaged catalog metadata. Browser catalog development does not require raw HectaresBC payloads, DataLad network retrieval, Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access.
 
 ## DataLad Retrieval

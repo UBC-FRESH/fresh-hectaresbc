@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>fresh-hectaresbc catalog</title>
-    <link rel="stylesheet" href="styles.css?v=20260619-p10-2">
+    <link rel="stylesheet" href="styles.css?v=20260619-p10-3">
   </head>
   <body>
     <header class="app-header">
@@ -100,9 +100,19 @@
 
         <p id="empty-state" class="empty-state" hidden>No matching records.</p>
       </section>
+
+      <section class="detail-band" aria-labelledby="detail-heading">
+        <div class="section-heading">
+          <h2 id="detail-heading">Dataset Detail</h2>
+          <p id="detail-status" class="result-count">No record selected</p>
+        </div>
+        <div id="record-detail" class="record-detail" aria-live="polite">
+          <p class="empty-detail">Select a catalog record to inspect provenance and usage commands.</p>
+        </div>
+      </section>
     </main>
 
-    <script src="catalog.js?v=20260619-p10-2"></script>
-    <script src="app.js?v=20260619-p10-2"></script>
+    <script src="catalog.js?v=20260619-p10-3"></script>
+    <script src="app.js?v=20260619-p10-3"></script>
   </body>
 </html>

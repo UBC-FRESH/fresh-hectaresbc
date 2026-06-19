@@ -76,7 +76,8 @@ h2 {
 }
 
 .summary-band,
-.catalog-band {
+.catalog-band,
+.detail-band {
   padding: 24px 0;
 }
 
@@ -103,7 +104,8 @@ h2 {
 
 .summary-grid div,
 .record-item,
-.empty-state {
+.empty-state,
+.record-detail {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--surface);
@@ -266,6 +268,158 @@ dd {
   padding: 18px;
 }
 
+.record-detail {
+  padding: 20px;
+}
+
+.record-detail.has-record {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.empty-detail {
+  margin: 0;
+  color: var(--muted);
+}
+
+.detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.75fr);
+  gap: 16px;
+}
+
+.detail-panel {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.detail-panel h3 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
+.detail-summary {
+  grid-column: 1 / -1;
+}
+
+.detail-summary h3 {
+  margin-bottom: 14px;
+  font-size: 1.25rem;
+}
+
+.detail-list {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.35fr) minmax(0, 1fr);
+  gap: 8px 14px;
+  margin: 0;
+}
+
+.detail-list dt {
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.detail-list dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.95rem;
+  font-weight: 400;
+}
+
+.metadata-list {
+  grid-template-columns: minmax(140px, 0.4fr) minmax(0, 1fr);
+}
+
+.nested-list {
+  grid-template-columns: minmax(110px, 0.4fr) minmax(0, 1fr);
+  gap: 4px 10px;
+}
+
+.nested-list dt,
+.nested-list dd {
+  font-size: 0.9rem;
+}
+
+.inline-list,
+.note-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.inline-list li + li,
+.note-list li + li {
+  margin-top: 4px;
+}
+
+.note-list {
+  color: var(--text);
+}
+
+details summary {
+  cursor: pointer;
+  color: var(--accent-dark);
+  font-weight: 700;
+}
+
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 10px 0 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--text);
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.command-list {
+  display: grid;
+  gap: 12px;
+}
+
+.command-snippet {
+  min-width: 0;
+}
+
+.command-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.command-heading h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.copy-button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--accent-dark);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--accent-dark);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.copy-button:hover {
+  background: var(--surface-soft);
+}
+
 code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 0.92em;
@@ -286,6 +440,13 @@ code {
   }
 
   .catalog-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-layout,
+  .detail-list,
+  .metadata-list,
+  .nested-list {
     grid-template-columns: 1fr;
   }
 
