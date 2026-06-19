@@ -148,7 +148,7 @@ Phase 9 should proceed from product and service boundaries to concrete browser s
 - [x] P9.3 Specify map preview workflow. Child issue: #19.
 - [x] P9.4 Specify AOI and tile-selection workflow. Child issue: #23.
 - [x] P9.5 Specify custom download request workflow. Child issue: #24.
-- [ ] P9.6 Define web app hosting and deployment plan. Child issue: #21.
+- [x] P9.6 Define web app hosting and deployment plan. Child issue: #21.
 
 ## Phase 10: Future Workflow Hardening
 
@@ -163,6 +163,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P9.6 by defining the web app hosting and deployment plan across catalog, preview, AOI, and download request workflows.
-2. Do not close parent issue #13 until the Phase 9 PR has merged back to `main`.
-3. Merge the Phase 9 branch back to `main` after #13 and its children are complete or explicitly deferred.
+1. Merge Phase 9 PR #86 back to `main`.
+2. Close parent issue #13 only after PR #86 has merged.
+3. After Phase 9 is closed, activate the next roadmap phase only with a new parent issue/branch or explicit maintainer-approved parallel lane.
