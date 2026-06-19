@@ -164,7 +164,7 @@ Phase 10 must produce a real runnable browser app surface, not another planning 
 - [x] P10.2 Implement catalog search, filter, and list UI. Child issue: #89.
 - [x] P10.3 Implement dataset detail and provenance UI. Child issue: #90.
 - [x] P10.4 Add browser app smoke verification. Child issue: #91.
-- [ ] P10.5 Verify, document, and close browser catalog implementation phase. Child issue: #92.
+- [x] P10.5 Verify, document, and close browser catalog implementation phase. Child issue: #92.
 
 ## Phase 11: Future Workflow Hardening
 
@@ -179,6 +179,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P10.5 by auditing Phase 10 documentation, verification commands, issue checklists, and PR readiness.
-2. Close P10.5 only after its checklist and verification are complete.
-3. Merge the Phase 10 branch back to `main` after #87 and its children are complete or explicitly deferred.
+1. Merge Phase 10 PR #93 back to `main`.
+2. Close parent issue #87 only after PR #93 is merged.
+3. Do not activate the next roadmap phase until the maintainer explicitly selects the next parent issue and branch.
