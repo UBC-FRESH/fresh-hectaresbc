@@ -61,3 +61,5 @@
 - Recorded the full-annex import at data-repo commit `b16b83bfaabc0563291c72c716d5278c430f1245`; full upload of those annexed payloads to `arbutus-s3` remains P5.4.
 - Completed P5.4 by uploading the full annexed ZIP payload set to `arbutus-s3`, validating 2,183 expected ZIPs present, 0 missing, 0 extras, and 17,531,591,717 expected bytes available from the special remote.
 - Recorded the full remote-availability validation in the data repo at commit `5bc5874cc969233460751cccfba547a79d3e1645` and updated the main-repo submodule pointer.
+- Completed P5.5 by validating full ZIP inventory coverage in the data repo: 2,183 tracked raw ZIPs exactly match the recovered archive manifest, with 418 data-layer ZIPs, 1,765 virtual-layer ZIPs, 0 missing, 0 extras, 0 non-annex ZIPs, and no blocked private/disposable path hits.
+- Recorded the full ZIP inventory coverage validation in the data repo at commit `b3a6e3efab770cd7cb5e60d10a11e209bc5ed5de` and updated the main-repo submodule pointer.
