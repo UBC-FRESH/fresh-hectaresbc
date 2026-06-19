@@ -35,4 +35,11 @@ http://localhost:8000/#dl_adminunits_bcts
 http://localhost:8000/#vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
 ```
 
+Representative map preview routes use `#map=<dataset_id>`:
+
+```text
+http://localhost:8000/#map=dl_water_cwb_canals
+http://localhost:8000/#map=vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
+```
+
 The app shell, catalog artifact, and initial map-preview fixture do not require raw HectaresBC payloads, DataLad network retrieval, Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access. The generated GeoJSON preview is a labelled UI fixture pending derivation from recovered payload content, not recovered HectaresBC geometry.

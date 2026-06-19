@@ -7,6 +7,8 @@ const recordListNode = document.querySelector("#record-list");
 const emptyStateNode = document.querySelector("#empty-state");
 const detailStatusNode = document.querySelector("#detail-status");
 const recordDetailNode = document.querySelector("#record-detail");
+const mapStatusNode = document.querySelector("#map-status");
+const mapPreviewNode = document.querySelector("#map-preview");
 const controlsNode = document.querySelector("#catalog-controls");
 const searchInputNode = document.querySelector("#search-input");
 const sortSelectNode = document.querySelector("#sort-select");
@@ -14,6 +16,8 @@ const pageSizeSelectNode = document.querySelector("#page-size-select");
 
 const state = {
   catalog: null,
+  previewManifest: null,
+  previewManifestStatus: "loading",
   query: "",
   family: "all",
   sort: "title",
@@ -28,9 +32,10 @@ async function loadCatalog() {
     }
     const catalog = await response.json();
     state.catalog = catalog;
+    await loadPreviewManifest();
     renderCatalogSummary(catalog);
     renderResults();
-    renderSelectedRecord();
+    renderRoute();
   } catch (error) {
     statusNode.textContent = "Catalog data unavailable. Run the generator first.";
     emptyStateNode.hidden = false;
@@ -39,6 +44,20 @@ async function loadCatalog() {
       <code>python3 scripts/generate_web_catalog.py</code>, then serve the
       <code>web/</code> directory with a local static server.
     `;
+  }
+}
+
+async function loadPreviewManifest() {
+  try {
+    const response = await fetch("data/map_previews/manifest.json");
+    if (!response.ok) {
+      throw new Error(`Preview manifest request failed with ${response.status}`);
+    }
+    state.previewManifest = await response.json();
+    state.previewManifestStatus = "available";
+  } catch (error) {
+    state.previewManifest = null;
+    state.previewManifestStatus = "unavailable";
   }
 }
 
@@ -133,7 +152,22 @@ function selectedDatasetId() {
   if (!window.location.hash || window.location.hash === "#") {
     return "";
   }
+  if (window.location.hash.startsWith("#map=")) {
+    return "";
+  }
   return decodeURIComponent(window.location.hash.slice(1));
+}
+
+function selectedMapDatasetId() {
+  if (!window.location.hash.startsWith("#map=")) {
+    return "";
+  }
+  return decodeURIComponent(window.location.hash.slice("#map=".length));
+}
+
+function renderRoute() {
+  renderSelectedRecord();
+  renderMapPreview();
 }
 
 function renderDetail(record) {
@@ -160,6 +194,7 @@ function renderDetail(record) {
       ["Source ZIP", record.source_zip_path],
       ["Verification", record.verification_status],
       ["Preview", CatalogBrowser.previewLabel(record)],
+      ["Map route", mapRouteLink(record)],
       ["Manifest size", CatalogBrowser.formatBytes(record.manifest_size_bytes)],
     ])
   );
@@ -179,6 +214,161 @@ function renderDetail(record) {
 
   wrapper.append(summary, metadata, provenance, notes, commands);
   return wrapper;
+}
+
+function mapRouteLink(record) {
+  const wrapper = document.createElement("span");
+  const link = document.createElement("a");
+  link.href = `#map=${encodeURIComponent(record.dataset_id)}`;
+  link.textContent = "Open map preview";
+  wrapper.append(link);
+
+  const status = document.createElement("span");
+  status.className = "inline-status";
+  status.textContent = ` ${previewStatusLabel(record)}`;
+  wrapper.append(status);
+  return wrapper;
+}
+
+function renderMapPreview() {
+  if (!state.catalog) {
+    return;
+  }
+
+  const datasetId = selectedMapDatasetId();
+  if (!datasetId) {
+    mapStatusNode.textContent = "No layer selected";
+    mapPreviewNode.className = "map-preview";
+    mapPreviewNode.innerHTML = `
+      <p class="empty-detail">Open a map preview from a dataset detail route.</p>
+    `;
+    return;
+  }
+
+  const record = CatalogBrowser.findRecord(state.catalog.records, datasetId);
+  if (!record) {
+    mapStatusNode.textContent = "Record not found";
+    mapPreviewNode.className = "map-preview";
+    mapPreviewNode.innerHTML = `
+      <p class="empty-detail">No recovered catalog record matches <code></code>.</p>
+    `;
+    mapPreviewNode.querySelector("code").textContent = datasetId;
+    return;
+  }
+
+  const artifact = findPreviewArtifact(record.dataset_id);
+  if (!artifact) {
+    mapStatusNode.textContent = "Preview unavailable";
+    mapPreviewNode.className = "map-preview";
+    mapPreviewNode.replaceChildren(renderUnavailableMap(record));
+    return;
+  }
+
+  mapStatusNode.textContent = record.dataset_id;
+  mapPreviewNode.className = "map-preview has-record";
+  mapPreviewNode.replaceChildren(renderMapScaffold(record, artifact));
+}
+
+function findPreviewArtifact(datasetId) {
+  const artifacts = state.previewManifest?.artifacts || [];
+  return artifacts.find((artifact) => artifact.dataset_id === datasetId) || null;
+}
+
+function renderMapScaffold(record, artifact) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "map-layout";
+
+  const viewport = document.createElement("section");
+  viewport.className = "map-viewport";
+  viewport.setAttribute("aria-label", `Map preview scaffold for ${record.title}`);
+  const grid = document.createElement("div");
+  grid.className = "map-grid";
+  const label = document.createElement("div");
+  label.className = "map-placeholder-label";
+  label.textContent = "Preview artifact ready";
+  viewport.append(grid, label);
+
+  const panel = document.createElement("aside");
+  panel.id = "map-layer-panel";
+  panel.className = "map-layer-panel";
+  panel.append(
+    mapPanelHeading(record, "Available"),
+    definitionList([
+      ["Dataset ID", record.dataset_id],
+      ["Source ZIP", record.source_zip_path],
+      ["Artifact", artifact.artifact_path],
+      ["Artifact status", artifact.artifact_status],
+      ["CRS", artifact.crs],
+      ["Bounds", artifact.bounds.join(", ")],
+      ["Source content", artifact.source_content_status],
+      ["Catalog detail", detailRouteLink(record)],
+    ])
+  );
+
+  const warning = document.createElement("p");
+  warning.className = "map-warning";
+  warning.textContent = artifact.fixture_warning;
+  panel.append(warning);
+
+  wrapper.append(viewport, panel);
+  return wrapper;
+}
+
+function renderUnavailableMap(record) {
+  const panel = document.createElement("div");
+  panel.className = "map-unavailable";
+  panel.append(
+    mapPanelHeading(record, "Unavailable"),
+    definitionList([
+      ["Dataset ID", record.dataset_id],
+      ["Source ZIP", record.source_zip_path],
+      ["Eligibility", record.preview?.eligibility_status || "unknown"],
+      ["Reason", unavailableReason(record)],
+      ["Blockers", (record.preview?.eligibility_blockers || []).join(", ") || "none"],
+      ["Catalog detail", detailRouteLink(record)],
+    ])
+  );
+
+  if (state.previewManifestStatus === "unavailable") {
+    const missing = document.createElement("p");
+    missing.className = "map-warning";
+    missing.textContent = "Preview manifest unavailable. Generate it with python scripts/generate_map_preview_artifacts.py.";
+    panel.append(missing);
+  }
+  return panel;
+}
+
+function mapPanelHeading(record, status) {
+  const heading = document.createElement("div");
+  heading.className = "map-panel-heading";
+  const title = document.createElement("h3");
+  title.textContent = record.title;
+  const badge = document.createElement("span");
+  badge.className = "map-status-badge";
+  badge.textContent = status;
+  heading.append(title, badge);
+  return heading;
+}
+
+function detailRouteLink(record) {
+  const link = document.createElement("a");
+  link.href = `#${encodeURIComponent(record.dataset_id)}`;
+  link.textContent = "Open catalog detail";
+  return link;
+}
+
+function unavailableReason(record) {
+  return (
+    record.preview?.eligibility_reason ||
+    "No generated preview artifact is available for this record."
+  );
+}
+
+function previewStatusLabel(record) {
+  if (findPreviewArtifact(record.dataset_id)) {
+    return "(preview artifact available)";
+  }
+  return `(${record.preview?.eligibility_status || "preview unavailable"})`;
 }
 
 function detailPanel(title, contentNode) {
@@ -230,6 +420,10 @@ function renderValue(node, value) {
   }
 
   if (value && typeof value === "object") {
+    if (value.nodeType || value.tagName) {
+      node.append(value);
+      return;
+    }
     node.append(definitionList(Object.entries(value), "nested-list"));
     return;
   }
@@ -357,7 +551,7 @@ controlsNode.addEventListener("input", () => {
   renderResults();
 });
 
-window.addEventListener("hashchange", renderSelectedRecord);
+window.addEventListener("hashchange", renderRoute);
 
 recordDetailNode.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-copy]");

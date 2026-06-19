@@ -28,6 +28,13 @@ def test_web_catalog_ui_smoke_checks_representative_behavior(tmp_path: Path) -> 
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
+    subprocess.run(
+        [sys.executable, "scripts/generate_map_preview_artifacts.py"],
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
 
     result = subprocess.run(
         [sys.executable, "scripts/smoke_test_web_static_app.py"],

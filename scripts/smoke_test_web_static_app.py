@@ -94,6 +94,8 @@ def _check_static_assets(web_root: Path) -> None:
         "record-list",
         "record-detail",
         "detail-status",
+        "map-status",
+        "map-preview",
     }
     missing_ids = sorted(expected_ids.difference(parser.ids))
     _require(not missing_ids, f"missing expected DOM ids: {missing_ids}")

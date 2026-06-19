@@ -7,7 +7,10 @@ const assert = require("assert");
 
 const repoRoot = path.join(__dirname, "..");
 const catalogPath = process.argv[2] || path.join(repoRoot, "web", "data", "catalog.json");
+const previewManifestPath =
+  process.argv[3] || path.join(repoRoot, "web", "data", "map_previews", "manifest.json");
 const catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
+const previewManifest = JSON.parse(fs.readFileSync(previewManifestPath, "utf8"));
 
 class Element {
   constructor(tagName, id = "") {
@@ -132,6 +135,8 @@ class FakeDocument {
       "empty-state",
       "detail-status",
       "record-detail",
+      "map-status",
+      "map-preview",
       "catalog-controls",
       "search-input",
       "sort-select",
@@ -205,10 +210,13 @@ const context = {
     },
   },
   fetch: async (url) => {
-    assert.strictEqual(url, "data/catalog.json");
+    assert(["data/catalog.json", "data/map_previews/manifest.json"].includes(url));
     return {
       ok: true,
       async json() {
+        if (url === "data/map_previews/manifest.json") {
+          return previewManifest;
+        }
         return catalog;
       },
     };
@@ -252,6 +260,7 @@ setImmediate(() => {
   assert(detail.includes("BCTS Operating Areas"));
   assert(detail.includes("data_layers/adminunits_bcts.zip"));
   assert(detail.includes("metadata_recovered"));
+  assert(detail.includes("Open map preview"));
   assert(detail.includes("fresh-hectaresbc catalog show dl_adminunits_bcts"));
   assert(detail.includes("fresh-hectaresbc fetch dl_adminunits_bcts --dry-run"));
 
@@ -265,6 +274,29 @@ setImmediate(() => {
   window.dispatchEvent({type: "hashchange"});
   assert.strictEqual(document.querySelector("#detail-status").textContent, "Record not found");
   assert(document.querySelector("#record-detail").textContent.includes("missing-dataset-id"));
+
+  window.location.hash = "#map=dl_water_cwb_canals";
+  window.dispatchEvent({type: "hashchange"});
+  assert.strictEqual(document.querySelector("#map-status").textContent, "dl_water_cwb_canals");
+  const availableMap = document.querySelector("#map-preview").textContent;
+  assert(availableMap.includes("Canals"));
+  assert(availableMap.includes("Preview artifact ready"));
+  assert(availableMap.includes("dl_water_cwb_canals/preview.geojson"));
+  assert(availableMap.includes("fixture_pending_source_derivation"));
+  assert(availableMap.includes("not recovered HectaresBC canal geometry"));
+
+  window.location.hash = "#map=vl_virtualspecies_bulltroutsalvelinusconfluentus_1135";
+  window.dispatchEvent({type: "hashchange"});
+  assert.strictEqual(document.querySelector("#map-status").textContent, "Preview unavailable");
+  const unavailableMap = document.querySelector("#map-preview").textContent;
+  assert(unavailableMap.includes("Bull Trout (Salvelinus confluentus)"));
+  assert(unavailableMap.includes("not_supported"));
+  assert(unavailableMap.includes("unsupported_family"));
+
+  window.location.hash = "#map=missing-dataset-id";
+  window.dispatchEvent({type: "hashchange"});
+  assert.strictEqual(document.querySelector("#map-status").textContent, "Record not found");
+  assert(document.querySelector("#map-preview").textContent.includes("missing-dataset-id"));
 
   console.log(`validated browser app DOM smoke flow: ${catalogPath}`);
 });
