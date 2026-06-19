@@ -120,3 +120,4 @@
 - Completed P11.6 closeout verification by auditing closed child issue checklists, confirming README/web README generate/run/smoke/map commands, rerunning browser catalog generation, map-preview artifact generation, browser smoke checks, JavaScript syntax checks, and the full Python test suite, and preparing PR #103 for merge.
 - Merged Phase 11 browser map preview implementation to `main` via PR #103.
 - Activated Phase 12 source-derived real map previews with parent issue #105, feature branch `feature/p12-source-derived-map-previews`, draft PR #111, and child issues #106-#110.
+- Completed P12.1 by auditing `dl_adminunits_bcts` as the first source-derived preview target, confirming `bcts.tiff` is readable from the recovered ZIP with `EPSG:3005`, BC Albers and WGS84 bounds, `int16` categorical values 1-12, nodata `-9999`, and 12 legend classes/colors from `bcts.wms.xml`.

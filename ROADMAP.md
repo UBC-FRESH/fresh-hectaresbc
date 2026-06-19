@@ -194,7 +194,7 @@ Draft PR: #111
 
 Phase 12 replaces the Phase 11 fixture happy path with a real source-derived raster preview. The first target is `dl_adminunits_bcts` / BCTS Operating Areas, derived from the real `bcts.tiff` inside `adminunits_bcts.zip`. The default browser route should become `#map=dl_adminunits_bcts`, with a PNG/RGBA overlay generated from recovered payload content, real CRS and bounds metadata, legend classes, visibility/opacity controls, and catalog linkback.
 
-- [ ] P12.1 Audit real preview candidate and source raster readability. Child issue: #106.
+- [x] P12.1 Audit real preview candidate and source raster readability. Child issue: #106.
 - [ ] P12.2 Implement source-derived raster PNG preview generator. Child issue: #107.
 - [ ] P12.3 Update browser map renderer for raster overlay artifacts. Child issue: #108.
 - [ ] P12.4 Add real-data smoke checks and tests. Child issue: #109.
@@ -213,6 +213,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P12.1 by documenting the real `dl_adminunits_bcts` raster-readability audit.
-2. Work P12.2 through P12.5 one child issue at a time, closing each only after its checklist and verification are complete.
+1. Complete P12.2 by implementing the source-derived `dl_adminunits_bcts` PNG preview generator.
+2. Work P12.3 through P12.5 one child issue at a time, closing each only after its checklist and verification are complete.
 3. Merge the Phase 12 branch back to `main` only after the source-derived BCTS preview is documented and verified.
