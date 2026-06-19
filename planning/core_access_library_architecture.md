@@ -222,6 +222,8 @@ result = hbc.fetch(record.dataset_id)
 
 That example is illustrative, not final. P6.2 should define catalog methods. P6.3 should define retrieval/cache methods. P6.4 should define backend configuration and diagnostics.
 
+P6.2 catalog query decisions are recorded in `planning/catalog_query_api.md`.
+
 ## Configuration Direction
 
 The library should work from a normal source checkout without global configuration when only catalog metadata is needed.

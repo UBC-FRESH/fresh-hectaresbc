@@ -68,3 +68,4 @@
 - Completed P5.7 by updating the final data-repo README, advancing the main-repo submodule pointer to data-repo commit `360d277f723f7dd946c1dde19160a32efc7b74e7`, and documenting full-data retrieval status in the main README and planning notes.
 - Activated Phase 6 core Python access library work with parent issue #25 and branch `feature/p6-core-python-access`.
 - Completed P6.1 with `planning/core_access_library_architecture.md`, defining the core library's source inputs, concepts, package-shape direction, result/error model, backend boundaries, diagnostics expectations, and verification gates for later P6 tasks.
+- Completed P6.2 with `planning/catalog_query_api.md`, defining catalog loading precedence, lookup/search/filter semantics, result/detail shapes, error categories, source-preservation rules, and verification expectations for recovered catalog metadata.

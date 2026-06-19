@@ -89,7 +89,7 @@ Active branch: `feature/p6-core-python-access`
 The core Python access library is the shared layer that should power both the CLI and the browser app. It should expose catalog search, metadata lookup, dataset resolution, retrieval/cache behavior, and backend diagnostics. DataLad/git-annex and S3-compatible object stores should be internal backends, not the user-facing abstraction.
 
 - [x] P6.1 Define core access architecture. Child issue: #27.
-- [ ] P6.2 Define catalog query API. Child issue: #30.
+- [x] P6.2 Define catalog query API. Child issue: #30.
 - [ ] P6.3 Define retrieval and cache API. Child issue: #28.
 - [ ] P6.4 Define backend abstraction for DataLad and object stores. Child issue: #29.
 
@@ -136,7 +136,7 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P6.2 by defining the catalog query API.
-2. Complete P6.3 by defining the retrieval and cache API.
-3. Complete P6.4 by defining the backend abstraction for DataLad and object stores.
+1. Complete P6.3 by defining the retrieval and cache API.
+2. Complete P6.4 by defining the backend abstraction for DataLad and object stores.
+3. Prepare PR #67 for review after all Phase 6 child issues close.
 4. Keep future parent issues (#26, #12, #13) as inactive planning placeholders until their phase is explicitly activated.
