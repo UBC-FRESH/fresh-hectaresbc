@@ -138,5 +138,4 @@ These are planned but not active requirements yet.
 
 1. Activate Phase 7 Typer CLI interface work with parent issue #26 and a new feature branch.
 2. Complete P7.1 by defining CLI workflows over the core access contracts.
-3. Defer package distribution and browser app parent issues (#12, #13) until their phases are explicitly activated.
-4. Keep future parent issues (#12, #13) as inactive planning placeholders until their phase is explicitly activated.
+3. Keep package distribution and browser app parent issues (#12, #13) as inactive planning placeholders until their phases are explicitly activated.
