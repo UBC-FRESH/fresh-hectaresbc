@@ -67,3 +67,4 @@
 - Recorded the retrieval sampling validation in the data repo at commit `c36fde5a2da2569922c4435e7b5eae7a1d3733cd`, with all sampled SHA-256 values matching their git-annex keys and `git annex fsck` reporting checksum `ok`.
 - Completed P5.7 by updating the final data-repo README, advancing the main-repo submodule pointer to data-repo commit `360d277f723f7dd946c1dde19160a32efc7b74e7`, and documenting full-data retrieval status in the main README and planning notes.
 - Activated Phase 6 core Python access library work with parent issue #25 and branch `feature/p6-core-python-access`.
+- Completed P6.1 with `planning/core_access_library_architecture.md`, defining the core library's source inputs, concepts, package-shape direction, result/error model, backend boundaries, diagnostics expectations, and verification gates for later P6 tasks.
