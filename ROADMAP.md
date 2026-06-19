@@ -110,7 +110,7 @@ The CLI should be a thin, user-friendly interface over the completed core Python
 Phase 7 must be implementation-oriented. Command handlers should call `fresh_hectaresbc.HectaresBC` rather than reimplementing catalog, resolver, or backend behavior. Default verification must avoid credentials and network retrieval; use dry-run fetch and simulated backend states for routine tests.
 
 - [x] P7.1 Define CLI command contract and output rules. Child issue: #18.
-- [ ] P7.2 Add Typer CLI scaffold and console entrypoint. Child issue: #75.
+- [x] P7.2 Add Typer CLI scaffold and console entrypoint. Child issue: #75.
 - [ ] P7.3 Implement catalog CLI commands. Child issue: #76.
 - [ ] P7.4 Implement local data path and status CLI commands. Child issue: #77.
 - [ ] P7.5 Implement diagnostics and fetch CLI commands. Child issue: #78.
@@ -151,6 +151,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P7.2 by adding the Typer CLI scaffold and console entrypoint.
-2. Work P7.3 through P7.6 one child issue at a time, closing each only after its checklist and verification are complete.
+1. Complete P7.3 by implementing catalog CLI commands.
+2. Work P7.4 through P7.6 one child issue at a time, closing each only after its checklist and verification are complete.
 3. Merge the Phase 7 branch back to `main` after #26 and its children are complete or explicitly deferred.

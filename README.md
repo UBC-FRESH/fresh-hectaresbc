@@ -70,6 +70,13 @@ Run the current test suite:
 python3 -m pytest
 ```
 
+Smoke-test the CLI:
+
+```bash
+fresh-hectaresbc --help
+fresh-hectaresbc --version
+```
+
 Load and query the recovered catalog:
 
 ```python
