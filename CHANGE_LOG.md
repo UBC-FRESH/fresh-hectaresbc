@@ -119,4 +119,4 @@
 - Completed P11.5 by adding map-layer visibility and opacity controls with per-dataset UI state, preview eligibility and blocker metadata in the layer panel, catalog detail linkback coverage, and DOM smoke checks for layer controls and route navigation.
 - Completed P11.6 closeout verification by auditing closed child issue checklists, confirming README/web README generate/run/smoke/map commands, rerunning browser catalog generation, map-preview artifact generation, browser smoke checks, JavaScript syntax checks, and the full Python test suite, and preparing PR #103 for merge.
 - Merged Phase 11 browser map preview implementation to `main` via PR #103.
-- Activated Phase 12 source-derived real map previews with parent issue #105, feature branch `feature/p12-source-derived-map-previews`, and child issues #106-#110.
+- Activated Phase 12 source-derived real map previews with parent issue #105, feature branch `feature/p12-source-derived-map-previews`, draft PR #111, and child issues #106-#110.

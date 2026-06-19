@@ -190,6 +190,8 @@ GitHub parent issue: #105
 
 Active branch: `feature/p12-source-derived-map-previews`
 
+Draft PR: #111
+
 Phase 12 replaces the Phase 11 fixture happy path with a real source-derived raster preview. The first target is `dl_adminunits_bcts` / BCTS Operating Areas, derived from the real `bcts.tiff` inside `adminunits_bcts.zip`. The default browser route should become `#map=dl_adminunits_bcts`, with a PNG/RGBA overlay generated from recovered payload content, real CRS and bounds metadata, legend classes, visibility/opacity controls, and catalog linkback.
 
 - [ ] P12.1 Audit real preview candidate and source raster readability. Child issue: #106.
