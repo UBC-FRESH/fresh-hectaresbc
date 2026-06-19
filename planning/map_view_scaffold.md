@@ -13,7 +13,7 @@ Reasons:
 - adding a full map library before source-derived preview artifacts exist would imply more spatial capability than the app currently has;
 - default smoke tests should stay credential-free and network-free.
 
-P11.4 can either extend this scaffold to render the generated GeoJSON fixture or introduce a proven map library if the representative preview artifact format requires it.
+P11.4 extended this scaffold to render the generated GeoJSON fixture as an SVG overlay fitted to the artifact bounds. A full map library remains a later option once preview artifacts are derived from recovered payload content and require pan/zoom, reprojection, tile loading, or multiple layer types.
 
 ## Routes
 
@@ -30,11 +30,11 @@ Representative routes:
 #map=vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
 ```
 
-The data-layer candidate route renders an available map shell and layer panel when `web/data/map_previews/manifest.json` has been generated. The virtual-layer route renders an unavailable state because virtual-layer map preview is outside the first data-layer implementation pass.
+The data-layer candidate route renders the generated GeoJSON fixture when `web/data/map_previews/manifest.json` and `web/data/map_previews/dl_water_cwb_canals/preview.geojson` have been generated. The virtual-layer route renders an unavailable state because virtual-layer map preview is outside the first data-layer implementation pass.
 
 ## Current Boundaries
 
-P11.3 does not draw recovered map geometry. It provides:
+P11.3 did not draw recovered map geometry. It provided:
 
 - stable map route parsing;
 - map preview shell;
@@ -44,4 +44,4 @@ P11.3 does not draw recovered map geometry. It provides:
 - unavailable-preview messaging;
 - catalog-detail linkback.
 
-Actual feature rendering belongs to P11.4.
+P11.4 now draws the generated GeoJSON fixture, but this is still not recovered HectaresBC geometry. Source-derived preview artifact generation remains future work.

@@ -460,6 +460,7 @@ pre {
   position: absolute;
   right: 14px;
   bottom: 14px;
+  z-index: 3;
   padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -467,6 +468,37 @@ pre {
   color: var(--accent-dark);
   font-size: 0.9rem;
   font-weight: 700;
+}
+
+.map-geojson-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+}
+
+.map-feature-line {
+  fill: none;
+  stroke: #0d423b;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.map-error {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  z-index: 2;
+  width: min(360px, calc(100% - 32px));
+  padding: 14px;
+  border: 1px solid #9f483f;
+  border-radius: 8px;
+  background: #fff8f6;
+  color: #6d251f;
+  font-size: 0.92rem;
+  transform: translate(-50%, -50%);
 }
 
 .map-layer-panel,
