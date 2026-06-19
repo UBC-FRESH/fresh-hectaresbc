@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import csv
 from collections.abc import Iterable, Iterator
+from importlib import resources
+from importlib.resources.abc import Traversable
 from pathlib import Path
 
 from fresh_hectaresbc.models import DatasetRecord
@@ -65,8 +67,12 @@ SEARCH_FIELDS = (
 class Catalog:
     """In-memory view of recovered HectaresBC metadata records."""
 
-    def __init__(self, records: Iterable[DatasetRecord], metadata_root: Path):
-        self.metadata_root = Path(metadata_root)
+    def __init__(
+        self, records: Iterable[DatasetRecord], metadata_root: Path | str | Traversable
+    ):
+        self.metadata_root = (
+            metadata_root if isinstance(metadata_root, Path) else str(metadata_root)
+        )
         self._records = tuple(
             sorted(records, key=lambda record: (record.source_family, record.dataset_id))
         )
@@ -78,15 +84,31 @@ class Catalog:
 
     @classmethod
     def from_default_paths(cls, start: Path | str | None = None) -> "Catalog":
-        """Load recovered catalog records from the current source checkout."""
+        """Load recovered catalog records from source metadata or package data."""
 
-        return cls.from_metadata_root(default_metadata_root(start))
+        try:
+            return cls.from_metadata_root(default_metadata_root(start))
+        except FileNotFoundError:
+            return cls.from_package_data()
 
     @classmethod
     def from_metadata_root(cls, metadata_root: Path | str) -> "Catalog":
         """Load recovered catalog records from a metadata directory."""
 
         metadata_root = Path(metadata_root)
+        return cls._from_catalog_root(metadata_root)
+
+    @classmethod
+    def from_package_data(cls) -> "Catalog":
+        """Load recovered catalog records bundled with the installed package."""
+
+        metadata_root = resources.files("fresh_hectaresbc").joinpath(
+            "package_data", "recovered_catalog"
+        )
+        return cls._from_catalog_root(metadata_root)
+
+    @classmethod
+    def _from_catalog_root(cls, metadata_root: Path | Traversable) -> "Catalog":
         records = [
             *cls._read_csv(metadata_root / "data_layer_records.csv"),
             *cls._read_csv(metadata_root / "virtual_layer_records.csv"),
@@ -94,8 +116,8 @@ class Catalog:
         return cls(records, metadata_root=metadata_root)
 
     @staticmethod
-    def _read_csv(path: Path) -> list[DatasetRecord]:
-        if not path.exists():
+    def _read_csv(path: Path | Traversable) -> list[DatasetRecord]:
+        if not path.is_file():
             raise CatalogFileMissing(f"Catalog file not found: {path}")
 
         with path.open(newline="", encoding="utf-8") as stream:

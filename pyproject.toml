@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,7 @@ version = "0.0.0"
 description = "Python access library for the recovered HectaresBC geospatial data collection."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
   { name = "UBC FRESH" },
 ]
@@ -21,11 +21,15 @@ fresh-hectaresbc = "fresh_hectaresbc.cli:app"
 
 [project.optional-dependencies]
 dev = [
+  "build>=1",
   "pytest>=8",
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+fresh_hectaresbc = ["package_data/recovered_catalog/*.csv"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

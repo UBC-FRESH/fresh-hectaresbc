@@ -120,16 +120,18 @@ Phase 7 must be implementation-oriented. Command handlers should call `fresh_hec
 
 GitHub parent issue: #12
 
+Active branch: `feature/p8-package-distribution`
+
 The envisioned local user workflow is `pip install fresh-hectaresbc`, followed by Python API or CLI access to HectaresBC catalog and data workflows. Packaging should support the core library and CLI layers without mixing their responsibilities.
 
 Phase 8 must make installed-package behavior real. Catalog lookup/search/filter should work outside a source checkout using compact packaged metadata, while raw HectaresBC ZIP payloads remain external in the DataLad data repository.
 
-- [ ] P8.1 Define package distribution contract. Child issue: #16.
-- [ ] P8.2 Define package install and smoke-test plan. Child issue: #15.
-- [ ] P8.3 Embed compact catalog metadata in package data. Child issue: #81.
-- [ ] P8.4 Validate wheel and source distribution artifacts. Child issue: #82.
-- [ ] P8.5 Add clean install smoke-test workflow. Child issue: #83.
-- [ ] P8.6 Verify, document, and close package distribution phase. Child issue: #84.
+- [x] P8.1 Define package distribution contract. Child issue: #16.
+- [x] P8.2 Define package install and smoke-test plan. Child issue: #15.
+- [x] P8.3 Embed compact catalog metadata in package data. Child issue: #81.
+- [x] P8.4 Validate wheel and source distribution artifacts. Child issue: #82.
+- [x] P8.5 Add clean install smoke-test workflow. Child issue: #83.
+- [x] P8.6 Verify, document, and close package distribution phase. Child issue: #84.
 
 ## Phase 9: Browser Catalog, Map, and Download Web App
 
@@ -157,6 +159,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Activate Phase 8 with parent issue #12 and a dedicated feature branch.
-2. Complete P8.1 and P8.2 before package-data implementation so package contents and install checks are explicit.
-3. Work P8.3 through P8.6 one child issue at a time, closing each only after its checklist and verification are complete.
+1. Merge Phase 8 PR #85 back to `main`.
+2. Close parent issue #12 only after PR #85 has merged.
+3. After Phase 8 is closed, activate the next roadmap phase only with a new parent issue/branch or explicit maintainer-approved parallel lane.

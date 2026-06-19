@@ -70,6 +70,16 @@ Run the current test suite:
 python3 -m pytest
 ```
 
+Build and inspect local distribution artifacts:
+
+```bash
+python3 -m pip install -e .[dev]
+rm -rf dist/
+python3 -m build
+python3 scripts/inspect_distribution_artifacts.py dist
+python3 scripts/smoke_test_wheel_install.py dist
+```
+
 Smoke-test the CLI:
 
 ```bash
@@ -132,11 +142,17 @@ print([(item.check, item.status) for item in diagnostics])
 print(plan.status)
 ```
 
-The catalog API reads compact tracked metadata from:
+In a source checkout, the catalog API reads compact tracked metadata from:
 
 ```text
 metadata/recovered_catalog/data_layer_records.csv
 metadata/recovered_catalog/virtual_layer_records.csv
+```
+
+Installed packages fall back to bundled copies of those compact CSVs under:
+
+```text
+fresh_hectaresbc/package_data/recovered_catalog/
 ```
 
 Catalog operations do not read bulky ZIP payloads, require the data submodule contents, or require Arbutus credentials. Resolution and status operations inspect only local filesystem metadata under `external/fresh-hectaresbc-data`; they do not retrieve annex content. Dry-run fetches validate the planned DataLad operation without network retrieval.

@@ -35,7 +35,13 @@ def default_metadata_root(start: Path | str | None = None) -> Path:
 def default_data_repo_path(start: Path | str | None = None) -> Path:
     """Return the default linked DataLad data-repository path."""
 
-    return find_repo_root(start) / DEFAULT_DATA_REPO
+    try:
+        return find_repo_root(start) / DEFAULT_DATA_REPO
+    except FileNotFoundError:
+        base = Path(start or Path.cwd()).resolve()
+        if base.is_file():
+            base = base.parent
+        return base / DEFAULT_DATA_REPO
 
 
 def raw_relative_path(source_zip_path: str | Path) -> Path:

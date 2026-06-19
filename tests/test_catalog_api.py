@@ -17,6 +17,19 @@ def test_catalog_loads_all_recovered_records() -> None:
     assert len({record.dataset_id for record in catalog}) == 2183
 
 
+def test_default_catalog_falls_back_to_package_data(tmp_path: Path) -> None:
+    catalog = Catalog.from_default_paths(start=tmp_path)
+
+    assert len(catalog) == 2183
+    assert catalog.get("dl_adminunits_bcts").title_candidate == "BCTS Operating Areas"
+    assert catalog.search("bull trout", limit=1)[0].dataset_id == (
+        "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135"
+    )
+    assert "package_data/recovered_catalog" in str(catalog.metadata_root).replace(
+        "\\", "/"
+    )
+
+
 def test_exact_lookup_preserves_recovered_fields() -> None:
     record = HectaresBC().get("dl_adminunits_bcts")
 
