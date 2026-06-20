@@ -7,10 +7,25 @@ const assert = require("assert");
 
 const repoRoot = path.join(__dirname, "..");
 const catalogPath = process.argv[2] || path.join(repoRoot, "web", "data", "catalog.json");
-const previewManifestPath =
-  process.argv[3] || path.join(repoRoot, "web", "data", "map_previews", "manifest.json");
+const previewIndexPath =
+  process.argv[3] ||
+  path.join(
+    repoRoot,
+    "external",
+    "fresh-hectaresbc-data",
+    "derived",
+    "web_map_previews",
+    "v1",
+    "index.json"
+  );
+const localPreviewManifestPath =
+  process.argv[4] || path.join(repoRoot, "web", "data", "map_previews", "manifest.json");
 const catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
-const previewManifest = JSON.parse(fs.readFileSync(previewManifestPath, "utf8"));
+const previewIndex = JSON.parse(fs.readFileSync(previewIndexPath, "utf8"));
+const localPreviewManifest = fs.existsSync(localPreviewManifestPath)
+  ? JSON.parse(fs.readFileSync(localPreviewManifestPath, "utf8"))
+  : null;
+const publishedPreviewRoot = "../external/fresh-hectaresbc-data/derived/web_map_previews/v1";
 
 class Element {
   constructor(tagName, id = "") {
@@ -226,19 +241,12 @@ const context = {
     },
   },
   fetch: async (url) => {
-    assert(
-      [
-        "data/catalog.json",
-        "data/map_previews/manifest.json",
-      ].includes(url)
-    );
+    const payload = jsonPayloadForUrl(url);
+    assert(payload !== undefined, `unexpected fetch URL: ${url}`);
     return {
-      ok: true,
+      ok: payload !== null,
       async json() {
-        if (url === "data/map_previews/manifest.json") {
-          return previewManifest;
-        }
-        return catalog;
+        return payload;
       },
     };
   },
@@ -311,7 +319,8 @@ setImmediate(async () => {
     const availableMap = document.querySelector("#map-preview").textContent;
     assert(availableMap.includes("BCTS Operating Areas"));
     assert(availableMap.includes("Rendered source preview"));
-    assert(availableMap.includes("dl_adminunits_bcts/preview.png"));
+    assert(availableMap.includes("layers/dl_adminunits_bcts/preview.png"));
+    assert(availableMap.includes("Artifact sourceDataLad published preview index"));
     assert(availableMap.includes("source_derived_preview"));
     assert(availableMap.includes("EPSG:3005"));
     assert(availableMap.includes("bcts.tiff"));
@@ -320,7 +329,7 @@ setImmediate(async () => {
     assert(availableMap.includes("Legend classes"));
     assert(availableMap.includes("Layer controls"));
     assert(availableMap.includes("BasemapNatural Resource Sector Administrative Regions"));
-    assert(availableMap.includes("Preview eligibilitysource_derived_preview"));
+    assert(availableMap.includes("Preview eligibilitymetadata_preview_candidate"));
     assert(availableMap.includes("Preview blockersnone"));
     const basemap = document.querySelector("#map-preview").querySelector(".map-reference-basemap");
     assert.strictEqual(basemap.dataset.basemap, "source-derived-reference");
@@ -337,7 +346,7 @@ setImmediate(async () => {
     const renderedLayer = document.querySelector("#map-preview").querySelector(".map-render-layer");
     assert.strictEqual(
       renderedLayer.src,
-      "data/map_previews/dl_adminunits_bcts/preview.png"
+      `${publishedPreviewRoot}/layers/dl_adminunits_bcts/preview.png`
     );
     assert.strictEqual(
       renderedLayer.alt,
@@ -346,7 +355,7 @@ setImmediate(async () => {
     assert.strictEqual(renderedLayer.dataset.layerDatasetId, "dl_adminunits_bcts");
     assert.strictEqual(
       renderedLayer.dataset.wgs84Bounds,
-      previewManifest.artifacts[0].wgs84_bounds
+      manifestForDataset("dl_adminunits_bcts").wgs84_bounds
         .map((value) => Number(value).toFixed(4))
         .join(", ")
     );
@@ -380,11 +389,23 @@ setImmediate(async () => {
     window.location.hash = "#map=vl_virtualspecies_bulltroutsalvelinusconfluentus_1135";
     window.dispatchEvent({type: "hashchange"});
     await settleAsyncRender();
+    assert.strictEqual(
+      document.querySelector("#map-status").textContent,
+      "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135"
+    );
+    const virtualMap = document.querySelector("#map-preview").textContent;
+    assert(virtualMap.includes("Bull Trout (Salvelinus confluentus)"));
+    assert(virtualMap.includes("Rendered source preview"));
+    assert(virtualMap.includes("layers/vl_virtualspecies_bulltroutsalvelinusconfluentus_1135/preview.png"));
+
+    window.location.hash = "#map=dl_pinebeetle_pinekill1999";
+    window.dispatchEvent({type: "hashchange"});
+    await settleAsyncRender();
     assert.strictEqual(document.querySelector("#map-status").textContent, "Preview unavailable");
     const unavailableMap = document.querySelector("#map-preview").textContent;
-    assert(unavailableMap.includes("Bull Trout (Salvelinus confluentus)"));
-    assert(unavailableMap.includes("not_supported"));
-    assert(unavailableMap.includes("unsupported_family"));
+    assert(unavailableMap.includes("% Pne Killed, 1999"));
+    assert(unavailableMap.includes("not_previewable"));
+    assert(unavailableMap.includes("not_previewable_empty_preview"));
 
     window.location.hash = "#map=missing-dataset-id";
     window.dispatchEvent({type: "hashchange"});
@@ -428,4 +449,36 @@ function hasClass(node, className) {
     .split(/\s+/)
     .filter(Boolean)
     .includes(className);
+}
+
+function jsonPayloadForUrl(url) {
+  if (url === "data/catalog.json") {
+    return catalog;
+  }
+  if (url === `${publishedPreviewRoot}/index.json`) {
+    return previewIndex;
+  }
+  if (url === "data/map_previews/manifest.json") {
+    return localPreviewManifest;
+  }
+  if (url.startsWith(`${publishedPreviewRoot}/layers/`) && url.endsWith("/manifest.json")) {
+    const datasetId = path.basename(path.dirname(url));
+    return manifestForDataset(datasetId);
+  }
+  return undefined;
+}
+
+function manifestForDataset(datasetId) {
+  const manifestPath = path.join(
+    repoRoot,
+    "external",
+    "fresh-hectaresbc-data",
+    "derived",
+    "web_map_previews",
+    "v1",
+    "layers",
+    datasetId,
+    "manifest.json"
+  );
+  return JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 }

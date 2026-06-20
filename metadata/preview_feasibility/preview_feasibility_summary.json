@@ -1,0 +1,21 @@
+{
+  "family_counts": {
+    "data_layer": 418,
+    "virtual_layer": 1765
+  },
+  "family_status_counts": {
+    "data_layer": {
+      "metadata_preview_candidate": 418
+    },
+    "virtual_layer": {
+      "metadata_preview_candidate": 1765
+    }
+  },
+  "generated_at": "2026-06-20T03:14:09+00:00",
+  "limit": null,
+  "record_count": 2183,
+  "sample_size": 0,
+  "status_counts": {
+    "metadata_preview_candidate": 2183
+  }
+}
