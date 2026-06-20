@@ -244,7 +244,7 @@ commands without pretending that future AOI/download services already exist.
 
 GitHub parent issue: #126
 
-Status: planned backlog
+Active branch: `feature/p16-full-layer-preview-publication`
 
 Phase 16 queues full source-derived preview coverage for the browser map app.
 The goal is to compile useful preview artifacts for all feasible recovered
@@ -262,7 +262,7 @@ The intended ownership split is:
   so a cold clone can retrieve representative preview artifacts without private
   local paths.
 
-- [ ] P16.1 Define full preview artifact contract and DataLad storage layout. Child issue: #129.
+- [x] P16.1 Define full preview artifact contract and DataLad storage layout. Child issue: #129.
 - [ ] P16.2 Audit all layer preview feasibility. Child issue: #127.
 - [ ] P16.3 Implement batch preview generation and resumable validation. Child issue: #128.
 - [ ] P16.4 Publish generated preview artifacts to the DataLad object store. Child issue: #132.
@@ -282,5 +282,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Activate Phase 16 only when ready to start full preview coverage work, by creating the feature branch from `main` and updating issue #126 from planned backlog to active.
-2. Keep any earlier ad hoc preview expansion aligned with the Phase 16 storage rule: generated preview payloads belong in the DataLad-backed data repo and object-store remote, not in this main repo.
+1. Continue with P16.2 all-layer preview feasibility audit (#127).
+2. Do not batch-generate or publish preview payloads until the P16.2 audit is complete.
+3. Keep generated preview payloads routed to the DataLad-backed data repo layout defined in `planning/full_layer_preview_artifact_contract.md`.

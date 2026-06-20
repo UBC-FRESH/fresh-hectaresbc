@@ -7,6 +7,8 @@
 - Verified Phase 15 locally with a warning-clean Sphinx HTML build, 53 passing Python tests, and `git diff --check`.
 - Merged Phase 15 Sphinx docs and GitHub Pages publication to `main` via PR #125.
 - Queued Phase 16 full layer preview artifact publication with parent issue #126 and child issues #129, #127, #128, #132, #130, and #131, explicitly routing bulky generated preview artifacts to the DataLad-backed data repository and object-store remote.
+- Activated Phase 16 on branch `feature/p16-full-layer-preview-publication` and started P16.1 with a full layer preview artifact contract for the DataLad-backed derived preview layout.
+- Completed P16.1 with `planning/full_layer_preview_artifact_contract.md`, defining the DataLad-backed `derived/web_map_previews/v1/` layout, Git-tracked versus annexed artifact split, per-layer manifest fields, object-store publication requirements, and validation gates for future full preview compilation.
 
 ## 2026-06-18
 
