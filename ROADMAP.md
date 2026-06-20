@@ -198,7 +198,7 @@ Phase 12 replaces the Phase 11 fixture happy path with a real source-derived ras
 - [x] P12.2 Implement source-derived raster PNG preview generator. Child issue: #107.
 - [x] P12.3 Update browser map renderer for raster overlay artifacts. Child issue: #108.
 - [x] P12.4 Add real-data smoke checks and tests. Child issue: #109.
-- [ ] P12.5 Document and close source-derived preview phase. Child issue: #110.
+- [x] P12.5 Document and close source-derived preview phase. Child issue: #110.
 
 ## Phase 13: Future Workflow Hardening
 
@@ -213,6 +213,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P12.5 by documenting the source-derived preview workflow, rerunning closeout verification, and preparing the phase PR for merge.
-2. Close P12.5 only after its checklist, documentation, and verification are complete.
-3. Merge the Phase 12 branch back to `main` only after the source-derived BCTS preview is documented and verified.
+1. Merge Phase 12 PR #111 back to `main`.
+2. Close the Phase 12 parent issue #105 after the PR merge is complete.
+3. Start the next roadmap phase only after Phase 12 is closed, unless a parallel lane is explicitly approved.
