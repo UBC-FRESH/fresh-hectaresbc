@@ -264,7 +264,7 @@ The intended ownership split is:
 
 - [x] P16.1 Define full preview artifact contract and DataLad storage layout. Child issue: #129.
 - [x] P16.2 Audit all layer preview feasibility. Child issue: #127.
-- [ ] P16.3 Implement batch preview generation and resumable validation. Child issue: #128.
+- [x] P16.3 Implement batch preview generation and resumable validation. Child issue: #128.
 - [ ] P16.4 Publish generated preview artifacts to the DataLad object store. Child issue: #132.
 - [ ] P16.5 Update browser app to consume published preview manifests. Child issue: #130.
 - [ ] P16.6 Verify, document, and close full preview publication phase. Child issue: #131.
@@ -282,6 +282,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Continue with P16.3 batch preview generation and resumable validation (#128).
-2. Use `metadata/preview_feasibility/layer_preview_feasibility.csv` as the source audit input for batch generation.
+1. Continue with P16.4 publishing generated preview artifacts to the DataLad object store (#132).
+2. Use `scripts/generate_layer_preview_batch.py` and `metadata/preview_feasibility/layer_preview_feasibility.csv` for the full generation run.
 3. Keep generated preview payloads routed to the DataLad-backed data repo layout defined in `planning/full_layer_preview_artifact_contract.md`.
