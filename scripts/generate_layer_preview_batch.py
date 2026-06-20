@@ -9,6 +9,7 @@ import json
 import sys
 import warnings
 from collections import Counter
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -97,6 +98,12 @@ def main() -> int:
         help="Regenerate layers even when manifest and PNG already exist.",
     )
     parser.add_argument(
+        "--workers",
+        type=int,
+        default=1,
+        help="Number of parallel worker processes.",
+    )
+    parser.add_argument(
         "--progress-every",
         type=int,
         default=25,
@@ -120,6 +127,7 @@ def main() -> int:
         local_archive_root=args.local_archive_root,
         max_size=args.max_size,
         force=args.force,
+        workers=args.workers,
         progress_every=args.progress_every,
     )
     print(
@@ -141,6 +149,7 @@ def generate_batch(
     local_archive_root: Path = DEFAULT_LOCAL_ARCHIVE_ROOT,
     max_size: int = DEFAULT_MAX_SIZE,
     force: bool = False,
+    workers: int = 1,
     progress_every: int = 0,
 ) -> dict[str, Any]:
     output_root.mkdir(parents=True, exist_ok=True)
@@ -148,33 +157,35 @@ def generate_batch(
     failures: list[dict[str, str]] = []
     started_at = datetime.now(UTC).replace(microsecond=0).isoformat()
 
-    for index, row in enumerate(rows, start=1):
-        dataset_id = row["dataset_id"]
-        if progress_every > 0 and (index == 1 or index % progress_every == 0):
-            print(f"generating {index}/{len(rows)} {dataset_id}", file=sys.stderr, flush=True)
+    if workers <= 1:
+        for index, row in enumerate(rows, start=1):
+            if progress_every > 0 and (index == 1 or index % progress_every == 0):
+                print(f"generating {index}/{len(rows)} {row['dataset_id']}", file=sys.stderr, flush=True)
 
-        layer_dir = output_root / "layers" / dataset_id
-        manifest_path = layer_dir / "manifest.json"
-        preview_path = layer_dir / "preview.png"
-        if not force and manifest_path.exists() and preview_path.exists():
-            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-            layers.append(_index_entry_from_manifest(manifest, skipped=True))
-            continue
+            layer, failure = _process_one(row, output_root, local_archive_root, max_size, force)
+            layers.append(layer)
+            if failure is not None:
+                failures.append(failure)
+    else:
+        work_items = [
+            (row, output_root, local_archive_root, max_size, force)
+            for row in rows
+        ]
+        with ProcessPoolExecutor(max_workers=workers) as executor:
+            futures = [executor.submit(_process_one_worker, item) for item in work_items]
+            for index, future in enumerate(as_completed(futures), start=1):
+                layer, failure = future.result()
+                layers.append(layer)
+                if failure is not None:
+                    failures.append(failure)
+                if progress_every > 0 and (index == 1 or index % progress_every == 0):
+                    print(
+                        f"generated {index}/{len(rows)} {layer['dataset_id']}",
+                        file=sys.stderr,
+                        flush=True,
+                    )
 
-        source = _resolve_source_zip(row, local_archive_root)
-        try:
-            manifest = _generate_one(row, source, output_root=output_root, max_size=max_size)
-            _validate_manifest(manifest)
-            layer_dir.mkdir(parents=True, exist_ok=True)
-            manifest_path.write_text(
-                json.dumps(manifest, indent=2, sort_keys=True) + "\n",
-                encoding="utf-8",
-            )
-            layers.append(_index_entry_from_manifest(manifest, skipped=False))
-        except Exception as error:  # noqa: BLE001 - batch output should capture row-level failures.
-            failure = _failure_record(row, source, error)
-            failures.append(failure)
-            layers.append(_index_entry_from_failure(failure))
+    layers.sort(key=lambda layer: layer["dataset_id"])
 
     summary = _write_batch_outputs(
         output_root,
@@ -186,6 +197,42 @@ def generate_batch(
     )
     _validate_no_private_fragments(output_root)
     return summary
+
+
+def _process_one_worker(
+    item: tuple[dict[str, str], Path, Path, int, bool],
+) -> tuple[dict[str, Any], dict[str, str] | None]:
+    return _process_one(*item)
+
+
+def _process_one(
+    row: dict[str, str],
+    output_root: Path,
+    local_archive_root: Path,
+    max_size: int,
+    force: bool,
+) -> tuple[dict[str, Any], dict[str, str] | None]:
+    dataset_id = row["dataset_id"]
+    layer_dir = output_root / "layers" / dataset_id
+    manifest_path = layer_dir / "manifest.json"
+    preview_path = layer_dir / "preview.png"
+    if not force and manifest_path.exists() and preview_path.exists():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        return _index_entry_from_manifest(manifest, skipped=True), None
+
+    source = _resolve_source_zip(row, local_archive_root)
+    try:
+        manifest = _generate_one(row, source, output_root=output_root, max_size=max_size)
+        _validate_manifest(manifest)
+        layer_dir.mkdir(parents=True, exist_ok=True)
+        manifest_path.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        return _index_entry_from_manifest(manifest, skipped=False), None
+    except Exception as error:  # noqa: BLE001 - batch output should capture row-level failures.
+        failure = _failure_record(row, source, error)
+        return _index_entry_from_failure(failure), failure
 
 
 def _resolve_source_zip(row: dict[str, str], local_archive_root: Path) -> SourceZip:
