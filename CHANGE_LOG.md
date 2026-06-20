@@ -12,6 +12,7 @@
 - Completed P16.2 by adding `scripts/audit_layer_preview_feasibility.py` and compact outputs in `metadata/preview_feasibility/`, auditing all 2,183 recovered records for readable raster headers, CRS, bounds, dimensions, nodata, source member paths, WMS class counts, and sanitized DataLad/local source resolution.
 - Completed P16.3 by adding `scripts/generate_layer_preview_batch.py`, a resumable batch generator that writes per-layer preview PNGs, manifests, a root `index.json`, validation summaries, and failed-layer CSVs under the contracted DataLad preview layout, with tests and representative data/virtual-layer smoke generation.
 - Completed P16.4 by generating and publishing the full `derived/web_map_previews/v1/` artifact set in `UBC-FRESH/fresh-hectaresbc-data` through commit `c4903168`: 2,183 catalog records indexed, 2,163 source-derived preview PNGs annexed and copied to `arbutus-s3`, 20 records marked `not_previewable`, and representative `whereis` plus cold-clone retrieval checks recorded in the data repo publication report.
+- Completed P16.5 by updating the browser map preview loader to prefer the published DataLad preview index, lazily fetch per-layer manifests from `external/fresh-hectaresbc-data/derived/web_map_previews/v1/`, keep the ignored local `web/data/map_previews/` manifest as a fallback and basemap-reference source, render published data-layer and virtual-layer preview PNGs, expose `not_previewable` states, and verify the behavior in DOM smoke coverage.
 
 ## 2026-06-18
 

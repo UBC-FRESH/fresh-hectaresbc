@@ -18,12 +18,16 @@ const DEFAULT_LAYER_OPTIONS = {
   visible: true,
   opacity: 0.85,
 };
+const PUBLISHED_PREVIEW_ROOT = "../external/fresh-hectaresbc-data/derived/web_map_previews/v1";
+const LOCAL_PREVIEW_ROOT = "data/map_previews";
 
 const state = {
   catalog: null,
   previewManifest: null,
+  localPreviewManifest: null,
   previewManifestStatus: "loading",
   previewArtifactCache: new Map(),
+  previewManifestCache: new Map(),
   previewRenderToken: 0,
   mapLayerOptions: new Map(),
   query: "",
@@ -57,17 +61,63 @@ async function loadCatalog() {
 }
 
 async function loadPreviewManifest() {
-  try {
-    const response = await fetch("data/map_previews/manifest.json");
-    if (!response.ok) {
-      throw new Error(`Preview manifest request failed with ${response.status}`);
-    }
-    state.previewManifest = await response.json();
-    state.previewManifestStatus = "available";
-  } catch (error) {
-    state.previewManifest = null;
-    state.previewManifestStatus = "unavailable";
+  const published = await fetchJson(`${PUBLISHED_PREVIEW_ROOT}/index.json`);
+  const local = await fetchJson(`${LOCAL_PREVIEW_ROOT}/manifest.json`);
+
+  state.localPreviewManifest = local ? adaptPreviewManifest(local, LOCAL_PREVIEW_ROOT, "local") : null;
+  if (published) {
+    state.previewManifest = adaptPreviewManifest(published, PUBLISHED_PREVIEW_ROOT, "published");
+    state.previewManifestStatus = "published";
+    return;
   }
+  if (state.localPreviewManifest) {
+    state.previewManifest = state.localPreviewManifest;
+    state.previewManifestStatus = "local";
+    return;
+  }
+
+  state.previewManifest = null;
+  state.previewManifestStatus = "unavailable";
+}
+
+async function fetchJson(path) {
+  try {
+    const response = await fetch(path);
+    if (!response.ok) {
+      return null;
+    }
+    return await response.json();
+  } catch (error) {
+    return null;
+  }
+}
+
+function adaptPreviewManifest(manifest, baseUrl, sourceKind) {
+  if (Array.isArray(manifest.artifacts)) {
+    return {
+      ...manifest,
+      source_kind: sourceKind,
+      base_url: baseUrl,
+      artifacts: manifest.artifacts.map((artifact) => adaptArtifact(artifact, baseUrl, sourceKind)),
+      reference_layers: (manifest.reference_layers || []).map((layer) => adaptArtifact(layer, baseUrl, sourceKind)),
+    };
+  }
+
+  return {
+    ...manifest,
+    source_kind: sourceKind,
+    base_url: baseUrl,
+    artifacts: (manifest.layers || []).map((artifact) => adaptArtifact(artifact, baseUrl, sourceKind)),
+    reference_layers: (manifest.reference_layers || []).map((layer) => adaptArtifact(layer, baseUrl, sourceKind)),
+  };
+}
+
+function adaptArtifact(artifact, baseUrl, sourceKind) {
+  return {
+    ...artifact,
+    artifact_source: sourceKind,
+    artifact_base_url: baseUrl,
+  };
 }
 
 function renderCatalogSummary(catalog) {
@@ -297,13 +347,31 @@ async function renderMapPreview() {
     mapPreviewNode.replaceChildren(renderUnavailableMap(record));
     return;
   }
+  if (!isAvailablePreviewArtifact(artifact)) {
+    mapStatusNode.textContent = "Preview unavailable";
+    mapPreviewNode.className = "map-preview";
+    mapPreviewNode.replaceChildren(renderUnavailableMap(record, artifact));
+    return;
+  }
 
   mapStatusNode.textContent = record.dataset_id;
   mapPreviewNode.className = "map-preview has-record";
   mapPreviewNode.replaceChildren(renderMapScaffold(record, artifact, {status: "loading"}));
 
   if (artifact.artifact_kind === "raster_png") {
-    mapPreviewNode.replaceChildren(renderMapScaffold(record, artifact, {raster: true}));
+    try {
+      const detailedArtifact = await loadPreviewManifestDetails(artifact);
+      if (state.previewRenderToken !== renderToken) {
+        return;
+      }
+      mapPreviewNode.replaceChildren(renderMapScaffold(record, detailedArtifact, {raster: true}));
+    } catch (error) {
+      if (state.previewRenderToken !== renderToken) {
+        return;
+      }
+      mapStatusNode.textContent = "Preview manifest missing";
+      mapPreviewNode.replaceChildren(renderMapScaffold(record, artifact, {error}));
+    }
     return;
   }
 
@@ -327,8 +395,45 @@ function findPreviewArtifact(datasetId) {
   return artifacts.find((artifact) => artifact.dataset_id === datasetId) || null;
 }
 
+function isAvailablePreviewArtifact(artifact) {
+  return Boolean(
+    artifact?.artifact_path &&
+      artifact?.manifest_path &&
+      ["already_present", "source_derived_preview"].includes(artifact.artifact_status)
+  );
+}
+
+async function loadPreviewManifestDetails(artifact) {
+  if (hasDetailedRasterMetadata(artifact)) {
+    return artifact;
+  }
+
+  const path = artifactUrl(artifact, artifact.manifest_path);
+  if (state.previewManifestCache.has(path)) {
+    return state.previewManifestCache.get(path);
+  }
+
+  const response = await fetch(path);
+  if (!response.ok) {
+    throw new Error(`Preview manifest request failed with ${response.status}`);
+  }
+  const manifest = adaptArtifact(await response.json(), artifact.artifact_base_url, artifact.artifact_source);
+  state.previewManifestCache.set(path, manifest);
+  return manifest;
+}
+
+function hasDetailedRasterMetadata(artifact) {
+  return Boolean(
+    artifact &&
+      artifact.crs &&
+      artifact.raster_width &&
+      artifact.preview_width &&
+      Array.isArray(artifact.value_classes)
+  );
+}
+
 async function loadPreviewArtifact(artifact) {
-  const path = `data/map_previews/${artifact.artifact_path}`;
+  const path = artifactUrl(artifact, artifact.artifact_path);
   if (state.previewArtifactCache.has(path)) {
     return state.previewArtifactCache.get(path);
   }
@@ -410,6 +515,7 @@ function mapArtifactRows(record, artifact, options) {
     ["Title", record.title],
     ["Source ZIP", record.source_zip_path],
     ["Artifact", artifact.artifact_path],
+    ["Artifact source", artifactSourceLabel(artifact)],
     ["Artifact status", artifact.artifact_status],
     ["Artifact kind", artifact.artifact_kind],
     ["CRS", artifact.crs],
@@ -451,7 +557,10 @@ function basemapDescription(referenceLayer) {
 }
 
 function findReferenceLayer() {
-  const layers = state.previewManifest?.reference_layers || [];
+  const layers = [
+    ...(state.previewManifest?.reference_layers || []),
+    ...(state.localPreviewManifest?.reference_layers || []),
+  ];
   return (
     layers.find((layer) => layer.role === "source_derived_basemap_reference") ||
     null
@@ -468,7 +577,7 @@ function renderReferenceBasemap(referenceLayer) {
 
   const image = document.createElement("img");
   image.className = "map-reference-basemap";
-  image.src = `data/map_previews/${referenceLayer.artifact_path}`;
+  image.src = artifactUrl(referenceLayer, referenceLayer.artifact_path);
   image.alt = `${referenceLayer.title} source-derived basemap reference`;
   image.dataset.basemap = "source-derived-reference";
   image.dataset.layerDatasetId = referenceLayer.dataset_id;
@@ -485,7 +594,7 @@ function renderReferenceBasemap(referenceLayer) {
 function renderRasterLayer(artifact) {
   const image = document.createElement("img");
   image.className = "map-render-layer map-raster-layer";
-  image.src = `data/map_previews/${artifact.artifact_path}`;
+  image.src = artifactUrl(artifact, artifact.artifact_path);
   image.alt = `${artifact.title} source-derived raster preview`;
   image.dataset.layerDatasetId = artifact.dataset_id;
   image.dataset.wgs84Bounds = formatBounds(artifact.wgs84_bounds);
@@ -733,7 +842,7 @@ function featureCount(geojson) {
   return geojson.features.length.toLocaleString();
 }
 
-function renderUnavailableMap(record) {
+function renderUnavailableMap(record, artifact) {
   const panel = document.createElement("div");
   panel.className = "map-unavailable";
   panel.append(
@@ -741,9 +850,11 @@ function renderUnavailableMap(record) {
     definitionList([
       ["Dataset ID", record.dataset_id],
       ["Source ZIP", record.source_zip_path],
+      ["Artifact source", artifact ? artifactSourceLabel(artifact) : previewManifestStatusLabel()],
+      ["Artifact status", artifact?.artifact_status || "missing"],
       ["Eligibility", record.preview?.eligibility_status || "unknown"],
-      ["Reason", unavailableReason(record)],
-      ["Blockers", (record.preview?.eligibility_blockers || []).join(", ") || "none"],
+      ["Reason", unavailableReason(record, artifact)],
+      ["Blockers", previewBlockers(record, artifact).join(", ") || "none"],
       ["Catalog detail", detailRouteLink(record)],
     ])
   );
@@ -755,6 +866,31 @@ function renderUnavailableMap(record) {
     panel.append(missing);
   }
   return panel;
+}
+
+function artifactUrl(artifact, relativePath) {
+  const baseUrl = artifact?.artifact_base_url || state.previewManifest?.base_url || LOCAL_PREVIEW_ROOT;
+  return `${baseUrl}/${relativePath}`;
+}
+
+function artifactSourceLabel(artifact) {
+  if (artifact?.artifact_source === "published") {
+    return "DataLad published preview index";
+  }
+  if (artifact?.artifact_source === "local") {
+    return "local generated preview artifacts";
+  }
+  return previewManifestStatusLabel();
+}
+
+function previewManifestStatusLabel() {
+  if (state.previewManifestStatus === "published") {
+    return "DataLad published preview index";
+  }
+  if (state.previewManifestStatus === "local") {
+    return "local generated preview artifacts";
+  }
+  return "preview index unavailable";
 }
 
 function mapPanelHeading(record, status) {
@@ -776,11 +912,24 @@ function detailRouteLink(record) {
   return link;
 }
 
-function unavailableReason(record) {
+function unavailableReason(record, artifact = null) {
+  if (artifact?.artifact_status === "not_previewable") {
+    return "The published preview batch inspected this layer but did not find visible preview pixels.";
+  }
+  if (artifact?.artifact_status) {
+    return `Published preview artifact status is ${artifact.artifact_status}.`;
+  }
   return (
     record.preview?.eligibility_reason ||
     "No generated preview artifact is available for this record."
   );
+}
+
+function previewBlockers(record, artifact = null) {
+  if (Array.isArray(artifact?.preview_eligibility_blockers)) {
+    return artifact.preview_eligibility_blockers;
+  }
+  return record.preview?.eligibility_blockers || [];
 }
 
 function previewStatusLabel(record) {
