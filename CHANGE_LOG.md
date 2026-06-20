@@ -121,3 +121,4 @@
 - Merged Phase 11 browser map preview implementation to `main` via PR #103.
 - Activated Phase 12 source-derived real map previews with parent issue #105, feature branch `feature/p12-source-derived-map-previews`, draft PR #111, and child issues #106-#110.
 - Completed P12.1 by auditing `dl_adminunits_bcts` as the first source-derived preview target, confirming `bcts.tiff` is readable from the recovered ZIP with `EPSG:3005`, BC Albers and WGS84 bounds, `int16` categorical values 1-12, nodata `-9999`, and 12 legend classes/colors from `bcts.wms.xml`.
+- Completed P12.2 by adding raster preview generation dependencies, replacing the map-preview fixture generator with a source-derived `dl_adminunits_bcts` PNG/RGBA artifact workflow, producing sanitized schema-v2 manifest metadata with real CRS/bounds/classes/provenance, and updating artifact smoke tests for non-empty PNG validation.

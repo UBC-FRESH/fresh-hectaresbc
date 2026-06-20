@@ -7,6 +7,8 @@ import argparse
 import json
 from pathlib import Path
 
+from PIL import Image
+
 
 DEFAULT_PREVIEW_ROOT = Path("web/data/map_previews")
 
@@ -26,44 +28,44 @@ def main() -> int:
 
     manifest_path = args.preview_root / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    _require(manifest["schema_version"] == 1, "unexpected manifest schema version")
+    _require(manifest["schema_version"] == 2, "unexpected manifest schema version")
     _require(manifest["artifact_count"] == 1, "unexpected artifact count")
-    _require(manifest["artifact_format"] == "geojson", "unexpected artifact format")
+    _require(manifest["artifact_format"] == "raster_png", "unexpected artifact format")
     _require(
-        manifest["artifact_scope"] == "ui_fixture_pending_payload_derivation",
+        manifest["artifact_scope"] == "source_derived_payload_preview",
         "unexpected artifact scope",
     )
     _require(
         manifest["representative_records"]["data_layer_candidate"]
-        == "dl_water_cwb_canals",
+        == "dl_adminunits_bcts",
         "unexpected data-layer representative",
     )
 
     artifact = manifest["artifacts"][0]
-    _require(artifact["dataset_id"] == "dl_water_cwb_canals", "unexpected dataset")
+    _require(artifact["dataset_id"] == "dl_adminunits_bcts", "unexpected dataset")
     _require(
-        artifact["artifact_status"] == "fixture_pending_source_derivation",
+        artifact["artifact_status"] == "source_derived_preview",
         "unexpected artifact status",
     )
-    _require(
-        artifact["preview_eligibility_blockers"] == ["missing_crs", "missing_extent"],
-        "unexpected eligibility blockers",
-    )
+    _require(artifact["artifact_kind"] == "raster_png", "unexpected artifact kind")
+    _require(artifact["preview_eligibility_blockers"] == [], "unexpected blockers")
+    _require(artifact["crs"] == "EPSG:3005", "unexpected CRS")
+    _require(artifact["internal_raster_path"] == "bcts.tiff", "unexpected raster path")
+    _require(artifact["source_zip_path"] == "data_layers/adminunits_bcts.zip", "unexpected source")
+    _require(artifact["value_class_count"] == 12, "unexpected class count")
+    _require(len(artifact["value_classes"]) == 12, "unexpected classes")
+    _require(artifact["preview_width"] > 0, "missing preview width")
+    _require(artifact["preview_height"] > 0, "missing preview height")
 
-    geojson_path = args.preview_root / artifact["artifact_path"]
-    geojson = json.loads(geojson_path.read_text(encoding="utf-8"))
-    _require(geojson["type"] == "FeatureCollection", "not a FeatureCollection")
-    _require(len(geojson["features"]) == 1, "unexpected feature count")
-    feature = geojson["features"][0]
-    _require(feature["geometry"]["type"] == "LineString", "unexpected geometry")
-    _require(feature["properties"]["fixture"] is True, "fixture flag missing")
-    _require(
-        "not recovered HectaresBC canal geometry"
-        in feature["properties"]["fixture_warning"],
-        "fixture warning missing",
-    )
+    png_path = args.preview_root / artifact["artifact_path"]
+    _require(png_path.exists(), "preview PNG missing")
+    with Image.open(png_path) as image:
+        _require(image.mode == "RGBA", "preview PNG is not RGBA")
+        _require(image.size == (artifact["preview_width"], artifact["preview_height"]), "size mismatch")
+        alpha = image.getchannel("A")
+        _require(alpha.getbbox() is not None, "preview PNG has no visible pixels")
 
-    serialized = json.dumps({"manifest": manifest, "geojson": geojson}, sort_keys=True)
+    serialized = json.dumps({"manifest": manifest}, sort_keys=True)
     for fragment in ("/home/", "tmp/shared-data/hectaresbc", "aws-secrets"):
         _require(fragment not in serialized, f"artifact leaks forbidden fragment: {fragment}")
 

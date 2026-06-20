@@ -23,7 +23,10 @@ fresh-hectaresbc = "fresh_hectaresbc.cli:app"
 dev = [
   "build>=1",
   "datalad[full]>=1",
+  "numpy>=1.24",
+  "Pillow>=10",
   "pytest>=8",
+  "rasterio>=1.3",
 ]
 
 [tool.setuptools.packages.find]
