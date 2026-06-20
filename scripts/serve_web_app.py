@@ -13,6 +13,7 @@ from urllib.parse import unquote, urlsplit
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+ROOT_REDIRECT_LOCATION = "web/"
 ALLOWED_PREFIXES = (
     "/web/",
     "/external/fresh-hectaresbc-data/derived/web_map_previews/v1/",
@@ -25,7 +26,7 @@ class FreshHectaresBCHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self) -> None:
         if self.path in {"", "/"}:
             self.send_response(302)
-            self.send_header("Location", "/web/")
+            self.send_header("Location", ROOT_REDIRECT_LOCATION)
             self.end_headers()
             return
         super().do_GET()
@@ -33,7 +34,7 @@ class FreshHectaresBCHandler(http.server.SimpleHTTPRequestHandler):
     def do_HEAD(self) -> None:
         if self.path in {"", "/"}:
             self.send_response(302)
-            self.send_header("Location", "/web/")
+            self.send_header("Location", ROOT_REDIRECT_LOCATION)
             self.end_headers()
             return
         super().do_HEAD()

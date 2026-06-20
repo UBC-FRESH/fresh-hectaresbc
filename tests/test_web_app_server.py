@@ -1,4 +1,13 @@
-from scripts.serve_web_app import is_allowed_path, normalized_url_path
+from scripts.serve_web_app import (
+    ROOT_REDIRECT_LOCATION,
+    is_allowed_path,
+    normalized_url_path,
+)
+
+
+def test_web_app_server_root_redirect_is_proxy_relative() -> None:
+    assert ROOT_REDIRECT_LOCATION == "web/"
+    assert not ROOT_REDIRECT_LOCATION.startswith("/")
 
 
 def test_web_app_server_allows_only_browser_and_preview_paths() -> None:
