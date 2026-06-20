@@ -128,3 +128,4 @@
 - Merged Phase 12 source-derived real map previews to `main` via PR #111.
 - Activated Phase 13 map context and preview coverage with parent issue #112, feature branch `feature/p13-map-context-preview-coverage`, and child issues #113-#114.
 - Completed P13.1 by adding an offline minimalist basemap/context SVG layer behind map preview overlays, preserving the source-derived BCTS raster overlay and controls, exposing basemap status in the layer panel, and adding DOM smoke assertions that the real map route includes the contextual basemap.
+- Completed P13.2 by documenting that the current source-derived preview generator is configured only for `dl_adminunits_bcts`, while the browser renderer can display additional raster PNG artifacts once generated, and by recording the next expansion path as source-readability audits plus per-layer generator configuration and tests.

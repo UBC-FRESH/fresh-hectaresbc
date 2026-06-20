@@ -209,7 +209,7 @@ Active branch: `feature/p13-map-context-preview-coverage`
 Phase 13 follows the first real source-derived preview by improving the map-preview user experience and making current preview coverage limits explicit. The immediate product fix is a restrained offline basemap/context layer behind preview overlays so real raster layers do not appear to float in an empty viewport. The current source-derived preview generator remains configured for `dl_adminunits_bcts` only until a later layer-expansion slice audits and adds more source configs.
 
 - [x] P13.1 Add minimalist basemap context behind preview overlays. Child issue: #113.
-- [ ] P13.2 Document preview coverage limits and expansion path. Child issue: #114.
+- [x] P13.2 Document preview coverage limits and expansion path. Child issue: #114.
 
 ## Phase 14: Future Workflow Hardening
 
@@ -224,6 +224,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P13.2 by documenting current preview coverage limits and the next layer-expansion path.
-2. Open a Phase 13 PR after P13.2 is complete and verified.
-3. Merge the Phase 13 branch back to `main` only after both child issues are complete.
+1. Open and merge the Phase 13 PR after closeout verification.
+2. Close parent issue #112 after the PR merge is complete.
+3. Start the next roadmap phase only after Phase 13 is closed, unless a parallel lane is explicitly approved.
