@@ -336,21 +336,22 @@ function renderMapScaffold(record, artifact, options = {}) {
   const viewport = document.createElement("section");
   viewport.className = "map-viewport";
   viewport.setAttribute("aria-label", `Map preview for ${record.title}`);
+  const basemap = renderBasemapContext(artifact);
   const grid = document.createElement("div");
   grid.className = "map-grid";
   const label = document.createElement("div");
   label.className = "map-placeholder-label";
   if (options.raster) {
-    viewport.append(grid, renderRasterLayer(artifact), label);
+    viewport.append(basemap, grid, renderRasterLayer(artifact), label);
     label.textContent = "Rendered source preview";
   } else if (options.geojson) {
-    viewport.append(grid, renderGeoJsonLayer(options.geojson, artifact), label);
+    viewport.append(basemap, grid, renderGeoJsonLayer(options.geojson, artifact), label);
     label.textContent = "Rendered preview artifact";
   } else if (options.error) {
-    viewport.append(grid, renderMapError(options.error), label);
+    viewport.append(basemap, grid, renderMapError(options.error), label);
     label.textContent = "Preview artifact missing";
   } else {
-    viewport.append(grid, label);
+    viewport.append(basemap, grid, label);
     label.textContent = "Loading preview artifact";
   }
 
@@ -393,7 +394,8 @@ function mapArtifactRows(record, artifact, options) {
       ["Preview size", `${artifact.preview_width} x ${artifact.preview_height}`],
       ["Internal raster", artifact.internal_raster_path],
       ["Legend source", artifact.internal_wms_path],
-      ["Legend classes", legendList(artifact.value_classes || [])]
+      ["Legend classes", legendList(artifact.value_classes || [])],
+      ["Basemap", "offline minimalist context"]
     );
   } else {
     rows.push(
@@ -412,6 +414,51 @@ function mapArtifactRows(record, artifact, options) {
   return rows;
 }
 
+function renderBasemapContext(artifact) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.className = "map-basemap";
+  svg.setAttribute("viewBox", "0 0 100 100");
+  svg.setAttribute("preserveAspectRatio", "none");
+  svg.setAttribute("aria-label", "Offline minimalist basemap context");
+  svg.dataset.basemap = "minimalist-context";
+  svg.dataset.layerDatasetId = artifact.dataset_id;
+
+  const ocean = svgRect(0, 0, 100, 100, "map-basemap-ocean");
+  const land = svgPath(
+    "M22 0 L100 0 L100 100 L16 100 L12 88 L17 76 L10 65 L18 53 L14 43 L22 31 L18 17 Z",
+    "map-basemap-land"
+  );
+  const coast = svgPath(
+    "M20 7 C27 16 25 23 20 31 C14 40 18 50 12 58 C8 64 16 73 13 82 C11 88 16 94 18 100",
+    "map-basemap-coast"
+  );
+  const island = svgPath(
+    "M12 71 C17 76 16 84 12 91 C8 86 7 78 12 71 Z",
+    "map-basemap-island"
+  );
+  const border = svgPath("M78 0 L75 21 L78 45 L74 72 L77 100", "map-basemap-border");
+  svg.append(ocean, land, island, coast, border);
+
+  for (const position of [20, 40, 60, 80]) {
+    svg.append(svgLine(position, 0, position, 100, "map-basemap-graticule"));
+    svg.append(svgLine(0, position, 100, position, "map-basemap-graticule"));
+  }
+
+  const labels = [
+    [20, 82, "Pacific"],
+    [35, 23, "BC"],
+    [55, 16, "Interior"],
+    [42, 83, "Vancouver"],
+    [33, 91, "Victoria"],
+    [58, 44, "Prince George"],
+  ];
+  for (const [x, y, text] of labels) {
+    svg.append(svgText(x, y, text, "map-basemap-label"));
+  }
+
+  return svg;
+}
+
 function renderRasterLayer(artifact) {
   const image = document.createElement("img");
   image.className = "map-render-layer map-raster-layer";
@@ -424,6 +471,42 @@ function renderRasterLayer(artifact) {
   });
   applyLayerOptionsToNode(image, layerOptions(artifact.dataset_id));
   return image;
+}
+
+function svgRect(x, y, width, height, className) {
+  const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  rect.setAttribute("x", x);
+  rect.setAttribute("y", y);
+  rect.setAttribute("width", width);
+  rect.setAttribute("height", height);
+  rect.setAttribute("class", className);
+  return rect;
+}
+
+function svgPath(d, className) {
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", d);
+  path.setAttribute("class", className);
+  return path;
+}
+
+function svgLine(x1, y1, x2, y2, className) {
+  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line.setAttribute("x1", x1);
+  line.setAttribute("y1", y1);
+  line.setAttribute("x2", x2);
+  line.setAttribute("y2", y2);
+  line.setAttribute("class", className);
+  return line;
+}
+
+function svgText(x, y, value, className) {
+  const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  text.setAttribute("x", x);
+  text.setAttribute("y", y);
+  text.setAttribute("class", className);
+  text.textContent = value;
+  return text;
 }
 
 function renderGeoJsonLayer(geojson, artifact) {

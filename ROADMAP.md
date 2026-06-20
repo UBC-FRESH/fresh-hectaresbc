@@ -200,19 +200,30 @@ Phase 12 replaces the Phase 11 fixture happy path with a real source-derived ras
 - [x] P12.4 Add real-data smoke checks and tests. Child issue: #109.
 - [x] P12.5 Document and close source-derived preview phase. Child issue: #110.
 
-## Phase 13: Future Workflow Hardening
+## Phase 13: Map Context and Preview Coverage
+
+GitHub parent issue: #112
+
+Active branch: `feature/p13-map-context-preview-coverage`
+
+Phase 13 follows the first real source-derived preview by improving the map-preview user experience and making current preview coverage limits explicit. The immediate product fix is a restrained offline basemap/context layer behind preview overlays so real raster layers do not appear to float in an empty viewport. The current source-derived preview generator remains configured for `dl_adminunits_bcts` only until a later layer-expansion slice audits and adds more source configs.
+
+- [x] P13.1 Add minimalist basemap context behind preview overlays. Child issue: #113.
+- [ ] P13.2 Document preview coverage limits and expansion path. Child issue: #114.
+
+## Phase 14: Future Workflow Hardening
 
 These are planned but not active requirements yet.
 
-- [ ] P13.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
-- [ ] P13.2 Add linting, formatting, tests, and pre-commit once code exists.
-- [ ] P13.3 Add CI once there are stable commands to run.
-- [ ] P13.4 Add documentation build checks once formal docs exist.
-- [ ] P13.5 Add machine-readable catalog schemas once the metadata model stabilizes.
-- [ ] P13.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
+- [ ] P14.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
+- [ ] P14.2 Add linting, formatting, tests, and pre-commit once code exists.
+- [ ] P14.3 Add CI once there are stable commands to run.
+- [ ] P14.4 Add documentation build checks once formal docs exist.
+- [ ] P14.5 Add machine-readable catalog schemas once the metadata model stabilizes.
+- [ ] P14.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
 
 ## Current Next Steps
 
-1. Merge Phase 12 PR #111 back to `main`.
-2. Close the Phase 12 parent issue #105 after the PR merge is complete.
-3. Start the next roadmap phase only after Phase 12 is closed, unless a parallel lane is explicitly approved.
+1. Complete P13.2 by documenting current preview coverage limits and the next layer-expansion path.
+2. Open a Phase 13 PR after P13.2 is complete and verified.
+3. Merge the Phase 13 branch back to `main` only after both child issues are complete.

@@ -313,8 +313,18 @@ setImmediate(async () => {
     assert(availableMap.includes("TBA (Babine)"));
     assert(availableMap.includes("Legend classes"));
     assert(availableMap.includes("Layer controls"));
+    assert(availableMap.includes("Basemapoffline minimalist context"));
+    assert(availableMap.includes("Pacific"));
+    assert(availableMap.includes("Vancouver"));
     assert(availableMap.includes("Preview eligibilitysource_derived_preview"));
     assert(availableMap.includes("Preview blockersnone"));
+    const basemap = document.querySelector("#map-preview").querySelector(".map-basemap");
+    assert.strictEqual(basemap.dataset.basemap, "minimalist-context");
+    assert.strictEqual(basemap.dataset.layerDatasetId, "dl_adminunits_bcts");
+    assert.strictEqual(
+      basemap.getAttribute("aria-label"),
+      "Offline minimalist basemap context"
+    );
     const renderedLayer = document.querySelector("#map-preview").querySelector(".map-render-layer");
     assert.strictEqual(
       renderedLayer.src,
