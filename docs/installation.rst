@@ -28,6 +28,9 @@ Catalog operations do not require raw ZIP payload retrieval:
    fresh-hectaresbc catalog show dl_adminunits_bcts
    fresh-hectaresbc fetch dl_adminunits_bcts --dry-run
 
+See :doc:`cli` for the full command reference, output formats, exit codes, and
+retrieval safety boundaries.
+
 The equivalent Python entrypoint is:
 
 .. code-block:: python

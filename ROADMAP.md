@@ -281,7 +281,7 @@ diagnostics, and plan or perform retrieval from documented commands without
 reading source code or planning contracts.
 
 - [x] P17.1 Add Sphinx CLI guide. Child issue: #137.
-- [ ] P17.2 Document CLI examples, outputs, and safety boundaries. Child issue: #138.
+- [x] P17.2 Document CLI examples, outputs, and safety boundaries. Child issue: #138.
 - [ ] P17.3 Verify and close CLI documentation phase. Child issue: #136.
 
 ## Phase 18: Future Workflow Hardening
