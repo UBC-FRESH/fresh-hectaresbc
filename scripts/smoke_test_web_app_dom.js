@@ -320,6 +320,17 @@ setImmediate(async () => {
       renderedLayer.src,
       "data/map_previews/dl_adminunits_bcts/preview.png"
     );
+    assert.strictEqual(
+      renderedLayer.alt,
+      "BCTS Operating Areas source-derived raster preview"
+    );
+    assert.strictEqual(renderedLayer.dataset.layerDatasetId, "dl_adminunits_bcts");
+    assert.strictEqual(
+      renderedLayer.dataset.wgs84Bounds,
+      previewManifest.artifacts[0].wgs84_bounds
+        .map((value) => Number(value).toFixed(4))
+        .join(", ")
+    );
     assert.strictEqual(renderedLayer.getAttribute("opacity"), "0.85");
     assert.strictEqual(renderedLayer.getAttribute("data-visible"), "true");
 

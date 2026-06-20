@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -67,14 +68,29 @@ def main() -> int:
         default=PREVIEW_MAX_SIZE,
         help="Maximum preview image width or height in pixels.",
     )
+    parser.add_argument(
+        "--local-archive-root",
+        type=Path,
+        default=LOCAL_ARCHIVE_ROOT,
+        help=(
+            "Ignored local archive fallback root used when DataLad content is "
+            "not materialized."
+        ),
+    )
     args = parser.parse_args()
 
-    manifest = build_preview_manifest(
-        args.output_dir,
-        dataset_id=args.dataset_id,
-        max_size=args.max_size,
-        write_artifacts=True,
-    )
+    try:
+        manifest = build_preview_manifest(
+            args.output_dir,
+            dataset_id=args.dataset_id,
+            max_size=args.max_size,
+            local_archive_root=args.local_archive_root,
+            write_artifacts=True,
+        )
+    except FileNotFoundError as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 2
+
     write_manifest(manifest, args.output_dir)
     print(
         "wrote map preview artifacts "
@@ -88,6 +104,7 @@ def build_preview_manifest(
     *,
     dataset_id: str = DEFAULT_DATASET_ID,
     max_size: int = PREVIEW_MAX_SIZE,
+    local_archive_root: Path = LOCAL_ARCHIVE_ROOT,
     write_artifacts: bool = False,
 ) -> dict[str, Any]:
     if dataset_id not in SOURCE_CONFIG:
@@ -96,7 +113,7 @@ def build_preview_manifest(
     hbc = HectaresBC()
     candidate = hbc.get(dataset_id)
     unavailable = hbc.get(UNAVAILABLE_DATASET_ID)
-    source = _resolve_source_zip(hbc, dataset_id)
+    source = _resolve_source_zip(hbc, dataset_id, local_archive_root=local_archive_root)
     config = SOURCE_CONFIG[dataset_id]
     artifact_path = Path(dataset_id) / "preview.png"
 
@@ -177,7 +194,12 @@ def write_manifest(manifest: dict[str, Any], output_dir: Path) -> None:
     )
 
 
-def _resolve_source_zip(hbc: HectaresBC, dataset_id: str) -> SourceZip:
+def _resolve_source_zip(
+    hbc: HectaresBC,
+    dataset_id: str,
+    *,
+    local_archive_root: Path,
+) -> SourceZip:
     resolved = hbc.resolve(dataset_id)
     if resolved.absolute_path.exists():
         return SourceZip(
@@ -188,7 +210,7 @@ def _resolve_source_zip(hbc: HectaresBC, dataset_id: str) -> SourceZip:
             content_status="content_present",
         )
 
-    fallback = LOCAL_ARCHIVE_ROOT / resolved.source_zip_path
+    fallback = local_archive_root / resolved.source_zip_path
     if fallback.exists():
         return SourceZip(
             path=fallback,
@@ -201,7 +223,7 @@ def _resolve_source_zip(hbc: HectaresBC, dataset_id: str) -> SourceZip:
     raise FileNotFoundError(
         "source ZIP content is unavailable; retrieve "
         f"{resolved.raw_relative_path.as_posix()} with DataLad or restore "
-        f"{(LOCAL_ARCHIVE_ROOT / resolved.source_zip_path).as_posix()}"
+        f"{(local_archive_root / resolved.source_zip_path).as_posix()}"
     )
 
 
