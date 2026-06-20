@@ -282,6 +282,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Open the Phase 16 pull request from `feature/p16-full-layer-preview-publication` to `main`.
-2. Merge the Phase 16 PR after review/CI.
-3. Close parent issue #126 only after the PR is merged.
+1. Select and activate the next roadmap phase before starting new implementation work.
+2. Create or update the GitHub parent issue and feature branch for that next phase.
+3. Keep Phase 17 workflow hardening as planned backlog unless explicitly activated.
