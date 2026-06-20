@@ -34,7 +34,7 @@ node scripts/smoke_test_web_app_dom.js web/data/catalog.json
 Serve the static app from the repository root when using the published DataLad preview artifacts:
 
 ```bash
-python -m http.server 8023
+python scripts/serve_web_app.py --host 0.0.0.0 --port 8023
 ```
 
 Then open:
@@ -49,7 +49,7 @@ In the JupyterHub/code-server proxy environment, use the corresponding proxied `
 https://fresh01.01101.dev/jupyterhub11/user/gep/codeserver/proxy/8023/web/#map=dl_adminunits_bcts
 ```
 
-Serving only the `web/` directory still works for catalog browsing and for the ignored local `web/data/map_previews/` fallback, but it cannot read sibling paths under `external/fresh-hectaresbc-data/`.
+The project server redirects `/` to `/web/`, serves only browser assets plus the published preview artifact tree, and disables directory listings. Serving only the `web/` directory still works for catalog browsing and for the ignored local `web/data/map_previews/` fallback, but it cannot read sibling paths under `external/fresh-hectaresbc-data/`.
 
 Representative detail views use stable hash routes:
 

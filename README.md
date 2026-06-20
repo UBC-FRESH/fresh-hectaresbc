@@ -246,7 +246,7 @@ an external tile basemap and does not require network map tiles.
 Serve the static app from the repository root when using the published DataLad preview index:
 
 ```bash
-python -m http.server 8023
+python scripts/serve_web_app.py --host 0.0.0.0 --port 8023
 ```
 
 Then open:
@@ -255,7 +255,7 @@ Then open:
 http://localhost:8023/web/
 ```
 
-Serving only the `web/` directory still works for catalog browsing and the ignored local `web/data/map_previews/` fallback, but it cannot read sibling paths under `external/fresh-hectaresbc-data/`.
+The project server redirects `/` to `/web/`, serves only browser assets plus the published preview artifact tree, and disables directory listings. Serving only the `web/` directory still works for catalog browsing and the ignored local `web/data/map_previews/` fallback, but it cannot read sibling paths under `external/fresh-hectaresbc-data/`.
 
 Representative detail views use stable hash routes:
 
