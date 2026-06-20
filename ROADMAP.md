@@ -269,19 +269,34 @@ The intended ownership split is:
 - [x] P16.5 Update browser app to consume published preview manifests. Child issue: #130.
 - [x] P16.6 Verify, document, and close full preview publication phase. Child issue: #131.
 
-## Phase 17: Future Workflow Hardening
+## Phase 17: CLI Documentation Expansion
+
+GitHub parent issue: #135
+
+Active branch: `feature/p17-cli-docs`
+
+Phase 17 expands the public documentation for the implemented Typer CLI. The
+goal is to let users discover catalog records, inspect local data status, run
+diagnostics, and plan or perform retrieval from documented commands without
+reading source code or planning contracts.
+
+- [x] P17.1 Add Sphinx CLI guide. Child issue: #137.
+- [x] P17.2 Document CLI examples, outputs, and safety boundaries. Child issue: #138.
+- [x] P17.3 Verify and close CLI documentation phase. Child issue: #136.
+
+## Phase 18: Future Workflow Hardening
 
 These are planned but not active requirements yet.
 
-- [ ] P17.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
-- [ ] P17.2 Add linting, formatting, tests, and pre-commit once code exists.
-- [ ] P17.3 Add broader CI once there are stable commands to run beyond docs builds.
-- [ ] P17.4 Add documentation quality gates beyond basic Sphinx build checks once docs mature.
-- [ ] P17.5 Add machine-readable catalog schemas once the metadata model stabilizes.
-- [ ] P17.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
+- [ ] P18.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
+- [ ] P18.2 Add linting, formatting, tests, and pre-commit once code exists.
+- [ ] P18.3 Add broader CI once there are stable commands to run beyond docs builds.
+- [ ] P18.4 Add documentation quality gates beyond basic Sphinx build checks once docs mature.
+- [ ] P18.5 Add machine-readable catalog schemas once the metadata model stabilizes.
+- [ ] P18.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
 
 ## Current Next Steps
 
-1. Select and activate the next roadmap phase before starting new implementation work.
-2. Create or update the GitHub parent issue and feature branch for that next phase.
-3. Keep Phase 17 workflow hardening as planned backlog unless explicitly activated.
+1. Open the Phase 17 pull request from `feature/p17-cli-docs` to `main`.
+2. Merge the Phase 17 PR after review/CI.
+3. Close parent issue #135 only after the PR is merged.

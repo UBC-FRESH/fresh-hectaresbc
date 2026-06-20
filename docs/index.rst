@@ -16,6 +16,7 @@ from implemented behavior.
 
    overview
    installation
+   cli
    data_repository
    browser_app
 
