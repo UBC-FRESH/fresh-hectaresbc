@@ -42,6 +42,7 @@ async function loadCatalog() {
     state.catalog = catalog;
     await loadPreviewManifest();
     renderCatalogSummary(catalog);
+    syncRouteState();
     renderResults();
     renderRoute();
   } catch (error) {
@@ -93,6 +94,27 @@ function renderResults() {
   if (filtered.length === 0) {
     emptyStateNode.textContent = "No matching records.";
   }
+}
+
+function syncRouteState() {
+  if (!state.catalog) {
+    return;
+  }
+  const datasetId = selectedMapDatasetId() || selectedDatasetId();
+  if (!datasetId) {
+    return;
+  }
+  const record = CatalogBrowser.findRecord(state.catalog.records, datasetId);
+  if (!record) {
+    return;
+  }
+  state.query = record.dataset_id;
+  searchInputNode.value = record.dataset_id;
+  state.family = "all";
+  state.sort = "title";
+  state.pageSize = "50";
+  sortSelectNode.value = state.sort;
+  pageSizeSelectNode.value = state.pageSize;
 }
 
 function renderRecord(record) {
@@ -161,7 +183,7 @@ function selectedDatasetId() {
     return "";
   }
   if (window.location.hash.startsWith("#map=")) {
-    return "";
+    return decodeURIComponent(window.location.hash.slice("#map=".length));
   }
   return decodeURIComponent(window.location.hash.slice(1));
 }
@@ -174,6 +196,8 @@ function selectedMapDatasetId() {
 }
 
 function renderRoute() {
+  syncRouteState();
+  renderResults();
   renderSelectedRecord();
   void renderMapPreview();
 }
@@ -332,26 +356,31 @@ function validateGeoJson(geojson, path) {
 function renderMapScaffold(record, artifact, options = {}) {
   const wrapper = document.createElement("div");
   wrapper.className = "map-layout";
+  const referenceLayer = findReferenceLayer();
 
   const viewport = document.createElement("section");
   viewport.className = "map-viewport";
   viewport.setAttribute("aria-label", `Map preview for ${record.title}`);
-  const basemap = renderBasemapContext(artifact);
   const grid = document.createElement("div");
   grid.className = "map-grid";
   const label = document.createElement("div");
   label.className = "map-placeholder-label";
   if (options.raster) {
-    viewport.append(basemap, grid, renderRasterLayer(artifact), label);
+    viewport.append(grid, renderRasterLayer(artifact), renderReferenceBasemap(referenceLayer), label);
     label.textContent = "Rendered source preview";
   } else if (options.geojson) {
-    viewport.append(basemap, grid, renderGeoJsonLayer(options.geojson, artifact), label);
+    viewport.append(
+      grid,
+      renderGeoJsonLayer(options.geojson, artifact),
+      renderReferenceBasemap(referenceLayer),
+      label
+    );
     label.textContent = "Rendered preview artifact";
   } else if (options.error) {
-    viewport.append(basemap, grid, renderMapError(options.error), label);
+    viewport.append(grid, renderMapError(options.error), renderReferenceBasemap(referenceLayer), label);
     label.textContent = "Preview artifact missing";
   } else {
-    viewport.append(basemap, grid, label);
+    viewport.append(grid, renderReferenceBasemap(referenceLayer), label);
     label.textContent = "Loading preview artifact";
   }
 
@@ -361,7 +390,7 @@ function renderMapScaffold(record, artifact, options = {}) {
   panel.append(
     mapPanelHeading(record, options.raster || options.geojson ? "Rendered" : "Available"),
     mapLayerControls(record),
-    definitionList(mapArtifactRows(record, artifact, options))
+    definitionList(mapArtifactRows(record, artifact, {...options, referenceLayer}))
   );
 
   if (artifact.fixture_warning) {
@@ -395,7 +424,7 @@ function mapArtifactRows(record, artifact, options) {
       ["Internal raster", artifact.internal_raster_path],
       ["Legend source", artifact.internal_wms_path],
       ["Legend classes", legendList(artifact.value_classes || [])],
-      ["Basemap", "offline minimalist context"]
+      ["Basemap", basemapDescription(options.referenceLayer)]
     );
   } else {
     rows.push(
@@ -414,49 +443,43 @@ function mapArtifactRows(record, artifact, options) {
   return rows;
 }
 
-function renderBasemapContext(artifact) {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.className = "map-basemap";
-  svg.setAttribute("viewBox", "0 0 100 100");
-  svg.setAttribute("preserveAspectRatio", "none");
-  svg.setAttribute("aria-label", "Offline minimalist basemap context");
-  svg.dataset.basemap = "minimalist-context";
-  svg.dataset.layerDatasetId = artifact.dataset_id;
+function basemapDescription(referenceLayer) {
+  if (!referenceLayer) {
+    return "unavailable";
+  }
+  return `${referenceLayer.title} (${referenceLayer.source_zip_path})`;
+}
 
-  const ocean = svgRect(0, 0, 100, 100, "map-basemap-ocean");
-  const land = svgPath(
-    "M22 0 L100 0 L100 100 L16 100 L12 88 L17 76 L10 65 L18 53 L14 43 L22 31 L18 17 Z",
-    "map-basemap-land"
+function findReferenceLayer() {
+  const layers = state.previewManifest?.reference_layers || [];
+  return (
+    layers.find((layer) => layer.role === "source_derived_basemap_reference") ||
+    null
   );
-  const coast = svgPath(
-    "M20 7 C27 16 25 23 20 31 C14 40 18 50 12 58 C8 64 16 73 13 82 C11 88 16 94 18 100",
-    "map-basemap-coast"
-  );
-  const island = svgPath(
-    "M12 71 C17 76 16 84 12 91 C8 86 7 78 12 71 Z",
-    "map-basemap-island"
-  );
-  const border = svgPath("M78 0 L75 21 L78 45 L74 72 L77 100", "map-basemap-border");
-  svg.append(ocean, land, island, coast, border);
+}
 
-  for (const position of [20, 40, 60, 80]) {
-    svg.append(svgLine(position, 0, position, 100, "map-basemap-graticule"));
-    svg.append(svgLine(0, position, 100, position, "map-basemap-graticule"));
+function renderReferenceBasemap(referenceLayer) {
+  if (!referenceLayer) {
+    const missing = document.createElement("div");
+    missing.className = "map-reference-basemap map-reference-missing";
+    missing.textContent = "Basemap reference unavailable";
+    return missing;
   }
 
-  const labels = [
-    [20, 82, "Pacific"],
-    [35, 23, "BC"],
-    [55, 16, "Interior"],
-    [42, 83, "Vancouver"],
-    [33, 91, "Victoria"],
-    [58, 44, "Prince George"],
-  ];
-  for (const [x, y, text] of labels) {
-    svg.append(svgText(x, y, text, "map-basemap-label"));
-  }
-
-  return svg;
+  const image = document.createElement("img");
+  image.className = "map-reference-basemap";
+  image.src = `data/map_previews/${referenceLayer.artifact_path}`;
+  image.alt = `${referenceLayer.title} source-derived basemap reference`;
+  image.dataset.basemap = "source-derived-reference";
+  image.dataset.layerDatasetId = referenceLayer.dataset_id;
+  image.dataset.sourceZipPath = referenceLayer.source_zip_path;
+  image.dataset.wgs84Bounds = formatBounds(referenceLayer.wgs84_bounds);
+  image.addEventListener("error", () => {
+    image.className = "map-reference-basemap map-reference-missing";
+    image.removeAttribute("src");
+    image.alt = "Basemap reference unavailable";
+  });
+  return image;
 }
 
 function renderRasterLayer(artifact) {
@@ -471,42 +494,6 @@ function renderRasterLayer(artifact) {
   });
   applyLayerOptionsToNode(image, layerOptions(artifact.dataset_id));
   return image;
-}
-
-function svgRect(x, y, width, height, className) {
-  const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-  rect.setAttribute("x", x);
-  rect.setAttribute("y", y);
-  rect.setAttribute("width", width);
-  rect.setAttribute("height", height);
-  rect.setAttribute("class", className);
-  return rect;
-}
-
-function svgPath(d, className) {
-  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  path.setAttribute("d", d);
-  path.setAttribute("class", className);
-  return path;
-}
-
-function svgLine(x1, y1, x2, y2, className) {
-  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  line.setAttribute("x1", x1);
-  line.setAttribute("y1", y1);
-  line.setAttribute("x2", x2);
-  line.setAttribute("y2", y2);
-  line.setAttribute("class", className);
-  return line;
-}
-
-function svgText(x, y, value, className) {
-  const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  text.setAttribute("x", x);
-  text.setAttribute("y", y);
-  text.setAttribute("class", className);
-  text.textContent = value;
-  return text;
 }
 
 function renderGeoJsonLayer(geojson, artifact) {

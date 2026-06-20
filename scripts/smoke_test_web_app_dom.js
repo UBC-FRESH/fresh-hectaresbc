@@ -298,10 +298,16 @@ setImmediate(async () => {
     assert.strictEqual(document.querySelector("#detail-status").textContent, "Record not found");
     assert(document.querySelector("#record-detail").textContent.includes("missing-dataset-id"));
 
+    searchInput.value = "";
+    fakeState.family = "all";
     window.location.hash = "#map=dl_adminunits_bcts";
     window.dispatchEvent({type: "hashchange"});
     await settleAsyncRender();
     assert.strictEqual(document.querySelector("#map-status").textContent, "dl_adminunits_bcts");
+    assert.strictEqual(searchInput.value, "dl_adminunits_bcts");
+    assert.strictEqual(document.querySelector("#result-count").textContent, "1 matching records");
+    assert.strictEqual(document.querySelector("#detail-status").textContent, "dl_adminunits_bcts");
+    assert(document.querySelector("#record-detail").textContent.includes("BCTS Operating Areas"));
     const availableMap = document.querySelector("#map-preview").textContent;
     assert(availableMap.includes("BCTS Operating Areas"));
     assert(availableMap.includes("Rendered source preview"));
@@ -313,17 +319,20 @@ setImmediate(async () => {
     assert(availableMap.includes("TBA (Babine)"));
     assert(availableMap.includes("Legend classes"));
     assert(availableMap.includes("Layer controls"));
-    assert(availableMap.includes("Basemapoffline minimalist context"));
-    assert(availableMap.includes("Pacific"));
-    assert(availableMap.includes("Vancouver"));
+    assert(availableMap.includes("BasemapNatural Resource Sector Administrative Regions"));
     assert(availableMap.includes("Preview eligibilitysource_derived_preview"));
     assert(availableMap.includes("Preview blockersnone"));
-    const basemap = document.querySelector("#map-preview").querySelector(".map-basemap");
-    assert.strictEqual(basemap.dataset.basemap, "minimalist-context");
-    assert.strictEqual(basemap.dataset.layerDatasetId, "dl_adminunits_bcts");
+    const basemap = document.querySelector("#map-preview").querySelector(".map-reference-basemap");
+    assert.strictEqual(basemap.dataset.basemap, "source-derived-reference");
+    assert.strictEqual(basemap.dataset.layerDatasetId, "dl_adminunits_nrsab");
+    assert.strictEqual(basemap.dataset.sourceZipPath, "data_layers/adminunits_nrsab.zip");
     assert.strictEqual(
-      basemap.getAttribute("aria-label"),
-      "Offline minimalist basemap context"
+      basemap.src,
+      "data/map_previews/context/bc_admin_reference.png"
+    );
+    assert.strictEqual(
+      basemap.alt,
+      "Natural Resource Sector Administrative Regions & SubRegsion source-derived basemap reference"
     );
     const renderedLayer = document.querySelector("#map-preview").querySelector(".map-render-layer");
     assert.strictEqual(

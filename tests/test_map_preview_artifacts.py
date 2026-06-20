@@ -24,6 +24,23 @@ def test_map_preview_manifest_records_source_derived_provenance(tmp_path: Path) 
         "data_layer_candidate": "dl_adminunits_bcts",
         "unavailable_record": "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135",
     }
+    reference_layer = manifest["reference_layers"][0]
+    assert reference_layer["role"] == "source_derived_basemap_reference"
+    assert reference_layer["dataset_id"] == "dl_adminunits_nrsab"
+    assert reference_layer["source_zip_path"] == "data_layers/adminunits_nrsab.zip"
+    assert reference_layer["raw_relative_path"] == (
+        "raw/hectaresbc_2022_export/data_layers/adminunits_nrsab.zip"
+    )
+    assert reference_layer["artifact_path"] == "context/bc_admin_reference.png"
+    assert reference_layer["artifact_status"] == "source_derived_basemap_reference"
+    assert reference_layer["internal_raster_path"] == "nrsab.tiff"
+    assert reference_layer["internal_wms_path"] == "nrsab.wms.xml"
+    assert reference_layer["crs"] == "EPSG:3005"
+    assert reference_layer["raster_width"] == 17216
+    assert reference_layer["raster_height"] == 15744
+    assert reference_layer["dtype"] == "int16"
+    assert reference_layer["nodata"] == -9999.0
+    assert reference_layer["value_count"] == 8
 
     artifact = manifest["artifacts"][0]
     assert artifact["dataset_id"] == "dl_adminunits_bcts"
@@ -59,6 +76,14 @@ def test_map_preview_manifest_records_source_derived_provenance(tmp_path: Path) 
         colors = image.getcolors(maxcolors=image.size[0] * image.size[1])
         assert colors is not None
         assert len({color for _count, color in colors if color[3] > 0}) == 12
+
+    with Image.open(output_dir / reference_layer["artifact_path"]) as image:
+        assert image.mode == "RGBA"
+        assert image.size == (
+            reference_layer["preview_width"],
+            reference_layer["preview_height"],
+        )
+        assert image.getchannel("A").getbbox() is not None
 
     serialized = json.dumps(manifest, sort_keys=True)
     assert "/home/" not in serialized
