@@ -16,6 +16,8 @@
 - Completed P16.6 closeout by adding `planning/phase16_full_preview_publication_closeout.md`, documenting the full preview publication and browser consumption workflow, replacing generic repo-root `http.server` usage with the restricted `scripts/serve_web_app.py`, verifying live safe-server access to published preview artifacts without repo directory exposure, and rerunning the final browser/data/test suite with 62 passing Python tests.
 - Merged Phase 16 full layer preview artifact publication to `main` via PR #134 and closed parent issue #126.
 - Swept public docs for stale pre-Phase-16 browser-preview content, updating Sphinx overview/browser/data-repository pages, README serving notes, web README serving notes, and the Phase 16 closeout note to reflect the published 2,163-preview DataLad artifact cache and proxy-relative safe server redirect.
+- Activated Phase 17 CLI documentation expansion with parent issue #135, branch `feature/p17-cli-docs`, and child issues #137, #138, and #136.
+- Completed P17.1 by adding a dedicated Sphinx CLI guide page to the user guide, documenting the implemented command groups and command intent without adding unimplemented future CLI commands.
 
 ## 2026-06-18
 
