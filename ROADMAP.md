@@ -1,3 +1,4 @@
+
 # Roadmap
 
 This roadmap is intentionally lightweight. It should guide the next few moves without forcing the repo to carry FEMIC-level process before the HectaresBC archive shape is understood.
@@ -239,18 +240,47 @@ commands without pretending that future AOI/download services already exist.
 - [x] P15.2 Add GitHub Pages docs workflow. Child issue: #123.
 - [x] P15.3 Verify, document, and close docs phase. Child issue: #122.
 
-## Phase 16: Future Workflow Hardening
+## Phase 16: Full Layer Preview Artifact Publication
+
+GitHub parent issue: #126
+
+Status: planned backlog
+
+Phase 16 queues full source-derived preview coverage for the browser map app.
+The goal is to compile useful preview artifacts for all feasible recovered
+HectaresBC layers, then cache and publish those generated artifacts through the
+DataLad-backed data repository and its configured object-store special remote.
+Bulky preview images must not be committed to this main code repository.
+
+The intended ownership split is:
+
+- this repository tracks generator code, manifest/schema contracts, browser
+  loading logic, compact coverage metadata, tests, and documentation;
+- `UBC-FRESH/fresh-hectaresbc-data` stores generated preview artifacts under an
+  agreed DataLad/git-annex layout;
+- annexed preview payloads are uploaded to the configured object-store remote
+  so a cold clone can retrieve representative preview artifacts without private
+  local paths.
+
+- [ ] P16.1 Define full preview artifact contract and DataLad storage layout. Child issue: #129.
+- [ ] P16.2 Audit all layer preview feasibility. Child issue: #127.
+- [ ] P16.3 Implement batch preview generation and resumable validation. Child issue: #128.
+- [ ] P16.4 Publish generated preview artifacts to the DataLad object store. Child issue: #132.
+- [ ] P16.5 Update browser app to consume published preview manifests. Child issue: #130.
+- [ ] P16.6 Verify, document, and close full preview publication phase. Child issue: #131.
+
+## Phase 17: Future Workflow Hardening
 
 These are planned but not active requirements yet.
 
-- [ ] P16.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
-- [ ] P16.2 Add linting, formatting, tests, and pre-commit once code exists.
-- [ ] P16.3 Add broader CI once there are stable commands to run beyond docs builds.
-- [ ] P16.4 Add documentation quality gates beyond basic Sphinx build checks once docs mature.
-- [ ] P16.5 Add machine-readable catalog schemas once the metadata model stabilizes.
-- [ ] P16.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
+- [ ] P17.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
+- [ ] P17.2 Add linting, formatting, tests, and pre-commit once code exists.
+- [ ] P17.3 Add broader CI once there are stable commands to run beyond docs builds.
+- [ ] P17.4 Add documentation quality gates beyond basic Sphinx build checks once docs mature.
+- [ ] P17.5 Add machine-readable catalog schemas once the metadata model stabilizes.
+- [ ] P17.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
 
 ## Current Next Steps
 
-1. Start the next roadmap phase only after Phase 15 parent issue #121 is closed, unless a parallel lane is explicitly approved.
-2. Keep the next phase implementation-oriented, with a parent issue, feature branch, child issues, and verification plan before code changes.
+1. Activate Phase 16 only when ready to start full preview coverage work, by creating the feature branch from `main` and updating issue #126 from planned backlog to active.
+2. Keep any earlier ad hoc preview expansion aligned with the Phase 16 storage rule: generated preview payloads belong in the DataLad-backed data repo and object-store remote, not in this main repo.
