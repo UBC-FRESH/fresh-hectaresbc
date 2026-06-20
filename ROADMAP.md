@@ -221,7 +221,7 @@ Phase 14 corrects the Phase 13 map context mistake. The browser needs a recogniz
 
 - [x] P14.1 Generate source-derived BC/admin basemap artifact. Child issue: #117.
 - [x] P14.2 Render visible basemap and fix deep-link state. Child issue: #118.
-- [ ] P14.3 Verify, document, and close source-derived basemap phase. Child issue: #119.
+- [x] P14.3 Verify, document, and close source-derived basemap phase. Child issue: #119.
 
 ## Phase 15: Future Workflow Hardening
 
@@ -236,6 +236,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P14.3 closeout after verification and documentation.
-2. Open and merge the Phase 14 PR after P14.3 is complete.
-3. Merge the Phase 14 branch back to `main` only after all child issues are complete.
+1. Open and merge the Phase 14 PR after closeout verification.
+2. Close parent issue #116 after the PR merge is complete.
+3. Start the next roadmap phase only after Phase 14 is closed, unless a parallel lane is explicitly approved.

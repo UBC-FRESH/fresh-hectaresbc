@@ -204,12 +204,24 @@ The generated browser files are ignored because they are reproducible outputs:
 web/data/catalog.json
 web/data/map_previews/manifest.json
 web/data/map_previews/dl_adminunits_bcts/preview.png
+web/data/map_previews/context/bc_admin_reference.png
 ```
 
 The preview artifact manifest records `EPSG:3005`, native and WGS84 bounds,
 source ZIP and internal TIFF/WMS paths, raster dimensions, nodata, 12
 legend/classes, and derivation status. Use `--max-size 256` for faster local
 smoke iterations; the default maximum preview dimension is 768 pixels.
+
+The map route also renders a source-derived basemap/reference artifact generated
+from:
+
+```text
+data_layers/adminunits_nrsab.zip!nrsab.tiff
+```
+
+That artifact uses the recovered NRS administrative boundary raster to provide
+BC/province-like valid-data edges and major administrative boundaries. It is not
+an external tile basemap and does not require network map tiles.
 
 Current preview coverage is intentionally narrow. The browser renderer can
 display additional raster PNG preview artifacts, but
@@ -246,7 +258,7 @@ http://localhost:8000/#map=dl_adminunits_bcts
 http://localhost:8000/#map=vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
 ```
 
-The `dl_adminunits_bcts` route loads and renders the generated source-derived PNG preview artifact from `web/data/map_previews/dl_adminunits_bcts/preview.png` over an offline minimalist basemap context. The layer panel includes visibility and opacity controls, real CRS and bounds metadata, legend classes, preview derivation metadata, basemap status, and a link back to the recovered catalog detail route. This is a real source-derived raster preview, not the Phase 11 fixture geometry, but it is still a single static overlay image rather than a tile service or pan/zoom GIS renderer. Browser catalog development does not require Arbutus/Chinook credentials, UBC CWL, hosted workers, object-store access, or external map tiles. Source-derived preview generation requires local access to the relevant recovered ZIP payload through the DataLad submodule or ignored local archive fallback. Node is still a system prerequisite for the browser smoke scripts; it is not installed by the Python `.venv` setup. In restricted environments that cannot bind a loopback socket, `scripts/smoke_test_web_static_app.py` still validates static assets and catalog content and reports the HTTP serving check as skipped.
+The `dl_adminunits_bcts` route loads and renders the generated source-derived PNG preview artifact from `web/data/map_previews/dl_adminunits_bcts/preview.png` with the generated NRS administrative basemap/reference artifact from `web/data/map_previews/context/bc_admin_reference.png`. The layer panel includes visibility and opacity controls, real CRS and bounds metadata, legend classes, preview derivation metadata, basemap source metadata, and a link back to the recovered catalog detail route. Opening `#map=dl_adminunits_bcts` directly also synchronizes the visible catalog result and dataset detail to BCTS, so manual search is not required. This is a real source-derived raster preview, not the Phase 11 fixture geometry, but it is still a single static overlay image rather than a tile service or pan/zoom GIS renderer. Browser catalog development does not require Arbutus/Chinook credentials, UBC CWL, hosted workers, object-store access, or external map tiles. Source-derived preview generation requires local access to the relevant recovered ZIP payloads through the DataLad submodule or ignored local archive fallback. Node is still a system prerequisite for the browser smoke scripts; it is not installed by the Python `.venv` setup. In restricted environments that cannot bind a loopback socket, `scripts/smoke_test_web_static_app.py` still validates static assets and catalog content and reports the HTTP serving check as skipped.
 
 ## DataLad Retrieval
 
