@@ -395,10 +395,10 @@ def _read_basemap_reference_metadata(
         boundary = _expand_mask(coast_edge | internal_edge)
 
         rgba = np.zeros((preview_height, preview_width, 4), dtype=np.uint8)
-        rgba[valid] = [238, 244, 226, 55]
-        rgba[internal_edge] = [42, 75, 66, 185]
-        rgba[coast_edge] = [14, 54, 63, 235]
-        rgba[boundary & ~(coast_edge | internal_edge)] = [42, 75, 66, 135]
+        rgba[valid] = [235, 242, 222, 105]
+        rgba[internal_edge] = [20, 47, 42, 235]
+        rgba[coast_edge] = [4, 31, 39, 255]
+        rgba[boundary & ~(coast_edge | internal_edge)] = [20, 47, 42, 205]
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         Image.fromarray(rgba, mode="RGBA").save(output_path)
