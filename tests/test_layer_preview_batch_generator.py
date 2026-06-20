@@ -5,7 +5,14 @@ from pathlib import Path
 
 from PIL import Image
 
-from scripts.generate_layer_preview_batch import generate_batch, read_feasibility_rows
+from scripts.generate_layer_preview_batch import (
+    SourceZip,
+    _failure_record,
+    _index_entry_from_failure,
+    _parse_integer_legend_values,
+    generate_batch,
+    read_feasibility_rows,
+)
 
 
 def test_layer_preview_batch_generates_representative_artifacts(tmp_path: Path) -> None:
@@ -68,3 +75,33 @@ def test_layer_preview_batch_outputs_do_not_leak_private_paths(tmp_path: Path) -
         "aws-secrets",
     ):
         assert forbidden not in payload
+
+
+def test_integer_legend_value_parser_skips_ranges_and_preserves_lists() -> None:
+    assert _parse_integer_legend_values("7") == [7]
+    assert _parse_integer_legend_values("1, 2, 3") == [1, 2, 3]
+    assert _parse_integer_legend_values("0:200") == []
+    assert _parse_integer_legend_values("not an integer") == []
+
+
+def test_empty_preview_failures_are_indexed_as_not_previewable() -> None:
+    row = {
+        "dataset_id": "dl_empty_preview",
+        "title": "Empty preview",
+        "source_family": "data_layer",
+        "source_zip_path": "raw/hectaresbc_2022_export/data_layers/empty.zip",
+    }
+    source = SourceZip(
+        path=Path("raw/hectaresbc_2022_export/data_layers/empty.zip"),
+        source_resolution="datalad_submodule",
+        content_status="available",
+    )
+
+    failure = _failure_record(row, source, ValueError("preview PNG has no visible pixels"))
+    index_entry = _index_entry_from_failure(failure)
+
+    assert failure["artifact_status"] == "not_previewable"
+    assert json.loads(failure["preview_eligibility_blockers"]) == [
+        "not_previewable_empty_preview"
+    ]
+    assert index_entry["artifact_status"] == "not_previewable"

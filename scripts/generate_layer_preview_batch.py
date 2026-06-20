@@ -231,6 +231,7 @@ def _process_one(
         )
         return _index_entry_from_manifest(manifest, skipped=False), None
     except Exception as error:  # noqa: BLE001 - batch output should capture row-level failures.
+        preview_path.unlink(missing_ok=True)
         failure = _failure_record(row, source, error)
         return _index_entry_from_failure(failure), failure
 
@@ -435,15 +436,31 @@ def _read_wms_classes(zip_path: Path, wms_member: str) -> list[dict[str, Any]]:
         red = int((entry.findtext("color/red") or "0").strip())
         green = int((entry.findtext("color/green") or "0").strip())
         blue = int((entry.findtext("color/blue") or "0").strip())
-        classes.append(
-            {
-                "value": int(value_text),
-                "label": (entry.findtext("legend_entry") or "").strip(),
-                "rgb": [red, green, blue],
-                "rgba": [red, green, blue, 220],
-            }
-        )
+        for value in _parse_integer_legend_values(value_text):
+            classes.append(
+                {
+                    "value": value,
+                    "label": (entry.findtext("legend_entry") or "").strip(),
+                    "rgb": [red, green, blue],
+                    "rgba": [red, green, blue, 220],
+                }
+            )
     return classes
+
+
+def _parse_integer_legend_values(value_text: str) -> list[int]:
+    if ":" in value_text:
+        return []
+    values = []
+    for part in value_text.split(","):
+        stripped = part.strip()
+        if not stripped:
+            continue
+        try:
+            values.append(int(stripped))
+        except ValueError:
+            return []
+    return values
 
 
 def _index_entry_from_manifest(manifest: dict[str, Any], *, skipped: bool) -> dict[str, Any]:
@@ -466,7 +483,7 @@ def _index_entry_from_failure(failure: dict[str, str]) -> dict[str, Any]:
         "dataset_id": failure["dataset_id"],
         "title": failure["title"],
         "source_family": failure["source_family"],
-        "artifact_status": "generation_failed",
+        "artifact_status": failure["artifact_status"],
         "artifact_kind": "raster_png",
         "manifest_path": "",
         "artifact_path": "",
@@ -477,6 +494,17 @@ def _index_entry_from_failure(failure: dict[str, str]) -> dict[str, Any]:
 
 
 def _failure_record(row: dict[str, str], source: SourceZip, error: Exception) -> dict[str, str]:
+    message = str(error).splitlines()[0]
+    artifact_status = (
+        "not_previewable"
+        if message == "preview PNG has no visible pixels"
+        else "generation_failed"
+    )
+    blockers = (
+        ["not_previewable_empty_preview"]
+        if artifact_status == "not_previewable"
+        else ["generation_failed"]
+    )
     return {
         "dataset_id": row["dataset_id"],
         "title": row["title"],
@@ -484,8 +512,9 @@ def _failure_record(row: dict[str, str], source: SourceZip, error: Exception) ->
         "source_zip_path": row["source_zip_path"],
         "source_resolution": source.source_resolution,
         "source_content_status": source.content_status,
-        "preview_eligibility_blockers": json.dumps(["generation_failed"]),
-        "error_message": str(error).splitlines()[0],
+        "artifact_status": artifact_status,
+        "preview_eligibility_blockers": json.dumps(blockers),
+        "error_message": message,
     }
 
 
@@ -534,6 +563,7 @@ def _write_batch_outputs(
             "source_zip_path",
             "source_resolution",
             "source_content_status",
+            "artifact_status",
             "preview_eligibility_blockers",
             "error_message",
         ]
