@@ -220,7 +220,7 @@ Active branch: `feature/p14-source-derived-basemap-deeplinks`
 Phase 14 corrects the Phase 13 map context mistake. The browser needs a recognizable basemap/reference context from actual recovered or authoritative geography, not a decorative sketch hidden under the preview raster. The first implementation should derive an offline BC/admin reference artifact from recovered HectaresBC administrative boundary rasters, render it visibly with the BCTS preview, and fix direct hash routes so users do not need to search manually after opening a map or detail link.
 
 - [x] P14.1 Generate source-derived BC/admin basemap artifact. Child issue: #117.
-- [ ] P14.2 Render visible basemap and fix deep-link state. Child issue: #118.
+- [x] P14.2 Render visible basemap and fix deep-link state. Child issue: #118.
 - [ ] P14.3 Verify, document, and close source-derived basemap phase. Child issue: #119.
 
 ## Phase 15: Future Workflow Hardening
@@ -236,6 +236,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Complete P14.2 by rendering the source-derived basemap visibly and fixing direct map/detail hash routes.
-2. Complete P14.3 closeout after verification and documentation.
+1. Complete P14.3 closeout after verification and documentation.
+2. Open and merge the Phase 14 PR after P14.3 is complete.
 3. Merge the Phase 14 branch back to `main` only after all child issues are complete.
