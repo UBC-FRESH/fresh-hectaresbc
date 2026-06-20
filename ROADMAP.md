@@ -211,19 +211,31 @@ Phase 13 follows the first real source-derived preview by improving the map-prev
 - [x] P13.1 Add minimalist basemap context behind preview overlays. Child issue: #113.
 - [x] P13.2 Document preview coverage limits and expansion path. Child issue: #114.
 
-## Phase 14: Future Workflow Hardening
+## Phase 14: Source-Derived Basemap And Reliable Deep Links
+
+GitHub parent issue: #116
+
+Active branch: `feature/p14-source-derived-basemap-deeplinks`
+
+Phase 14 corrects the Phase 13 map context mistake. The browser needs a recognizable basemap/reference context from actual recovered or authoritative geography, not a decorative sketch hidden under the preview raster. The first implementation should derive an offline BC/admin reference artifact from recovered HectaresBC administrative boundary rasters, render it visibly with the BCTS preview, and fix direct hash routes so users do not need to search manually after opening a map or detail link.
+
+- [x] P14.1 Generate source-derived BC/admin basemap artifact. Child issue: #117.
+- [ ] P14.2 Render visible basemap and fix deep-link state. Child issue: #118.
+- [ ] P14.3 Verify, document, and close source-derived basemap phase. Child issue: #119.
+
+## Phase 15: Future Workflow Hardening
 
 These are planned but not active requirements yet.
 
-- [ ] P14.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
-- [ ] P14.2 Add linting, formatting, tests, and pre-commit once code exists.
-- [ ] P14.3 Add CI once there are stable commands to run.
-- [ ] P14.4 Add documentation build checks once formal docs exist.
-- [ ] P14.5 Add machine-readable catalog schemas once the metadata model stabilizes.
-- [ ] P14.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
+- [ ] P15.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
+- [ ] P15.2 Add linting, formatting, tests, and pre-commit once code exists.
+- [ ] P15.3 Add CI once there are stable commands to run.
+- [ ] P15.4 Add documentation build checks once formal docs exist.
+- [ ] P15.5 Add machine-readable catalog schemas once the metadata model stabilizes.
+- [ ] P15.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
 
 ## Current Next Steps
 
-1. Open and merge the Phase 13 PR after closeout verification.
-2. Close parent issue #112 after the PR merge is complete.
-3. Start the next roadmap phase only after Phase 13 is closed, unless a parallel lane is explicitly approved.
+1. Complete P14.2 by rendering the source-derived basemap visibly and fixing direct map/detail hash routes.
+2. Complete P14.3 closeout after verification and documentation.
+3. Merge the Phase 14 branch back to `main` only after all child issues are complete.

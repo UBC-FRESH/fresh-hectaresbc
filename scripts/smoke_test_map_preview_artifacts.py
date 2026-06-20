@@ -40,6 +40,19 @@ def main() -> int:
         == "dl_adminunits_bcts",
         "unexpected data-layer representative",
     )
+    reference_layer = manifest["reference_layers"][0]
+    _require(
+        reference_layer["role"] == "source_derived_basemap_reference",
+        "unexpected reference layer role",
+    )
+    _require(reference_layer["dataset_id"] == "dl_adminunits_nrsab", "unexpected basemap dataset")
+    _require(
+        reference_layer["source_zip_path"] == "data_layers/adminunits_nrsab.zip",
+        "unexpected basemap source ZIP",
+    )
+    _require(reference_layer["internal_raster_path"] == "nrsab.tiff", "unexpected basemap raster")
+    _require(reference_layer["crs"] == "EPSG:3005", "unexpected basemap CRS")
+    _require(reference_layer["value_count"] == 8, "unexpected basemap value count")
 
     artifact = manifest["artifacts"][0]
     _require(artifact["dataset_id"] == "dl_adminunits_bcts", "unexpected dataset")
@@ -121,6 +134,17 @@ def main() -> int:
         _require(colors is not None, "preview PNG has too many colors for categorical preview")
         visible_colors = {color for _count, color in colors if color[3] > 0}
         _require(len(visible_colors) == 12, "preview PNG does not contain all 12 legend colors")
+
+    basemap_path = args.preview_root / reference_layer["artifact_path"]
+    _require(basemap_path.exists(), "basemap reference PNG missing")
+    with Image.open(basemap_path) as image:
+        _require(image.mode == "RGBA", "basemap reference PNG is not RGBA")
+        _require(
+            image.size == (reference_layer["preview_width"], reference_layer["preview_height"]),
+            "basemap reference size mismatch",
+        )
+        alpha = image.getchannel("A")
+        _require(alpha.getbbox() is not None, "basemap reference has no visible pixels")
 
     serialized = json.dumps({"manifest": manifest}, sort_keys=True)
     for fragment in ("/home/", "tmp/shared-data/hectaresbc", "tmp/bootstrap", "aws-secrets"):
