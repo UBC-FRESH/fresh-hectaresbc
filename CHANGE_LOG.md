@@ -6,6 +6,7 @@
 - Added the initial Sphinx documentation scaffold, API reference pages, docs optional dependencies, GitHub Pages docs workflow, ignored Sphinx build output, and local docs build commands.
 - Verified Phase 15 locally with a warning-clean Sphinx HTML build, 53 passing Python tests, and `git diff --check`.
 - Merged Phase 15 Sphinx docs and GitHub Pages publication to `main` via PR #125.
+- Queued Phase 16 full layer preview artifact publication with parent issue #126 and child issues #129, #127, #128, #132, #130, and #131, explicitly routing bulky generated preview artifacts to the DataLad-backed data repository and object-store remote.
 
 ## 2026-06-18
 
