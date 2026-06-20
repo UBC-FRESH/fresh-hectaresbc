@@ -11,18 +11,6 @@ const previewManifestPath =
   process.argv[3] || path.join(repoRoot, "web", "data", "map_previews", "manifest.json");
 const catalog = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
 const previewManifest = JSON.parse(fs.readFileSync(previewManifestPath, "utf8"));
-const previewGeoJsonPath = path.join(
-  path.dirname(previewManifestPath),
-  "dl_water_cwb_canals",
-  "preview.geojson"
-);
-const previewGeoJson = JSON.parse(fs.readFileSync(previewGeoJsonPath, "utf8"));
-previewManifest.artifacts.push({
-  ...previewManifest.artifacts[0],
-  dataset_id: "dl_adminunits_bcts",
-  title: "BCTS Operating Areas",
-  artifact_path: "missing/preview.geojson",
-});
 
 class Element {
   constructor(tagName, id = "") {
@@ -34,8 +22,11 @@ class Element {
     this.checked = false;
     this.hidden = false;
     this.href = "";
+    this.src = "";
+    this.alt = "";
     this.className = "";
     this.dataset = {};
+    this.style = {};
     this.attributes = {};
     this.children = [];
     this.parentNode = null;
@@ -239,27 +230,13 @@ const context = {
       [
         "data/catalog.json",
         "data/map_previews/manifest.json",
-        "data/map_previews/dl_water_cwb_canals/preview.geojson",
-        "data/map_previews/missing/preview.geojson",
       ].includes(url)
     );
-    if (url === "data/map_previews/missing/preview.geojson") {
-      return {
-        ok: false,
-        status: 404,
-        async json() {
-          throw new Error("missing preview artifact");
-        },
-      };
-    }
     return {
       ok: true,
       async json() {
         if (url === "data/map_previews/manifest.json") {
           return previewManifest;
-        }
-        if (url === "data/map_previews/dl_water_cwb_canals/preview.geojson") {
-          return previewGeoJson;
         }
         return catalog;
       },
@@ -321,21 +298,28 @@ setImmediate(async () => {
     assert.strictEqual(document.querySelector("#detail-status").textContent, "Record not found");
     assert(document.querySelector("#record-detail").textContent.includes("missing-dataset-id"));
 
-    window.location.hash = "#map=dl_water_cwb_canals";
+    window.location.hash = "#map=dl_adminunits_bcts";
     window.dispatchEvent({type: "hashchange"});
     await settleAsyncRender();
-    assert.strictEqual(document.querySelector("#map-status").textContent, "dl_water_cwb_canals");
+    assert.strictEqual(document.querySelector("#map-status").textContent, "dl_adminunits_bcts");
     const availableMap = document.querySelector("#map-preview").textContent;
-    assert(availableMap.includes("Canals"));
-    assert(availableMap.includes("Rendered preview artifact"));
-    assert(availableMap.includes("dl_water_cwb_canals/preview.geojson"));
-    assert(availableMap.includes("fixture_pending_source_derivation"));
-    assert(availableMap.includes("Feature count1"));
+    assert(availableMap.includes("BCTS Operating Areas"));
+    assert(availableMap.includes("Rendered source preview"));
+    assert(availableMap.includes("dl_adminunits_bcts/preview.png"));
+    assert(availableMap.includes("source_derived_preview"));
+    assert(availableMap.includes("EPSG:3005"));
+    assert(availableMap.includes("bcts.tiff"));
+    assert(availableMap.includes("bcts.wms.xml"));
+    assert(availableMap.includes("TBA (Babine)"));
+    assert(availableMap.includes("Legend classes"));
     assert(availableMap.includes("Layer controls"));
-    assert(availableMap.includes("Preview eligibilitycandidate_missing_crs"));
-    assert(availableMap.includes("Preview blockersmissing_crs, missing_extent"));
-    assert(availableMap.includes("not recovered HectaresBC canal geometry"));
-    const renderedLayer = document.querySelector("#map-preview").querySelector(".map-geojson-layer");
+    assert(availableMap.includes("Preview eligibilitysource_derived_preview"));
+    assert(availableMap.includes("Preview blockersnone"));
+    const renderedLayer = document.querySelector("#map-preview").querySelector(".map-render-layer");
+    assert.strictEqual(
+      renderedLayer.src,
+      "data/map_previews/dl_adminunits_bcts/preview.png"
+    );
     assert.strictEqual(renderedLayer.getAttribute("opacity"), "0.85");
     assert.strictEqual(renderedLayer.getAttribute("data-visible"), "true");
 
@@ -357,11 +341,11 @@ setImmediate(async () => {
     assert.strictEqual(renderedLayer.getAttribute("opacity"), "0");
     assert.strictEqual(renderedLayer.getAttribute("data-visible"), "false");
 
-    window.location.hash = "#dl_water_cwb_canals";
+    window.location.hash = "#dl_adminunits_bcts";
     window.dispatchEvent({type: "hashchange"});
     const linkedDetail = document.querySelector("#record-detail").textContent;
-    assert.strictEqual(document.querySelector("#detail-status").textContent, "dl_water_cwb_canals");
-    assert(linkedDetail.includes("Canals"));
+    assert.strictEqual(document.querySelector("#detail-status").textContent, "dl_adminunits_bcts");
+    assert(linkedDetail.includes("BCTS Operating Areas"));
 
     window.location.hash = "#map=vl_virtualspecies_bulltroutsalvelinusconfluentus_1135";
     window.dispatchEvent({type: "hashchange"});
@@ -371,14 +355,6 @@ setImmediate(async () => {
     assert(unavailableMap.includes("Bull Trout (Salvelinus confluentus)"));
     assert(unavailableMap.includes("not_supported"));
     assert(unavailableMap.includes("unsupported_family"));
-
-    window.location.hash = "#map=dl_adminunits_bcts";
-    window.dispatchEvent({type: "hashchange"});
-    await settleAsyncRender();
-    assert.strictEqual(document.querySelector("#map-status").textContent, "Preview artifact missing");
-    const missingArtifactMap = document.querySelector("#map-preview").textContent;
-    assert(missingArtifactMap.includes("Preview artifact could not be loaded."));
-    assert(missingArtifactMap.includes("Preview artifact request failed with 404"));
 
     window.location.hash = "#map=missing-dataset-id";
     window.dispatchEvent({type: "hashchange"});

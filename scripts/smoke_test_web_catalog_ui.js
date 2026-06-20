@@ -10,7 +10,7 @@ const browser = require(path.join("..", "web", "catalog.js"));
 
 const records = catalog.records;
 const dataLayerDetail = browser.findRecord(records, "dl_adminunits_bcts");
-const previewCandidate = browser.findRecord(records, "dl_water_cwb_canals");
+const previewCandidate = browser.findRecord(records, "dl_adminunits_bcts");
 const virtualLayerDetail = browser.findRecord(
   records,
   "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135"
@@ -22,7 +22,7 @@ assert.deepStrictEqual(catalog.preview_eligibility_counts, {
   not_supported: 1765,
 });
 assert.deepStrictEqual(catalog.representative_preview_records, {
-  data_layer_candidate: "dl_water_cwb_canals",
+  data_layer_candidate: "dl_adminunits_bcts",
   unavailable_record: "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135",
 });
 assert(dataLayerDetail);
@@ -73,8 +73,8 @@ assert(
   )
 );
 
-assert.strictEqual(previewCandidate.title, "Canals");
-assert.strictEqual(previewCandidate.source_zip_path, "data_layers/water_cwb_canals.zip");
+assert.strictEqual(previewCandidate.title, "BCTS Operating Areas");
+assert.strictEqual(previewCandidate.source_zip_path, "data_layers/adminunits_bcts.zip");
 assert.strictEqual(previewCandidate.preview.eligibility_status, "candidate_missing_crs");
 assert.deepStrictEqual(previewCandidate.preview.eligibility_blockers, [
   "missing_crs",

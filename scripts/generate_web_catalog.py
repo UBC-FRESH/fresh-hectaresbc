@@ -14,7 +14,7 @@ from fresh_hectaresbc import DatasetRecord, HectaresBC
 
 DEFAULT_OUTPUT = Path("web/data/catalog.json")
 REPRESENTATIVE_PREVIEW_RECORDS = {
-    "data_layer_candidate": "dl_water_cwb_canals",
+    "data_layer_candidate": "dl_adminunits_bcts",
     "unavailable_record": "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135",
 }
 FORBIDDEN_FRAGMENTS = (

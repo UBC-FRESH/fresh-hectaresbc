@@ -21,7 +21,6 @@ DEFAULT_WEB_ROOT = REPO_ROOT / "web"
 DEFAULT_CATALOG = DEFAULT_WEB_ROOT / "data" / "catalog.json"
 REPRESENTATIVE_IDS = {
     "dl_adminunits_bcts",
-    "dl_water_cwb_canals",
     "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135",
 }
 FORBIDDEN_CATALOG_FRAGMENTS = (
@@ -135,7 +134,7 @@ def _check_catalog(catalog_path: Path) -> dict[str, object]:
     )
     representatives = catalog.get("representative_preview_records") or {}
     _require(
-        representatives.get("data_layer_candidate") == "dl_water_cwb_canals",
+        representatives.get("data_layer_candidate") == "dl_adminunits_bcts",
         "unexpected representative data-layer candidate",
     )
     _require(

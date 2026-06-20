@@ -206,11 +206,11 @@ http://localhost:8000/#vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
 Representative map preview routes use `#map=<dataset_id>`:
 
 ```text
-http://localhost:8000/#map=dl_water_cwb_canals
+http://localhost:8000/#map=dl_adminunits_bcts
 http://localhost:8000/#map=vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
 ```
 
-The `dl_water_cwb_canals` route loads and renders the generated GeoJSON preview artifact from `web/data/map_previews/dl_water_cwb_canals/preview.geojson`. The layer panel includes visibility and opacity controls, preview eligibility metadata, and a link back to the recovered catalog detail route. The generated `web/data/catalog.json` file is ignored because it is derived from packaged catalog metadata. Generated map-preview artifacts under `web/data/map_previews/` are also ignored. The initial map-preview GeoJSON is a labelled UI fixture pending derivation from recovered payload content, not recovered HectaresBC geometry. Browser catalog development does not require raw HectaresBC payloads, DataLad network retrieval, Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access. Node is still a system prerequisite for the browser smoke scripts; it is not installed by the Python `.venv` setup.
+The `dl_adminunits_bcts` route loads and renders the generated source-derived PNG preview artifact from `web/data/map_previews/dl_adminunits_bcts/preview.png`. The layer panel includes visibility and opacity controls, real CRS and bounds metadata, legend classes, preview derivation metadata, and a link back to the recovered catalog detail route. The generated `web/data/catalog.json` file is ignored because it is derived from packaged catalog metadata. Generated map-preview artifacts under `web/data/map_previews/` are also ignored. Browser catalog development does not require Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access. Source-derived preview generation requires local access to the relevant recovered ZIP payload through the DataLad submodule or ignored local archive fallback. Node is still a system prerequisite for the browser smoke scripts; it is not installed by the Python `.venv` setup.
 
 ## DataLad Retrieval
 
