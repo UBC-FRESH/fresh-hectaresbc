@@ -5,6 +5,7 @@
 - Activated Phase 15 Sphinx docs and GitHub Pages publication with parent issue #121, branch `feature/p15-sphinx-github-pages-docs`, and child issues #124, #123, and #122.
 - Added the initial Sphinx documentation scaffold, API reference pages, docs optional dependencies, GitHub Pages docs workflow, ignored Sphinx build output, and local docs build commands.
 - Verified Phase 15 locally with a warning-clean Sphinx HTML build, 53 passing Python tests, and `git diff --check`.
+- Merged Phase 15 Sphinx docs and GitHub Pages publication to `main` via PR #125.
 
 ## 2026-06-18
 

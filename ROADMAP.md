@@ -227,7 +227,7 @@ Phase 14 corrects the Phase 13 map context mistake. The browser needs a recogniz
 
 GitHub parent issue: #121
 
-Active branch: `feature/p15-sphinx-github-pages-docs`
+Merged PR: #125
 
 Phase 15 adds formal project documentation using Sphinx and publishes it to
 GitHub Pages automatically on pushes to `main`, following the lighter-weight
@@ -252,6 +252,5 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Open a Phase 15 PR from `feature/p15-sphinx-github-pages-docs` to `main`.
-2. Merge the Phase 15 PR after checks/review.
-3. Close parent issue #121 after the PR merge is complete.
+1. Start the next roadmap phase only after Phase 15 parent issue #121 is closed, unless a parallel lane is explicitly approved.
+2. Keep the next phase implementation-oriented, with a parent issue, feature branch, child issues, and verification plan before code changes.
