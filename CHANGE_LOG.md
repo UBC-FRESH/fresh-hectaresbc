@@ -19,6 +19,7 @@
 - Activated Phase 17 CLI documentation expansion with parent issue #135, branch `feature/p17-cli-docs`, and child issues #137, #138, and #136.
 - Completed P17.1 by adding a dedicated Sphinx CLI guide page to the user guide, documenting the implemented command groups and command intent without adding unimplemented future CLI commands.
 - Completed P17.2 by expanding the CLI guide with representative catalog, data, diagnostics, and fetch examples; text/table versus JSON output behavior; exit codes; setup-dependent status behavior; override options; and secret-safety/retrieval boundaries, with CLI-focused tests passing.
+- Completed P17.3 closeout by linking the README to the new CLI guide, rerunning a warning-clean Sphinx build, CLI-focused tests, the CLI quickstart smoke path, `git diff --check`, and the full Python test suite with 63 passing tests.
 
 ## 2026-06-18
 

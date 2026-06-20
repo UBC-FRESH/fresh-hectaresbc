@@ -282,7 +282,7 @@ reading source code or planning contracts.
 
 - [x] P17.1 Add Sphinx CLI guide. Child issue: #137.
 - [x] P17.2 Document CLI examples, outputs, and safety boundaries. Child issue: #138.
-- [ ] P17.3 Verify and close CLI documentation phase. Child issue: #136.
+- [x] P17.3 Verify and close CLI documentation phase. Child issue: #136.
 
 ## Phase 18: Future Workflow Hardening
 
@@ -297,6 +297,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Continue with P17.1 adding the Sphinx CLI guide (#137).
-2. Keep the CLI docs aligned with implemented Typer commands and tests.
-3. Keep Phase 18 workflow hardening as planned backlog unless explicitly activated.
+1. Open the Phase 17 pull request from `feature/p17-cli-docs` to `main`.
+2. Merge the Phase 17 PR after review/CI.
+3. Close parent issue #135 only after the PR is merged.

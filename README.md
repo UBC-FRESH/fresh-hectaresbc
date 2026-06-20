@@ -156,6 +156,10 @@ Run the CLI quickstart:
 bash examples/cli_quickstart.sh
 ```
 
+See `docs/cli.rst` for the full command guide, including output formats, exit
+codes, setup-dependent statuses, override options, and retrieval safety
+boundaries.
+
 Build the Sphinx documentation locally:
 
 ```bash
