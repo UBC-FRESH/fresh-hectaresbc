@@ -15,7 +15,7 @@ def test_web_catalog_payload_uses_package_catalog() -> None:
         "not_supported": 1765,
     }
     assert payload["representative_preview_records"] == {
-        "data_layer_candidate": "dl_water_cwb_canals",
+        "data_layer_candidate": "dl_adminunits_bcts",
         "unavailable_record": "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135",
     }
 
@@ -23,10 +23,10 @@ def test_web_catalog_payload_uses_package_catalog() -> None:
     assert records["dl_adminunits_bcts"]["title"] == "BCTS Operating Areas"
     assert records["dl_adminunits_bcts"]["preview"]["has_wms"] is True
     assert (
-        records["dl_water_cwb_canals"]["preview"]["eligibility_status"]
+        records["dl_adminunits_bcts"]["preview"]["eligibility_status"]
         == "candidate_missing_crs"
     )
-    assert records["dl_water_cwb_canals"]["preview"]["eligibility_blockers"] == [
+    assert records["dl_adminunits_bcts"]["preview"]["eligibility_blockers"] == [
         "missing_crs",
         "missing_extent",
     ]

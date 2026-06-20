@@ -470,12 +470,16 @@ pre {
   font-weight: 700;
 }
 
-.map-geojson-layer {
+.map-render-layer {
   position: absolute;
   inset: 0;
   z-index: 2;
   width: 100%;
   height: 100%;
+}
+
+.map-raster-layer {
+  object-fit: fill;
 }
 
 .map-feature-line {
@@ -544,6 +548,28 @@ pre {
   color: var(--accent-dark);
   font-weight: 700;
   text-align: right;
+}
+
+.map-legend-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.map-legend-list li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.map-legend-swatch {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
 }
 
 .map-layer-panel,

@@ -173,16 +173,43 @@ Catalog operations do not read bulky ZIP payloads, require the data submodule co
 
 ## Browser Catalog Development
 
-Generate the static browser catalog artifact from the Python package API:
+Generate the static browser catalog artifact from the Python package API and the
+source-derived BCTS map preview artifact from recovered payload content:
 
 ```bash
 python scripts/generate_web_catalog.py
-python scripts/generate_map_preview_artifacts.py
+python scripts/generate_map_preview_artifacts.py --dataset-id dl_adminunits_bcts
 python scripts/smoke_test_web_static_app.py
 python scripts/smoke_test_map_preview_artifacts.py
 node scripts/smoke_test_web_catalog_ui.js web/data/catalog.json
 node scripts/smoke_test_web_app_dom.js web/data/catalog.json
 ```
+
+The map-preview generator reads the real BCTS raster from:
+
+```text
+data_layers/adminunits_bcts.zip!bcts.tiff
+```
+
+It resolves that ZIP from the DataLad submodule when annex content is present,
+or from the ignored local archive fallback:
+
+```text
+tmp/shared-data/hectaresbc/data_layers/adminunits_bcts.zip
+```
+
+The generated browser files are ignored because they are reproducible outputs:
+
+```text
+web/data/catalog.json
+web/data/map_previews/manifest.json
+web/data/map_previews/dl_adminunits_bcts/preview.png
+```
+
+The preview artifact manifest records `EPSG:3005`, native and WGS84 bounds,
+source ZIP and internal TIFF/WMS paths, raster dimensions, nodata, 12
+legend/classes, and derivation status. Use `--max-size 256` for faster local
+smoke iterations; the default maximum preview dimension is 768 pixels.
 
 Serve the static app locally:
 
@@ -206,11 +233,11 @@ http://localhost:8000/#vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
 Representative map preview routes use `#map=<dataset_id>`:
 
 ```text
-http://localhost:8000/#map=dl_water_cwb_canals
+http://localhost:8000/#map=dl_adminunits_bcts
 http://localhost:8000/#map=vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
 ```
 
-The `dl_water_cwb_canals` route loads and renders the generated GeoJSON preview artifact from `web/data/map_previews/dl_water_cwb_canals/preview.geojson`. The layer panel includes visibility and opacity controls, preview eligibility metadata, and a link back to the recovered catalog detail route. The generated `web/data/catalog.json` file is ignored because it is derived from packaged catalog metadata. Generated map-preview artifacts under `web/data/map_previews/` are also ignored. The initial map-preview GeoJSON is a labelled UI fixture pending derivation from recovered payload content, not recovered HectaresBC geometry. Browser catalog development does not require raw HectaresBC payloads, DataLad network retrieval, Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access. Node is still a system prerequisite for the browser smoke scripts; it is not installed by the Python `.venv` setup.
+The `dl_adminunits_bcts` route loads and renders the generated source-derived PNG preview artifact from `web/data/map_previews/dl_adminunits_bcts/preview.png`. The layer panel includes visibility and opacity controls, real CRS and bounds metadata, legend classes, preview derivation metadata, and a link back to the recovered catalog detail route. This is a real source-derived raster preview, not the Phase 11 fixture geometry, but it is still a single static overlay image rather than a tile service or pan/zoom GIS renderer. Browser catalog development does not require Arbutus/Chinook credentials, UBC CWL, hosted workers, or object-store access. Source-derived preview generation requires local access to the relevant recovered ZIP payload through the DataLad submodule or ignored local archive fallback. Node is still a system prerequisite for the browser smoke scripts; it is not installed by the Python `.venv` setup. In restricted environments that cannot bind a loopback socket, `scripts/smoke_test_web_static_app.py` still validates static assets and catalog content and reports the HTTP serving check as skipped.
 
 ## DataLad Retrieval
 

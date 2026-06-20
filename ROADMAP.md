@@ -184,19 +184,35 @@ Phase 11 must produce a real runnable browser map-preview surface, not another p
 - [x] P11.5 Add map layer controls and catalog linkback. Child issue: #101.
 - [x] P11.6 Verify, document, and close map preview phase. Child issue: #102.
 
-## Phase 12: Future Workflow Hardening
+## Phase 12: Source-Derived Real Map Previews
+
+GitHub parent issue: #105
+
+Active branch: `feature/p12-source-derived-map-previews`
+
+Draft PR: #111
+
+Phase 12 replaces the Phase 11 fixture happy path with a real source-derived raster preview. The first target is `dl_adminunits_bcts` / BCTS Operating Areas, derived from the real `bcts.tiff` inside `adminunits_bcts.zip`. The default browser route should become `#map=dl_adminunits_bcts`, with a PNG/RGBA overlay generated from recovered payload content, real CRS and bounds metadata, legend classes, visibility/opacity controls, and catalog linkback.
+
+- [x] P12.1 Audit real preview candidate and source raster readability. Child issue: #106.
+- [x] P12.2 Implement source-derived raster PNG preview generator. Child issue: #107.
+- [x] P12.3 Update browser map renderer for raster overlay artifacts. Child issue: #108.
+- [x] P12.4 Add real-data smoke checks and tests. Child issue: #109.
+- [x] P12.5 Document and close source-derived preview phase. Child issue: #110.
+
+## Phase 13: Future Workflow Hardening
 
 These are planned but not active requirements yet.
 
-- [ ] P12.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
-- [ ] P12.2 Add linting, formatting, tests, and pre-commit once code exists.
-- [ ] P12.3 Add CI once there are stable commands to run.
-- [ ] P12.4 Add documentation build checks once formal docs exist.
-- [ ] P12.5 Add machine-readable catalog schemas once the metadata model stabilizes.
-- [ ] P12.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
+- [ ] P13.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
+- [ ] P13.2 Add linting, formatting, tests, and pre-commit once code exists.
+- [ ] P13.3 Add CI once there are stable commands to run.
+- [ ] P13.4 Add documentation build checks once formal docs exist.
+- [ ] P13.5 Add machine-readable catalog schemas once the metadata model stabilizes.
+- [ ] P13.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
 
 ## Current Next Steps
 
-1. Close parent issue #96 after recording the Phase 11 merge.
-2. Do not activate Phase 12 until the maintainer selects it as the next roadmap phase.
-3. Keep future work out of a new branch/parent issue until the next roadmap phase is explicitly activated.
+1. Merge Phase 12 PR #111 back to `main`.
+2. Close the Phase 12 parent issue #105 after the PR merge is complete.
+3. Start the next roadmap phase only after Phase 12 is closed, unless a parallel lane is explicitly approved.
