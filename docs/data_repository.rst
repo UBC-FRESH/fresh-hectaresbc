@@ -34,3 +34,16 @@ The recovered ZIP payload publication currently includes:
 * 1,765 virtual-layer ZIPs;
 * 17,531,591,717 published ZIP bytes;
 * the ``arbutus-s3`` storage remote.
+
+The data repository also stores the published browser-preview artifact cache
+under:
+
+.. code-block:: text
+
+   derived/web_map_previews/v1/
+
+That cache currently includes a compact preview index for all 2,183 recovered
+records, 2,163 source-derived preview PNGs tracked by git-annex, and 20
+``not_previewable`` records. The main repository consumes this publication
+through the linked submodule at
+``external/fresh-hectaresbc-data/derived/web_map_previews/v1/``.

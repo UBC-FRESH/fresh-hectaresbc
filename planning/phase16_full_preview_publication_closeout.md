@@ -39,14 +39,14 @@ python scripts/serve_web_app.py --host 0.0.0.0 --port 8023
 
 The generic repo-root `python -m http.server` command must not be used for this
 workflow because it exposes a directory listing at `/`. The project server
-redirects `/` to `/web/`, serves only `/web/` and the published preview artifact
-tree, and disables directory listings.
+redirects `/` to the proxy-relative `web/` path, serves only `/web/` and the
+published preview artifact tree, and disables directory listings.
 
 ## Live Server Checks
 
 The safe server was checked on port `8023`:
 
-- `/` returns `302` to `/web/`.
+- `/` returns `302` to `web/`.
 - `/web/` serves the browser shell.
 - `/web/data/catalog.json` serves the generated catalog.
 - `/external/fresh-hectaresbc-data/derived/web_map_previews/v1/index.json`

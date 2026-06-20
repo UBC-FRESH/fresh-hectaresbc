@@ -13,12 +13,16 @@ Current capabilities include:
 * local path resolution, content-status checks, backend diagnostics, and dry-run
   retrieval planning;
 * a static browser catalog with stable detail and map-preview routes;
-* source-derived map-preview artifacts for the first recovered raster layer and
-  a recovered administrative reference layer behind it.
+* a DataLad-backed source-derived browser preview publication covering 2,183
+  recovered catalog records, with 2,163 preview PNGs and 20 records marked
+  ``not_previewable``;
+* a recovered administrative reference layer that can be used as map context
+  behind preview overlays.
 
 Important current limits:
 
-* only ``dl_adminunits_bcts`` has a source-derived browser preview artifact;
 * raw HectaresBC payloads live outside this repository in a DataLad submodule;
+* browser previews are static PNG overlays, not a tile service or full GIS
+  renderer;
 * custom AOI masking, tile selection, and download-request processing are future
   service work, not implemented app behavior yet.

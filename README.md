@@ -255,7 +255,7 @@ Then open:
 http://localhost:8023/web/
 ```
 
-The project server redirects `/` to `/web/`, serves only browser assets plus the published preview artifact tree, and disables directory listings. Serving only the `web/` directory still works for catalog browsing and the ignored local `web/data/map_previews/` fallback, but it cannot read sibling paths under `external/fresh-hectaresbc-data/`.
+The project server redirects `/` to the proxy-relative `web/` path, serves only browser assets plus the published preview artifact tree, and disables directory listings. Serving only the `web/` directory still works for catalog browsing and the ignored local `web/data/map_previews/` fallback, but it cannot read sibling paths under `external/fresh-hectaresbc-data/`.
 
 Representative detail views use stable hash routes:
 

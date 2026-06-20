@@ -49,7 +49,7 @@ In the JupyterHub/code-server proxy environment, use the corresponding proxied `
 https://fresh01.01101.dev/jupyterhub11/user/gep/codeserver/proxy/8023/web/#map=dl_adminunits_bcts
 ```
 
-The project server redirects `/` to `/web/`, serves only browser assets plus the published preview artifact tree, and disables directory listings. Serving only the `web/` directory still works for catalog browsing and for the ignored local `web/data/map_previews/` fallback, but it cannot read sibling paths under `external/fresh-hectaresbc-data/`.
+The project server redirects `/` to the proxy-relative `web/` path, serves only browser assets plus the published preview artifact tree, and disables directory listings. Serving only the `web/` directory still works for catalog browsing and for the ignored local `web/data/map_previews/` fallback, but it cannot read sibling paths under `external/fresh-hectaresbc-data/`.
 
 Representative detail views use stable hash routes:
 
