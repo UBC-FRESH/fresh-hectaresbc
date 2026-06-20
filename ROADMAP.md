@@ -267,7 +267,7 @@ The intended ownership split is:
 - [x] P16.3 Implement batch preview generation and resumable validation. Child issue: #128.
 - [x] P16.4 Publish generated preview artifacts to the DataLad object store. Child issue: #132.
 - [x] P16.5 Update browser app to consume published preview manifests. Child issue: #130.
-- [ ] P16.6 Verify, document, and close full preview publication phase. Child issue: #131.
+- [x] P16.6 Verify, document, and close full preview publication phase. Child issue: #131.
 
 ## Phase 17: Future Workflow Hardening
 
@@ -282,6 +282,6 @@ These are planned but not active requirements yet.
 
 ## Current Next Steps
 
-1. Continue with P16.6 verifying, documenting, and closing the full preview publication phase (#131).
-2. Confirm the browser app can load published preview artifacts from `external/fresh-hectaresbc-data/derived/web_map_previews/v1/` when served from the repository root.
-3. Keep bulky preview payloads in the DataLad-backed data repo and retrieve them through annex/object-store workflows rather than committing them to this code repo.
+1. Open the Phase 16 pull request from `feature/p16-full-layer-preview-publication` to `main`.
+2. Merge the Phase 16 PR after review/CI.
+3. Close parent issue #126 only after the PR is merged.
