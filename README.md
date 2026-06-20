@@ -156,6 +156,15 @@ Run the CLI quickstart:
 bash examples/cli_quickstart.sh
 ```
 
+Build the Sphinx documentation locally:
+
+```bash
+python -m sphinx -b html -W --keep-going docs docs/_build/html
+```
+
+GitHub Actions builds documentation on pull requests and publishes the Sphinx
+site to GitHub Pages on pushes to `main`.
+
 In a source checkout, the catalog API reads compact tracked metadata from:
 
 ```text

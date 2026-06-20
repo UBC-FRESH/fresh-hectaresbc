@@ -6,5 +6,6 @@ __pycache__/
 .venv/
 build/
 dist/
+docs/_build/
 web/data/catalog.json
 web/data/map_previews/

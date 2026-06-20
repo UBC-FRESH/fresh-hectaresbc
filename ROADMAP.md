@@ -223,19 +223,35 @@ Phase 14 corrects the Phase 13 map context mistake. The browser needs a recogniz
 - [x] P14.2 Render visible basemap and fix deep-link state. Child issue: #118.
 - [x] P14.3 Verify, document, and close source-derived basemap phase. Child issue: #119.
 
-## Phase 15: Future Workflow Hardening
+## Phase 15: Sphinx Docs And GitHub Pages Publication
+
+GitHub parent issue: #121
+
+Active branch: `feature/p15-sphinx-github-pages-docs`
+
+Phase 15 adds formal project documentation using Sphinx and publishes it to
+GitHub Pages automatically on pushes to `main`, following the lighter-weight
+version of the FHOPS documentation pattern. The docs should cover the current
+Python API, CLI, data repository, browser map-preview workflow, and development
+commands without pretending that future AOI/download services already exist.
+
+- [x] P15.1 Add Sphinx docs scaffold and API reference. Child issue: #124.
+- [x] P15.2 Add GitHub Pages docs workflow. Child issue: #123.
+- [x] P15.3 Verify, document, and close docs phase. Child issue: #122.
+
+## Phase 16: Future Workflow Hardening
 
 These are planned but not active requirements yet.
 
-- [ ] P15.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
-- [ ] P15.2 Add linting, formatting, tests, and pre-commit once code exists.
-- [ ] P15.3 Add CI once there are stable commands to run.
-- [ ] P15.4 Add documentation build checks once formal docs exist.
-- [ ] P15.5 Add machine-readable catalog schemas once the metadata model stabilizes.
-- [ ] P15.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
+- [ ] P16.1 Add more formal GitHub issue hygiene, labels, milestones, and release tracking when task volume warrants it.
+- [ ] P16.2 Add linting, formatting, tests, and pre-commit once code exists.
+- [ ] P16.3 Add broader CI once there are stable commands to run beyond docs builds.
+- [ ] P16.4 Add documentation quality gates beyond basic Sphinx build checks once docs mature.
+- [ ] P16.5 Add machine-readable catalog schemas once the metadata model stabilizes.
+- [ ] P16.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
 
 ## Current Next Steps
 
-1. Open and merge the Phase 14 PR after closeout verification.
-2. Close parent issue #116 after the PR merge is complete.
-3. Start the next roadmap phase only after Phase 14 is closed, unless a parallel lane is explicitly approved.
+1. Open a Phase 15 PR from `feature/p15-sphinx-github-pages-docs` to `main`.
+2. Merge the Phase 15 PR after checks/review.
+3. Close parent issue #121 after the PR merge is complete.
