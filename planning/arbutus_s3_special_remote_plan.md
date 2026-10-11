@@ -17,7 +17,7 @@ Current non-secret remote details:
 ```text
 remote name: arbutus-s3
 bucket: fresh-hectaresbc-data
-endpoint host: object-arbutus.cloud.computecanada.ca
+endpoint host: object-arbutus.alliancecan.ca
 region: ca-west-1
 protocol: https
 port: 443
@@ -67,7 +67,7 @@ export AWS_ACCESS_KEY_ID="..."
 export AWS_SECRET_ACCESS_KEY="..."
 
 export AWS_DEFAULT_REGION="ca-west-1"
-export S3_ENDPOINT_URL="https://object-arbutus.cloud.computecanada.ca"
+export S3_ENDPOINT_URL="https://object-arbutus.alliancecan.ca"
 ```
 
 The working configuration uses standard AWS-compatible variables so that boto3, DataLad, and git-annex can share the same local environment.
