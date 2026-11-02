@@ -295,8 +295,56 @@ These are planned but not active requirements yet.
 - [ ] P18.5 Add machine-readable catalog schemas once the metadata model stabilizes.
 - [ ] P18.6 Add full data publication/storage hardening once Phase 5 publication has been validated.
 
+## Phase 19: Browser UI Upgrade
+
+Status: implementation in progress on
+`feature/p19-web-ui-upgrade`; draft PR #140. Planning:
+`planning/web_ui_upgrade_plan.md`. GitHub issue activation is pending
+maintainer review.
+
+Phase 19 replaces the document-style catalog page with an application shell:
+a Browse workspace with search, facets, pagination, preview thumbnails, and a
+contextual inspector; a dataset route with grouped metadata/provenance and
+copyable usage commands; and a MapLibre map workspace with a static fallback.
+The work keeps the static-first deployment and does not add credentials,
+hosted workers, a database, or a frontend build pipeline.
+
+- [x] P19.0 Add the UI review and upgrade plan, design tokens, and route/state contract.
+- [x] P19.1 Replace the stacked page with a responsive application shell and preserve legacy hash routes.
+- [x] P19.2 Add the compact catalog index, faceted Browse workspace, URL state, pagination, and preview thumbnails.
+- [x] P19.3 Add the dataset inspector and grouped detail/provenance views with copy/download actions.
+- [x] P19.4 Add the MapLibre map workspace with layer controls, legend, and static/offline fallback.
+- [x] P19.5 Add gzip/cache server behavior, real-browser smoke coverage, and updated docs.
+- [x] P19.6 Make the Map workspace open a useful default preview layer, enable Map from Browse, add preview-layer discovery links and a searchable change-layer control, add `scripts/fetch_web_previews.py` plus a missing-image banner, and add ignored 2048 px local preview overrides for sharper full-screen maps.
+- [x] P19.8 Reproject map preview overlays to EPSG:3857 so they align with the Web-Mercator basemap; keep native previews for thumbnails.
+- [x] P19.9 Complete full-library 2048 px previews for all 2,183 records, including virtual layers and the sparse pine-beetle rasters previously marked not previewable, and reproject the full set to EPSG:3857.
+- [x] P19.10 Add on-demand 1-ha source raster tiles (`/api/tiles/{id}/{z}/{x}/{y}.png`) with Web-Mercator reprojection, legend colors, nodata handling, and disk caching; MapLibre uses raster tiles when the service is available and falls back to the static preview otherwise.
+- [x] P19.11 Add demo service operations: detached `demo_ctl.sh`, systemd/env/cloudflared templates, public-origin health checker, and LRU tile-cache pruning.
+- [ ] P19.7 Verify, document, and close the browser UI upgrade phase.
+
+## Phase 20: Agent GIS Assistant And AOI Bundles
+
+Status: implementation in progress on `feature/p19-web-ui-upgrade`; draft PR
+#140. Planning: `planning/agent_gis_bundles.md`.
+
+Phase 20 adds an optional FastAPI service and browser assistant that can explain
+the UI, search the recovered raster catalog, resolve FEMIC/BC Data Catalogue
+boundaries into AOIs, clip selected rasters to those AOIs, and prepare
+downloadable multi-layer bundles. The static app remains usable without the
+service.
+
+- [x] P20.1 Add the FEMIC BCDC boundary resolution/materialization bridge with name and numeric-feature matching.
+- [x] P20.2 Add windowed raster clipping that preserves CRS, dtype, and nodata.
+- [x] P20.3 Add bundle assembly with AOI, manifest, provenance, ZIP, and demo limits.
+- [x] P20.4 Add the optional FastAPI service, static mounts, agent API, layer search, AOI, and bundle endpoints.
+- [x] P20.5 Add the browser "Ask" assistant panel with UI help and tool-driven AOI/bundle workflows.
+- [x] P20.6 Add agent tools, tests, docs, and the separate demo deployment.
+- [ ] P20.7 Verify and close the agent GIS assistant phase.
+
 ## Current Next Steps
 
-1. Open the Phase 17 pull request from `feature/p17-cli-docs` to `main`.
-2. Merge the Phase 17 PR after review/CI.
-3. Close parent issue #135 only after the PR is merged.
+1. Run the Phase 19 browser/static/logic smoke checks and review the app at
+   desktop, tablet, and mobile widths.
+2. Open the Phase 19 pull request from `feature/p19-web-ui-upgrade` to `main`.
+3. Activate or close the Phase 19 GitHub parent/child issues once the
+   maintainer confirms the issue numbering.

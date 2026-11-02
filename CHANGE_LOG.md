@@ -1,5 +1,31 @@
 # Change Log
 
+## 2026-11-02
+
+- Added `planning/web_ui_upgrade_plan.md`, a UI/UX review and phased upgrade plan benchmarking the catalog against the WS4 and FHOPS application shells and recording measured navigation, responsive, preview-semantics, and payload issues.
+- Added `catalog.index.json`, `catalog.details.json`, and `catalog.meta.json` generation alongside the compatibility `catalog.json`; the Browse workspace now loads the compact index and fetches full detail records lazily.
+- Replaced the stacked catalog page with a responsive application shell: compact header, global search, family/preview/verification/size facets, URL-addressable browse state, sortable results, pagination, preview thumbnails, and a contextual dataset inspector.
+- Added a dedicated dataset route with grouped metadata, provenance, known gaps/uncertainty, preview evidence, human-readable labels, copyable Python/CLI commands, JSON download, and raw-record disclosure.
+- Added a MapLibre map workspace with a vendored library, WGS84 preview-image overlay, visibility/opacity controls, legend classes, OpenStreetMap and offline basemaps, fit-to-layer, and static/status fallbacks for missing or non-previewable artifacts.
+- Preserved legacy `#<dataset_id>` and `#map=<dataset_id>` routes through canonical redirects, and preserved browse search/filter state when opening a dataset or returning to results.
+- Added gzip compression, conservative cache headers, and safer response headers to `scripts/serve_web_app.py`; the compact index drops from about 2.6 MB to about 230 KB over the wire.
+- Replaced the hand-written fake-DOM smoke harness with `scripts/smoke_test_web_ui_browser.py`, which checks desktop/tablet/mobile overflow, search-to-inspector navigation, dataset metadata, map loading/fallback, legacy routes, and keyboard focus when Playwright is available.
+- Updated the static asset checks, catalog logic checks, generator tests, server tests, README, web README, and Sphinx browser guide for the new routes, artifacts, and verification commands.
+- Pushed `feature/p19-web-ui-upgrade` and opened draft PR #140 for review.
+- Fixed map discovery after review: initialized the data submodule, fetched the 2,163 published preview PNG payloads from Arbutus (about 37 MB), made `#/map` open a useful default preview layer, enabled the Map tab directly from Browse, added "Preview layers" links and a searchable change-layer control, and added `scripts/fetch_web_previews.py` plus a visible missing-preview-image banner for cold checkouts.
+- Improved full-screen preview sharpness: recorded that the published artifacts are 256 px, added `scripts/generate_highres_web_previews.py` and ignored `web/data/map_previews_highres/v1/` overrides at 2048 px, taught the browser to prefer high-resolution local previews over the published index, and switched categorical raster previews to nearest-neighbor sampling.
+- Added the optional FastAPI web service (`fresh_hectaresbc.web_service`, `scripts/run_web_service.py`) with static app/preview mounts, catalog search, agent status/chat, FEMIC AOI resolution, and clipped bundle endpoints.
+- Added `femic_bridge.py` to resolve BCDC boundary packages and materialize WFS features through FEMIC, with named/numeric feature matching and compact candidate responses.
+- Added windowed raster clipping (`clip.py`) and bundle assembly (`bundle.py`): AOI GeoJSON, clipped GeoTIFFs preserving CRS/dtype/nodata, manifest/provenance, ZIP, six-layer/10M-ha demo limits, and safe bundle IDs.
+- Added `scripts/agent_tools.py` for assistant-driven layer search, boundary search/resolution, bundle preparation, and recent-bundle listing.
+- Added the browser "Ask" assistant panel with UI help, current catalog/map context, tool action chips, markdown links, and bundle download links; it stays hidden unless the service reports an enabled assistant.
+- Added `planning/agent_gis_bundles.md`, web service/agent tests with a synthetic archive, and README/Sphinx documentation for the service, limits, and protected demo deployment.
+- Created a separate demo clone at `fresh-hectaresbc-demo`, materialized its catalog, 2,163 preview PNGs, and local high-resolution overrides, and started the service on local port 8030 for the `fresh-hectaresbc.01101.dev` cloudflared/Cloudflare Access route.
+- Fixed map overlay alignment: preview PNGs are rendered in native CRS (usually EPSG:3005), so added `scripts/reproject_map_previews.py` to write ignored EPSG:3857 map overlays and bounds under `web/data/map_previews_3857/`; the map route now uses the reprojected image, while native previews remain thumbnails. Bumped browser asset versions so cached pre-fix JS/CSS is not reused.
+- Completed full-library sharpness: generated 2048 px overrides for all 1,765 virtual layers, reprojected all 2,183 previewable layers to EPSG:3857 (934 MB), and fixed WMS range-legend parsing plus palette fallback so the 19 sparse pine-beetle rasters that the published batch marked `not_previewable_empty_preview` now render. All 2,183 recovered records have a map preview; the demo clone has the full high-res/3857 set.
+- Added zoom-dependent 1-ha raster tiles: `tiles.py` renders 256 px EPSG:3857 tiles on demand from the recovered 100 m BC Albers GeoTIFFs with `WarpedVRT`, applies exact/range legends and nodata handling, and caches under `var/tile-cache/`. The service exposes `/api/tiles/{dataset_id}/metadata` and `/api/tiles/{dataset_id}/{z}/{x}/{y}.png`; MapLibre uses a raster tile source when available and falls back to the static 3857 preview otherwise.
+- Added demo operations: `scripts/demo_ctl.sh` for detached start/stop/restart/status/logs, systemd/env/cloudflared templates under `deploy/`, `scripts/check_demo_service.py` for public-origin verification, and LRU tile-cache pruning with a 4 GiB default budget.
+
 ## 2026-06-20
 
 - Activated Phase 15 Sphinx docs and GitHub Pages publication with parent issue #121, branch `feature/p15-sphinx-github-pages-docs`, and child issues #124, #123, and #122.

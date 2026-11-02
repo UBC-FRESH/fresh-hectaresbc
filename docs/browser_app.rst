@@ -1,15 +1,25 @@
-Browser Catalog And Map Preview
-===============================
+Browser Catalog And Map Workspace
+=================================
 
-The repository includes a static browser app under ``web/``. Generate the
-catalog with:
+The repository includes a static browser app under ``web/``. It has a Browse
+workspace, a dataset detail view, and a MapLibre map workspace. Generate the
+catalog and its lazy detail/index artifacts with:
 
 .. code-block:: bash
 
    python scripts/generate_web_catalog.py
    python scripts/smoke_test_web_static_app.py
    node scripts/smoke_test_web_catalog_ui.js web/data/catalog.json
-   node scripts/smoke_test_web_app_dom.js web/data/catalog.json
+   python scripts/smoke_test_web_ui_browser.py
+
+The generator writes four ignored artifacts:
+
+.. code-block:: text
+
+   web/data/catalog.json          full compatibility payload
+   web/data/catalog.index.json    compact Browse/search rows
+   web/data/catalog.details.json  full records, loaded on dataset open
+   web/data/catalog.meta.json     counts and generation timestamp
 
 The browser first looks for the published DataLad-backed preview index:
 
@@ -22,6 +32,45 @@ source-derived preview PNGs and 20 ``not_previewable`` records. Per-layer PNG
 payloads are annexed in the data submodule and published to ``arbutus-s3``.
 Per-layer manifests and the compact index are Git-tracked in the data
 repository.
+
+A cold checkout has the index and manifests but not the preview images. Fetch
+the payloads with user-local Arbutus credentials:
+
+.. code-block:: bash
+
+   export PATH="$HOME/.local/bin:$PATH"
+   source ~/.config/fresh-hectaresbc/arbutus_env.sh
+   python scripts/fetch_web_previews.py
+
+Use ``--dataset-id dl_adminunits_bcts`` for a single preview while developing.
+If an image is indexed but missing locally, the map shows an explicit
+"preview image missing locally" banner instead of an empty canvas.
+
+The published previews are intentionally compact (256 px), which is sharp at
+thumbnail scale but soft on a full-screen map. Generate ignored local 2048 px
+overrides from the recovered source archive:
+
+.. code-block:: bash
+
+   python scripts/generate_highres_web_previews.py \
+     --family data_layer --max-size 2048 --workers 8 \
+     --local-archive-root /path/to/hectaresbc
+
+The browser prefers ``web/data/map_previews_highres/v1/`` when present and falls
+back to the published previews for layers without an override. Use
+``--dataset-id`` for selected layers or ``--reindex-only`` after an interrupted
+run.
+
+Preview PNGs are in the source raster CRS (usually EPSG:3005 / BC Albers).
+MapLibre image overlays need Web Mercator, so reproject the map images:
+
+.. code-block:: bash
+
+   python scripts/reproject_map_previews.py --workers 8
+
+This writes ignored ``web/data/map_previews_3857/`` overlays with EPSG:3857
+bounds. The map route uses the reprojected images; native previews remain the
+list thumbnails.
 
 The older local BCTS preview generator remains available as a development
 fallback and for the current NRS administrative basemap/reference artifact:
@@ -41,21 +90,84 @@ Representative routes:
 
 .. code-block:: text
 
-   http://localhost:8023/web/#dl_adminunits_bcts
-   http://localhost:8023/web/#map=dl_adminunits_bcts
-   http://localhost:8023/web/#map=vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
-   http://localhost:8023/web/#map=dl_pinebeetle_pinekill1999
+   http://localhost:8023/web/#/catalog
+   http://localhost:8023/web/#/catalog?q=bull+trout
+   http://localhost:8023/web/#/map
+   http://localhost:8023/web/#/dataset/dl_adminunits_bcts
+   http://localhost:8023/web/#/dataset/dl_adminunits_bcts/map
+   http://localhost:8023/web/#/dataset/vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
+
+Legacy hashes redirect automatically:
+
+.. code-block:: text
+
+   #dl_adminunits_bcts    -> #/dataset/dl_adminunits_bcts
+   #map=dl_adminunits_bcts -> #/dataset/dl_adminunits_bcts/map
 
 The project server redirects ``/`` to ``web/`` using a proxy-relative redirect,
-serves only browser assets plus the published preview artifact tree, and
-disables directory listings. Serving only the ``web/`` directory still works for
+serves only browser assets plus the published preview artifact tree, disables
+directory listings, compresses textual responses with gzip, and sets
+conservative cache headers. Serving only the ``web/`` directory still works for
 catalog browsing and the ignored local ``web/data/map_previews/`` fallback, but
 it cannot read sibling paths under ``external/fresh-hectaresbc-data/``.
 
-The browser renders source-derived PNG/RGBA overlays. ``dl_adminunits_bcts`` and
-Bull Trout are representative previewable routes; ``dl_pinebeetle_pinekill1999``
-is a representative ``not_previewable`` route. The local fallback can provide a
-recovered administrative reference artifact derived from
-``data_layers/adminunits_nrsab.zip!nrsab.tiff``. The app does not use external
-map tiles, and the current previews are static image overlays rather than a tile
-service or full GIS renderer.
+Browse shows compact result rows with a preview thumbnail, format, family, size,
+verification, and preview badges. Facets cover family, preview availability,
+verification status, and size. Search, filters, sort, and pagination are stored
+in the hash so views are shareable and browser Back returns to the previous
+result set.
+
+The dataset view groups recovered metadata, provenance, known gaps/uncertainty,
+preview evidence, and copyable Python/CLI commands. Raw record JSON is available
+behind a technical-details disclosure.
+
+The map route lazy-loads MapLibre and renders the published preview PNG as an
+image overlay using its recovered WGS84 bounds. It includes layer visibility,
+opacity, legend classes, an OpenStreetMap basemap, an offline basemap option,
+and a static fallback when WebGL, bounds, or the preview index is unavailable.
+The app does not use dynamic tile services or raw payload retrieval in the
+browser.
+
+Optional Web Service And GIS Assistant
+--------------------------------------
+
+The static app can also run under an optional FastAPI service:
+
+.. code-block:: bash
+
+   python scripts/run_web_service.py \
+     --host 127.0.0.1 --port 8030 \
+     --allow-agent \
+     --archive-root /path/to/hectaresbc \
+     --femic-src /path/to/femic/src
+
+The service adds an OpenCode-backed assistant panel, catalog/layer search APIs,
+FEMIC BC Data Catalogue AOI resolution, and clipped raster bundle creation.
+The assistant can resolve a named TSA or administrative boundary, search the
+recovered raster library, and prepare a ZIP with clipped GeoTIFFs, the AOI, and
+a provenance manifest. Demo limits are six layers and 10,000,000 ha.
+
+The assistant is opt-in with ``--allow-agent``. The service binds loopback by
+default; a non-loopback demo bind requires ``--allow-remote`` and should sit
+behind an authenticating proxy such as Cloudflare Access/Zero Trust. See
+``planning/agent_gis_bundles.md`` for endpoints, limits, and the demo workflow.
+
+When the service has ``--archive-root``, the map uses zoom-dependent raster
+tiles rendered from the recovered 100 m (1 ha) source GeoTIFFs:
+
+.. code-block:: text
+
+   GET /api/tiles/{dataset_id}/metadata
+   GET /api/tiles/{dataset_id}/{z}/{x}/{y}.png
+
+Tiles are reprojected to EPSG:3857 on demand, colored with the recovered legend,
+and cached under ``var/tile-cache/``. MapLibre requests only visible tiles while
+panning and zooming. Source resolution is 1 ha, so zoom 13 is the practical
+maximum; deeper zoom over-samples the same cells. Without the service the app
+falls back to the static EPSG:3857 preview image.
+
+Default tests and smoke checks do not require UBC CWL, hosted workers, DataLad
+network retrieval, raw ZIP content, Arbutus/Chinook credentials, or an object
+store. Reading annexed preview PNG payloads from a cold checkout requires
+DataLad/git-annex retrieval from the configured storage remote before the browser
+can display those local files.
