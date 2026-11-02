@@ -193,6 +193,263 @@
     });
   }
 
+  function geometryCoordinates(value, output) {
+    if (!Array.isArray(value)) {
+      return;
+    }
+    if (
+      value.length >= 2 &&
+      Number.isFinite(Number(value[0])) &&
+      Number.isFinite(Number(value[1]))
+    ) {
+      output.push([Number(value[0]), Number(value[1])]);
+      return;
+    }
+    for (const item of value) {
+      geometryCoordinates(item, output);
+    }
+  }
+
+  function geometryBounds(geometry) {
+    const coordinates = [];
+    if (!geometry) {
+      return null;
+    }
+    if (geometry.type === "FeatureCollection") {
+      for (const feature of geometry.features || []) {
+        geometryCoordinates(feature.geometry?.coordinates, coordinates);
+      }
+    } else if (geometry.type === "Feature") {
+      geometryCoordinates(geometry.geometry?.coordinates, coordinates);
+    } else {
+      geometryCoordinates(geometry.coordinates, coordinates);
+    }
+    if (!coordinates.length) {
+      return null;
+    }
+    let minLng = Infinity;
+    let minLat = Infinity;
+    let maxLng = -Infinity;
+    let maxLat = -Infinity;
+    for (const [lng, lat] of coordinates) {
+      if (lng < minLng) minLng = lng;
+      if (lng > maxLng) maxLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+    }
+    return [
+      [minLng, minLat],
+      [maxLng, maxLat],
+    ];
+  }
+
+  function ensureAoiLayers(map) {
+    if (!map.getSource("hbc-aoi")) {
+      map.addSource("hbc-aoi", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+    }
+    if (!map.getLayer("hbc-aoi-fill")) {
+      map.addLayer({
+        id: "hbc-aoi-fill",
+        type: "fill",
+        source: "hbc-aoi",
+        paint: { "fill-color": "#b45309", "fill-opacity": 0.12 },
+      });
+    }
+    if (!map.getLayer("hbc-aoi-line")) {
+      map.addLayer({
+        id: "hbc-aoi-line",
+        type: "line",
+        source: "hbc-aoi",
+        paint: { "line-color": "#8a3f06", "line-width": 2 },
+      });
+    }
+  }
+
+  function setAoi(map, geometry, { fit = true } = {}) {
+    if (!map || !geometry) {
+      return;
+    }
+    if (!map.isStyleLoaded()) {
+      map.once("load", () => setAoi(map, geometry, { fit }));
+      return;
+    }
+    ensureAoiLayers(map);
+    const feature =
+      geometry.type === "FeatureCollection"
+        ? geometry
+        : {
+            type: "FeatureCollection",
+            features: [
+              geometry.type === "Feature"
+                ? geometry
+                : { type: "Feature", properties: {}, geometry },
+            ],
+          };
+    map.getSource("hbc-aoi")?.setData(feature);
+    if (fit) {
+      const bounds = geometryBounds(feature);
+      if (bounds) {
+        map.fitBounds(bounds, { padding: 48, duration: 400 });
+      }
+    }
+  }
+
+  function clearAoi(map) {
+    if (!map || !map.isStyleLoaded()) {
+      return;
+    }
+    map?.getSource("hbc-aoi")?.setData({
+      type: "FeatureCollection",
+      features: [],
+    });
+  }
+
+  function rectangleGeometry(start, end) {
+    const west = Math.min(start.lng, end.lng);
+    const east = Math.max(start.lng, end.lng);
+    const south = Math.min(start.lat, end.lat);
+    const north = Math.max(start.lat, end.lat);
+    return {
+      type: "Polygon",
+      coordinates: [
+        [
+          [west, north],
+          [east, north],
+          [east, south],
+          [west, south],
+          [west, north],
+        ],
+      ],
+    };
+  }
+
+  function startRectangleDraw(map, callback) {
+    if (!map) {
+      return;
+    }
+    if (!map.isStyleLoaded()) {
+      map.once("load", () => startRectangleDraw(map, callback));
+      return;
+    }
+    if (!map.getSource("hbc-draw")) {
+      map.addSource("hbc-draw", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+      map.addLayer({
+        id: "hbc-draw-fill",
+        type: "fill",
+        source: "hbc-draw",
+        paint: { "fill-color": "#b45309", "fill-opacity": 0.12 },
+      });
+      map.addLayer({
+        id: "hbc-draw-line",
+        type: "line",
+        source: "hbc-draw",
+        paint: {
+          "line-color": "#8a3f06",
+          "line-width": 2,
+          "line-dasharray": [2, 1],
+        },
+      });
+    }
+    const canvas = map.getCanvas();
+    const previousCursor = canvas.style.cursor;
+    canvas.style.cursor = "crosshair";
+    map.dragPan.disable();
+    let start = null;
+    let drawing = false;
+    let lastTouch = null;
+
+    const cleanup = () => {
+      map.off("mousedown", onDown);
+      map.off("mousemove", onMove);
+      map.off("mouseup", onUp);
+      map.off("touchstart", onTouchStart);
+      map.off("touchmove", onTouchMove);
+      map.off("touchend", onTouchEnd);
+      map.dragPan.enable();
+      canvas.style.cursor = previousCursor || "grab";
+      map.getSource("hbc-draw")?.setData({
+        type: "FeatureCollection",
+        features: [],
+      });
+      map.__hbcCancelDraw = null;
+    };
+    map.__hbcCancelDraw = cleanup;
+
+    const update = (end) => {
+      const geometry = rectangleGeometry(start, end);
+      map.getSource("hbc-draw")?.setData({
+        type: "FeatureCollection",
+        features: [{ type: "Feature", properties: {}, geometry }],
+      });
+      return geometry;
+    };
+
+    const finish = (end) => {
+      if (!drawing || !start) {
+        return;
+      }
+      drawing = false;
+      const geometry = update(end);
+      const bounds = geometryBounds(geometry);
+      cleanup();
+      if (
+        bounds &&
+        (Math.abs(bounds[1][0] - bounds[0][0]) > 0.0005 ||
+          Math.abs(bounds[1][1] - bounds[0][1]) > 0.0005)
+      ) {
+        callback(geometry);
+      }
+    };
+
+    const onDown = (event) => {
+      if (event.originalEvent && event.originalEvent.button !== 0) {
+        return;
+      }
+      start = event.lngLat;
+      drawing = true;
+      update(start);
+    };
+    const onMove = (event) => {
+      if (drawing && start) {
+        update(event.lngLat);
+      }
+    };
+    const onUp = (event) => {
+      finish(event.lngLat);
+    };
+    const onTouchStart = (event) => {
+      if (event.originalEvent?.touches?.length !== 1) {
+        return;
+      }
+      start = event.lngLat;
+      lastTouch = start;
+      drawing = true;
+      update(start);
+    };
+    const onTouchMove = (event) => {
+      if (drawing && start) {
+        lastTouch = event.lngLat;
+        update(lastTouch);
+      }
+    };
+    const onTouchEnd = () => {
+      finish(lastTouch);
+    };
+
+    map.on("mousedown", onDown);
+    map.on("mousemove", onMove);
+    map.on("mouseup", onUp);
+    map.on("touchstart", onTouchStart);
+    map.on("touchmove", onTouchMove);
+    map.on("touchend", onTouchEnd);
+  }
+
   async function create(options) {
     const {
       container,
@@ -250,6 +507,7 @@
     map.touchZoomRotate.disableRotation();
 
     map.on("load", () => {
+      map.__hbcReady = true;
       map.fitBounds(
         [
           [parsed[0], parsed[1]],
@@ -268,6 +526,12 @@
     });
 
     bindPanel(map, panel, parsed);
+    map.__hbc = {
+      setAoi: (geometry, options) => setAoi(map, geometry, options),
+      clearAoi: () => clearAoi(map),
+      startRectangleDraw: (callback) => startRectangleDraw(map, callback),
+      cancelRectangleDraw: () => map.__hbcCancelDraw?.(),
+    };
     activeMap = map;
     return map;
   }

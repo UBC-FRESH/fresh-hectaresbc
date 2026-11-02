@@ -117,6 +117,28 @@ def test_prepare_bundle_writes_manifest_and_zip(tmp_path: Path) -> None:
     assert "layers/dl_adminunits_bcts.tif" in names
 
 
+def test_candidate_options_extract_human_boundary_name() -> None:
+    from fresh_hectaresbc.femic_bridge import _candidate_options
+
+    options = _candidate_options(
+        [
+            {
+                "properties": {
+                    "TSA_NUMBER": "27",
+                    "TSA_NUMBER_DESCRIPTION": "Revelstoke TSA",
+                    "FEATURE_AREA_SQM": 1,
+                }
+            }
+        ]
+    )
+    assert options == [
+        {
+            "label": "TSA_NUMBER=27 | TSA_NUMBER_DESCRIPTION=Revelstoke TSA | FEATURE_AREA_SQM=1",
+            "name": "Revelstoke TSA",
+        }
+    ]
+
+
 def test_tiles_render_source_raster_without_preview(tmp_path: Path) -> None:
     from fresh_hectaresbc.tiles import layer_metadata, render_tile
 
@@ -191,6 +213,25 @@ def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
     assert tile.status_code == 200
     assert tile.headers["content-type"] == "image/png"
     assert tile.content.startswith(b"\x89PNG")
+
+    from pyproj import Transformer
+    from shapely.geometry import box, mapping
+    from shapely.ops import transform as shapely_transform
+
+    transformer = Transformer.from_crs("EPSG:3005", "EPSG:4326", always_xy=True)
+    drawn = shapely_transform(
+        transformer.transform, box(102_050, 96_050, 105_950, 99_950)
+    )
+    bundle = client.post(
+        "/api/bundles",
+        json={
+            "layer_ids": ["dl_adminunits_bcts"],
+            "aoi_geometry": mapping(drawn),
+        },
+    )
+    assert bundle.status_code == 200, bundle.text
+    assert bundle.json()["status"] == "complete"
+    assert bundle.json()["layers"][0]["dataset_id"] == "dl_adminunits_bcts"
 
     web = client.get("/web/")
     assert web.status_code == 200

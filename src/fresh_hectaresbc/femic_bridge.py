@@ -119,6 +119,41 @@ def _label_for_properties(properties: dict[str, Any]) -> str:
     )
 
 
+def _candidate_options(
+    features: list[dict[str, Any]], limit: int = 40
+) -> list[dict[str, str]]:
+    """Return display labels plus a safe name to pass back to resolve."""
+
+    options: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for feature in features:
+        properties = feature.get("properties") or {}
+        label = _label_for_properties(properties)
+        preferred = ""
+        for key, value in properties.items():
+            if value in (None, ""):
+                continue
+            key_lower = key.casefold()
+            if "description" in key_lower or key_lower in {
+                "name",
+                "admin_area_name",
+                "region_name",
+                "management_area_name",
+                "unit_name",
+            }:
+                preferred = str(value)
+                break
+        name = preferred or label
+        key = name.casefold()
+        if not name or key in seen:
+            continue
+        seen.add(key)
+        options.append({"label": label, "name": name})
+        if len(options) >= limit:
+            break
+    return options
+
+
 def _candidate_labels(features: list[dict[str, Any]], limit: int = 40) -> list[str]:
     labels: list[str] = []
     for feature in features:
@@ -340,6 +375,7 @@ def resolve_aoi(
     assert resource is not None
 
     labels = _candidate_labels(features)
+    options = _candidate_options(features)
     if not requested_name:
         return {
             "status": "needs_name",
@@ -349,6 +385,7 @@ def resolve_aoi(
             "wfs_typename": resource.wfs_typename,
             "feature_count": len(features),
             "candidates": labels,
+            "candidate_options": options,
             "request_url": request_url,
         }
 
@@ -364,6 +401,7 @@ def resolve_aoi(
             "wfs_typename": resource.wfs_typename,
             "feature_count": len(features),
             "candidates": labels,
+            "candidate_options": options,
             "request_url": request_url,
         }
 
@@ -378,6 +416,7 @@ def resolve_aoi(
             "wfs_typename": resource.wfs_typename,
             "match_count": len(matches),
             "candidates": matched_labels,
+            "candidate_options": _candidate_options(matches, limit=10),
             "request_url": request_url,
         }
 

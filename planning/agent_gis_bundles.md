@@ -47,6 +47,7 @@ Endpoints:
 | GET | `/api/tiles/{dataset_id}/metadata` | Tile bounds, min/max zoom, source resolution, legend |
 | GET | `/api/tiles/{dataset_id}/{z}/{x}/{y}.png` | On-demand Web-Mercator raster tile from the 1 ha source |
 | POST | `/api/aoi/resolve` | Resolve a named FEMIC/BCDC boundary to a GeoJSON AOI |
+| GET | `/api/aoi/search?q=` | Search boundary packages before resolution |
 | POST | `/api/bundles` | Clip selected rasters to an AOI and create a ZIP |
 | GET | `/api/bundles` | Recent bundle summaries |
 | GET | `/api/bundles/{id}` | Bundle manifest |
@@ -109,15 +110,39 @@ the app falls back to the static EPSG:3857 preview image.
 
 `src/fresh_hectaresbc/bundle.py`:
 
-- resolves the AOI (FEMIC query/name) or accepts a GeoJSON path;
+- resolves the AOI (FEMIC query/name) or accepts a browser-drawn GeoJSON
+  geometry;
 - validates layer IDs and limits;
 - clips each layer into `layers/<dataset_id>.tif`;
 - writes `aoi.geojson`, `manifest.json`, and `README.txt`;
 - zips the bundle and returns a download URL.
 
 Demo limits: 6 layers, 10,000,000 ha AOI. The service rejects unknown dataset
-IDs and path-like bundle IDs. The web API does not accept arbitrary AOI file
-paths; bundle creation uses FEMIC-resolved AOIs.
+IDs and path-like bundle IDs. Clients never provide AOI filesystem paths. The
+web API accepts either `aoi_query`/`aoi_name` or a GeoJSON
+`Polygon`/`MultiPolygon` in `aoi_geometry`; geometry is validated, written under
+`var/bundles/aoi/`, and reprojected by the bundle pipeline. Coordinate counts
+are bounded to keep requests reasonable.
+
+## Browser Clip And Bundle Panel
+
+The map workspace exposes a **Clip AOI** drawer (`.clip-panel` in
+`web/index.html`, `web/app.js`, `web/styles.css`):
+
+- resolve a FEMIC/BCDC boundary by layer query and feature name;
+- choose from structured candidate names when a query is ambiguous;
+- draw a rectangle on the map (mouse or touch), with a mobile-friendly
+  full-screen handoff while drawing;
+- filter and multi-select up to six previewable layers (40 visible results at a
+  time, search across all 2,183);
+- show the AOI outline on the map and submit its exact GeoJSON geometry;
+- show bundle status, layer count, ZIP size, download link, and recent bundles.
+
+The panel is only enabled when `/api/health` reports a running service. Map
+drawing waits for MapLibre style load, handles large TSA geometries without
+spread-operator stack overflows, and restores the AOI overlay after a map
+re-render. The synchronous bundle request is suitable for the demo limits; a
+future job/polling API can be added if six large layers approach proxy timeouts.
 
 ## Assistant Tools
 
@@ -153,6 +178,9 @@ installed OpenCode CLI with the service user's permissions.
   authenticating proxy.
 - Bundle outputs live under `var/bundles/` (ignored) and are served by ID.
 - Bundle IDs are validated; download paths cannot escape the bundle root.
+- Browser-drawn AOI geometry is validated as a finite Polygon/MultiPolygon,
+  bounded in coordinate count, and written under `var/bundles/aoi/`; no
+  client-supplied filesystem paths are accepted.
 - Limits are enforced before clipping; AOI area and layer count are bounded.
 - `GET /api/health` reports catalog, preview, archive, bundle, and agent state.
 
