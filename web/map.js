@@ -67,7 +67,17 @@
     ];
   }
 
-  function styleFor({ previewUrl, referenceUrl, referenceBounds, bounds, categorical }) {
+  function styleFor({
+    previewUrl,
+    tileUrl,
+    tileSize,
+    minzoom,
+    maxzoom,
+    referenceUrl,
+    referenceBounds,
+    bounds,
+    categorical,
+  }) {
     const sources = {
       osm: {
         type: "raster",
@@ -76,12 +86,23 @@
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors',
       },
-      preview: {
+    };
+    if (tileUrl) {
+      sources.preview = {
+        type: "raster",
+        tiles: [tileUrl],
+        tileSize: tileSize || 256,
+        minzoom: minzoom || 0,
+        maxzoom: maxzoom || 14,
+        bounds: [bounds[0], bounds[1], bounds[2], bounds[3]],
+      };
+    } else {
+      sources.preview = {
         type: "image",
         url: previewUrl,
         coordinates: imageCoordinates(bounds),
-      },
-    };
+      };
+    }
     const layers = [
       {
         id: "background",
@@ -116,7 +137,7 @@
       source: "preview",
       paint: {
         "raster-opacity": 0.88,
-        "raster-resampling": categorical ? "nearest" : "linear",
+        "raster-resampling": tileUrl || categorical ? "nearest" : "linear",
         "raster-fade-duration": 0,
       },
     });
@@ -175,7 +196,11 @@
   async function create(options) {
     const {
       container,
-      previewUrl,
+      previewUrl = null,
+      tileUrl = null,
+      tileSize = 256,
+      minzoom = 0,
+      maxzoom = 14,
       referenceUrl = null,
       referenceBounds = null,
       bounds,
@@ -189,8 +214,8 @@
     if (!parsed) {
       throw new Error("The preview artifact does not have usable WGS84 bounds.");
     }
-    if (!previewUrl) {
-      throw new Error("The preview artifact URL is missing.");
+    if (!previewUrl && !tileUrl) {
+      throw new Error("The preview image or tile URL is missing.");
     }
 
     const maplibregl = await ensureMaplibre();
@@ -200,6 +225,10 @@
       container,
       style: styleFor({
         previewUrl,
+        tileUrl,
+        tileSize,
+        minzoom,
+        maxzoom,
         referenceUrl,
         referenceBounds: validBounds(referenceBounds),
         bounds: parsed,

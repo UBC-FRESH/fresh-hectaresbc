@@ -44,6 +44,8 @@ Endpoints:
 | POST | `/api/agent/chat` | One assistant turn through `opencode run --format json --auto` |
 | GET | `/api/layers/search?q=` | Catalog search for the assistant/UI |
 | GET | `/api/layers/{dataset_id}` | One catalog record |
+| GET | `/api/tiles/{dataset_id}/metadata` | Tile bounds, min/max zoom, source resolution, legend |
+| GET | `/api/tiles/{dataset_id}/{z}/{x}/{y}.png` | On-demand Web-Mercator raster tile from the 1 ha source |
 | POST | `/api/aoi/resolve` | Resolve a named FEMIC/BCDC boundary to a GeoJSON AOI |
 | POST | `/api/bundles` | Clip selected rasters to an AOI and create a ZIP |
 | GET | `/api/bundles` | Recent bundle summaries |
@@ -74,6 +76,23 @@ resolution and WFS materialization:
    `ambiguous` candidate lists instead of guessing.
 5. The union is written as a WGS84 GeoJSON AOI with EPSG:3005 and WGS84 bounds,
    area, package/resource provenance, and a metadata JSON file.
+
+## Zoomable Raster Tiles
+
+The source HectaresBC rasters are 100 m (1 ha) BC Albers GeoTIFFs, usually
+internally tiled 64×64. When `--archive-root` is configured, the service renders
+256 px Web-Mercator tiles on demand:
+
+- compute the requested XYZ tile bounds in EPSG:3857;
+- open the source TIFF through `zip://` with rasterio;
+- use a `WarpedVRT` to read/reproject the visible window into a 256×256 tile;
+- apply the recovered exact/range legend classes and nodata handling;
+- cache the PNG under `var/tile-cache/`.
+
+MapLibre uses a `raster` source with that tile URL, so only visible tiles are
+fetched while panning/zooming. Maximum zoom is derived from source resolution:
+13 for 1-ha data (deeper zoom over-samples the same cells). Without the service,
+the app falls back to the static EPSG:3857 preview image.
 
 ## Raster Clipping
 

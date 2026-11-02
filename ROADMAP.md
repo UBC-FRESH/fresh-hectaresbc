@@ -318,6 +318,7 @@ hosted workers, a database, or a frontend build pipeline.
 - [x] P19.6 Make the Map workspace open a useful default preview layer, enable Map from Browse, add preview-layer discovery links and a searchable change-layer control, add `scripts/fetch_web_previews.py` plus a missing-image banner, and add ignored 2048 px local preview overrides for sharper full-screen maps.
 - [x] P19.8 Reproject map preview overlays to EPSG:3857 so they align with the Web-Mercator basemap; keep native previews for thumbnails.
 - [x] P19.9 Complete full-library 2048 px previews for all 2,183 records, including virtual layers and the sparse pine-beetle rasters previously marked not previewable, and reproject the full set to EPSG:3857.
+- [x] P19.10 Add on-demand 1-ha source raster tiles (`/api/tiles/{id}/{z}/{x}/{y}.png`) with Web-Mercator reprojection, legend colors, nodata handling, and disk caching; MapLibre uses raster tiles when the service is available and falls back to the static preview otherwise.
 - [ ] P19.7 Verify, document, and close the browser UI upgrade phase.
 
 ## Phase 20: Agent GIS Assistant And AOI Bundles

@@ -411,6 +411,32 @@ Cloudflare Access/Zero Trust. `scripts/start_demo_service.sh` wraps the demo
 bind and reads `FRESH_HECTARESBC_ARCHIVE_ROOT`, `FRESH_HECTARESBC_FEMIC_SRC`,
 `PORT`, and `FRESH_HECTARESBC_PUBLIC_URL`.
 
+### Zoomable 1-ha Raster Tiles
+
+When the service is running with `--archive-root`, the map uses
+zoom-dependent raster tiles from the recovered source GeoTIFFs instead of a
+flattened preview image:
+
+```text
+/api/tiles/{dataset_id}/{z}/{x}/{y}.png
+```
+
+The source HectaresBC rasters are 100 m (1 ha) BC Albers cells. The tile server
+reprojects each requested 256 px Web-Mercator tile on demand, applies the
+recovered legend/colormap, preserves nodata, and caches the result under
+`var/tile-cache/`. MapLibre requests only visible tiles as users pan/zoom.
+`--maxzoom` is derived from source resolution: **13** for 1-ha data (deeper zoom
+over-samples the same cells). Without the service, the app falls back to the
+static EPSG:3857 preview image.
+
+The service also exposes:
+
+```text
+GET /api/tiles/{dataset_id}/metadata
+```
+
+for tile bounds, min/max zoom, source resolution, and legend classes.
+
 ## DataLad Retrieval
 
 The development extra installs Python-side DataLad support through `datalad[full]`. Real retrieval may still require the external `git-annex` binary, initialized submodules, configured storage remotes, and user-local credentials.

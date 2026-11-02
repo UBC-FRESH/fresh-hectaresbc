@@ -47,6 +47,16 @@ Latest code commit at handoff: `a0f1abd`
   ```
   The reproject pass is incremental: it skips existing `map.png` files and
   preserves their index entries.
+- The map now prefers **on-demand 1-ha raster tiles** when the service runs with
+  `--archive-root`:
+  - `GET /api/tiles/{dataset_id}/metadata`
+  - `GET /api/tiles/{dataset_id}/{z}/{x}/{y}.png`
+  Tiles are rendered from the source 100 m BC Albers GeoTIFFs with rasterio
+  `WarpedVRT`, colored with the recovered legend, and cached under
+  `var/tile-cache/`. MapLibre uses a raster tile source, so pan/zoom fetches
+  only visible tiles. Max useful zoom is 13 (1-ha cells); deeper zoom
+  over-samples. Without the service the app falls back to the static 3857
+  preview image.
 
 ### Agent Service And GIS Bundles (P20)
 

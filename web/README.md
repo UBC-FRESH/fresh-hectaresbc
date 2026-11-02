@@ -173,10 +173,18 @@ python scripts/run_web_service.py \
 ```
 
 The service adds the "Ask" assistant panel, catalog/layer search APIs, FEMIC
-BCDC AOI resolution, and clipped multi-layer bundle downloads. The assistant is
-opt-in (`--allow-agent`) and the service is loopback-only unless
-`--allow-remote` is supplied for a protected deployment. See
-`planning/agent_gis_bundles.md`.
+BCDC AOI resolution, clipped multi-layer bundle downloads, and zoom-dependent
+raster tiles. The assistant is opt-in (`--allow-agent`) and the service is
+loopback-only unless `--allow-remote` is supplied for a protected deployment.
+See `planning/agent_gis_bundles.md`.
+
+When `--archive-root` is configured, the map switches from a static preview
+image to `/api/tiles/{dataset_id}/{z}/{x}/{y}.png`. Tiles are rendered on demand
+from the recovered 100 m (1 ha) source rasters in EPSG:3857, with legend colors
+and nodata handling, and cached under `var/tile-cache/`. MapLibre requests only
+visible tiles during pan/zoom. Source data is 1 ha, so the maximum useful zoom
+is 13; deeper zoom over-samples those cells. The static app still works without
+the service using the reprojected preview image.
 
 ## Verification
 

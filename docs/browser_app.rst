@@ -152,6 +152,20 @@ default; a non-loopback demo bind requires ``--allow-remote`` and should sit
 behind an authenticating proxy such as Cloudflare Access/Zero Trust. See
 ``planning/agent_gis_bundles.md`` for endpoints, limits, and the demo workflow.
 
+When the service has ``--archive-root``, the map uses zoom-dependent raster
+tiles rendered from the recovered 100 m (1 ha) source GeoTIFFs:
+
+.. code-block:: text
+
+   GET /api/tiles/{dataset_id}/metadata
+   GET /api/tiles/{dataset_id}/{z}/{x}/{y}.png
+
+Tiles are reprojected to EPSG:3857 on demand, colored with the recovered legend,
+and cached under ``var/tile-cache/``. MapLibre requests only visible tiles while
+panning and zooming. Source resolution is 1 ha, so zoom 13 is the practical
+maximum; deeper zoom over-samples the same cells. Without the service the app
+falls back to the static EPSG:3857 preview image.
+
 Default tests and smoke checks do not require UBC CWL, hosted workers, DataLad
 network retrieval, raw ZIP content, Arbutus/Chinook credentials, or an object
 store. Reading annexed preview PNG payloads from a cold checkout requires

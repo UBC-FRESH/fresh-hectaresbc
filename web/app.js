@@ -1299,9 +1299,14 @@
       return;
     }
     const preview = Catalog.previewStatus(record, state.previewIndex);
-    const bounds =
+    const tileMeta = await fetchJson(
+      `../api/tiles/${encodeURIComponent(datasetId)}/metadata`
+    );
+    const tileBounds = window.HectaresBCMap?.validBounds(tileMeta?.bounds_wgs84);
+    const staticBounds =
       window.HectaresBCMap?.validBounds(artifact?._map_bounds_wgs84) ||
       window.HectaresBCMap?.validBounds(artifact?.wgs84_bounds);
+    const bounds = tileBounds || staticBounds;
     let previewUrl = artifact?._map_path
       ? artifactUrl({ _base: artifact._map_base }, artifact._map_path)
       : artifact?.artifact_path
@@ -1310,7 +1315,12 @@
     if (previewUrl && artifact?._map_path && state.mapPreviewVersion) {
       previewUrl += `${previewUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(state.mapPreviewVersion)}`;
     }
-    const canMap = preview.status === "available" && previewUrl && bounds;
+    const tileUrl =
+      tileMeta?.status === "ok" && tileBounds
+        ? `../api/tiles/${encodeURIComponent(datasetId)}/{z}/{x}/{y}.png`
+        : null;
+    const canMap =
+      preview.status === "available" && bounds && (tileUrl || previewUrl);
 
     if (!canMap) {
       els.content.innerHTML = mapFallbackTemplate(record, preview, artifact, previewUrl);
@@ -1328,7 +1338,13 @@
     const referenceUrl = reference?.artifact_path
       ? artifactUrl(reference, reference.artifact_path)
       : null;
-    els.content.innerHTML = mapTemplate(record, preview, artifact, bounds);
+    els.content.innerHTML = mapTemplate(
+      record,
+      preview,
+      artifact,
+      bounds,
+      tileMeta
+    );
     bindMapLayerSearch();
     updateHeader();
     updateTabs();
@@ -1341,7 +1357,10 @@
     try {
       await window.HectaresBCMap.create({
         container: document.querySelector("#map-canvas"),
-        previewUrl,
+        previewUrl: tileUrl ? null : previewUrl,
+        tileUrl,
+        minzoom: tileMeta?.minzoom || 0,
+        maxzoom: tileMeta?.maxzoom || 14,
         referenceUrl,
         referenceBounds: reference?.wgs84_bounds || null,
         bounds,
@@ -1381,7 +1400,7 @@
     }
   }
 
-  function mapTemplate(record, preview, artifact, bounds) {
+  function mapTemplate(record, preview, artifact, bounds, tileMeta = null) {
     const datasetHref = `#/dataset/${encodeURIComponent(record.dataset_id)}`;
     const legend = mapLegendTemplate(artifact);
     return `
@@ -1431,6 +1450,8 @@
           <dl class="kv-list" style="margin-top:0.5rem">
             <dt>Bounds</dt><dd class="mono">${Catalog.escapeHtml(formatBounds(bounds))}</dd>
             <dt>Map CRS</dt><dd>${Catalog.escapeHtml(artifact?._map_crs || artifact?.crs || "unknown")}</dd>
+            <dt>Data</dt><dd>${tileMeta ? `Tiled raster · ${Catalog.escapeHtml(tileMeta.max_detail || "source resolution")}` : "Static preview"}</dd>
+            <dt>Max zoom</dt><dd>${Catalog.escapeHtml(String(tileMeta?.maxzoom ?? "—"))}</dd>
             <dt>Artifact</dt><dd>${Catalog.escapeHtml(artifact?.artifact_status || "unknown")}</dd>
           </dl>
         </div>

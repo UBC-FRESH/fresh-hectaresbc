@@ -28,6 +28,7 @@ web = [
   "fastapi>=0.110",
   "uvicorn>=0.27",
   "geopandas>=0.14",
+  "mercantile>=1.2",
   "rasterio>=1.3",
   "shapely>=2",
 ]
@@ -36,6 +37,7 @@ dev = [
   "datalad[full]>=1",
   "fastapi>=0.110",
   "geopandas>=0.14",
+  "mercantile>=1.2",
   "numpy>=1.24",
   "Pillow>=10",
   "pytest>=8",

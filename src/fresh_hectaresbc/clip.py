@@ -78,7 +78,7 @@ def _raster_members(record: Any) -> list[str]:
     return members
 
 
-def _resolve_zip(record: Any, archive_root: Path | None) -> tuple[Path, str]:
+def resolve_source_zip(record: Any, archive_root: Path | None) -> tuple[Path, str]:
     hbc = HectaresBC()
     resolved = hbc.resolve(record.dataset_id)
     candidate = Path(resolved.absolute_path)
@@ -94,7 +94,7 @@ def _resolve_zip(record: Any, archive_root: Path | None) -> tuple[Path, str]:
     )
 
 
-def _pick_member(zip_path: Path, record: Any) -> str:
+def pick_raster_member(zip_path: Path, record: Any) -> str:
     members = _raster_members(record)
     with zipfile.ZipFile(zip_path) as archive:
         names = set(archive.namelist())
@@ -150,8 +150,8 @@ def clip_raster_to_aoi(
         raise ClipError(f"Unknown dataset ID {dataset_id!r}.")
 
     archive = Path(archive_root).expanduser() if archive_root else None
-    zip_path, source_resolution = _resolve_zip(record, archive)
-    member = _pick_member(zip_path, record)
+    zip_path, source_resolution = resolve_source_zip(record, archive)
+    member = pick_raster_member(zip_path, record)
     temp_path, source_bytes = _extract_member(zip_path, member)
     output_root = Path(output_dir).expanduser().resolve()
     output_root.mkdir(parents=True, exist_ok=True)

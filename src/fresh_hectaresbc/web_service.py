@@ -76,6 +76,9 @@ class ServiceConfig:
     archive_root: Path | None = None
     femic_src: Path | None = None
     bundle_root: Path = field(default_factory=lambda: DEFAULT_BUNDLE_ROOT)
+    tile_cache_root: Path = field(
+        default_factory=lambda: REPO_ROOT / "var" / "tile-cache"
+    )
     max_layers: int = 6
     max_area_ha: float = 10_000_000.0
     public_url: str | None = None
@@ -238,6 +241,8 @@ def create_app(config: ServiceConfig) -> FastAPI:
 
     config.bundle_root = Path(config.bundle_root).expanduser().resolve()
     config.bundle_root.mkdir(parents=True, exist_ok=True)
+    config.tile_cache_root = Path(config.tile_cache_root).expanduser().resolve()
+    config.tile_cache_root.mkdir(parents=True, exist_ok=True)
     app = FastAPI(title=config.title, version="0.0.0")
     app.state.config = config
     app.add_middleware(GZipMiddleware, minimum_size=1024)
@@ -365,6 +370,46 @@ def create_app(config: ServiceConfig) -> FastAPI:
             "session": session_id or body.session,
             "actions": actions,
         }
+
+    @app.get("/api/tiles/{dataset_id}/metadata")
+    def tile_metadata(dataset_id: str) -> dict[str, Any]:
+        from fresh_hectaresbc.tiles import TileError, layer_metadata
+
+        if not config.archive_root:
+            raise HTTPException(
+                status_code=503,
+                detail="raster tiling needs --archive-root pointing at the recovered archive",
+            )
+        try:
+            return layer_metadata(dataset_id, archive_root=config.archive_root)
+        except TileError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @app.get("/api/tiles/{dataset_id}/{z}/{x}/{y}.png")
+    def tile_png(dataset_id: str, z: int, x: int, y: int) -> Response:
+        from fresh_hectaresbc.tiles import TileError, render_tile
+
+        if not config.archive_root:
+            raise HTTPException(
+                status_code=503,
+                detail="raster tiling needs --archive-root pointing at the recovered archive",
+            )
+        try:
+            png = render_tile(
+                dataset_id,
+                z,
+                x,
+                y,
+                archive_root=config.archive_root,
+                cache_root=config.tile_cache_root,
+            )
+        except TileError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return Response(
+            content=png,
+            media_type="image/png",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
 
     @app.get("/api/layers/search")
     def layer_search(

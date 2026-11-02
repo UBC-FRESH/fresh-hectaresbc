@@ -117,12 +117,37 @@ def test_prepare_bundle_writes_manifest_and_zip(tmp_path: Path) -> None:
     assert "layers/dl_adminunits_bcts.tif" in names
 
 
+def test_tiles_render_source_raster_without_preview(tmp_path: Path) -> None:
+    from fresh_hectaresbc.tiles import layer_metadata, render_tile
+
+    archive_root = _make_archive(tmp_path)
+    meta = layer_metadata("dl_adminunits_bcts", archive_root=archive_root)
+    assert meta["status"] == "ok"
+    assert meta["tile_crs"] == "EPSG:3857"
+    assert meta["pixel_size_m"] == 100
+    assert meta["maxzoom"] == 13
+    png = render_tile(
+        "dl_adminunits_bcts",
+        0,
+        0,
+        0,
+        archive_root=archive_root,
+        cache_root=tmp_path / "tiles",
+    )
+    assert png.startswith(b"\x89PNG")
+    assert len(png) > 100
+    assert (tmp_path / "tiles" / "dl_adminunits_bcts" / "0" / "0" / "0.png").is_file()
+
+
 def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
     from fastapi.testclient import TestClient
 
+    archive_root = _make_archive(tmp_path)
     config = ServiceConfig(
         workspace=Path(".").resolve(),
         bundle_root=tmp_path / "bundles",
+        tile_cache_root=tmp_path / "tile-cache",
+        archive_root=archive_root,
     )
     client = TestClient(create_app(config))
 
@@ -141,6 +166,14 @@ def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
     bundles = client.get("/api/bundles")
     assert bundles.status_code == 200
     assert bundles.json()["status"] == "ok"
+
+    tile_meta = client.get("/api/tiles/dl_adminunits_bcts/metadata")
+    assert tile_meta.status_code == 200
+    assert tile_meta.json()["maxzoom"] == 13
+    tile = client.get("/api/tiles/dl_adminunits_bcts/0/0/0.png")
+    assert tile.status_code == 200
+    assert tile.headers["content-type"] == "image/png"
+    assert tile.content.startswith(b"\x89PNG")
 
     web = client.get("/web/")
     assert web.status_code == 200

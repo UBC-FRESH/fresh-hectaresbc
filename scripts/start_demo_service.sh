@@ -12,6 +12,7 @@ PUBLIC_URL="${FRESH_HECTARESBC_PUBLIC_URL:-https://fresh-hectaresbc.01101.dev}"
 ARCHIVE_ROOT="${FRESH_HECTARESBC_ARCHIVE_ROOT:-}"
 FEMIC_SRC="${FRESH_HECTARESBC_FEMIC_SRC:-}"
 BUNDLE_ROOT="${FRESH_HECTARESBC_BUNDLE_ROOT:-${REPO_ROOT}/var/bundles}"
+TILE_CACHE_ROOT="${FRESH_HECTARESBC_TILE_CACHE_ROOT:-${REPO_ROOT}/var/tile-cache}"
 
 args=(
   "--host" "0.0.0.0"
@@ -20,6 +21,7 @@ args=(
   "--allow-agent"
   "--workspace" "${REPO_ROOT}"
   "--bundle-root" "${BUNDLE_ROOT}"
+  "--tile-cache-root" "${TILE_CACHE_ROOT}"
   "--public-url" "${PUBLIC_URL}"
 )
 if [[ -n "${ARCHIVE_ROOT}" ]]; then
