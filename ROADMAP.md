@@ -297,10 +297,8 @@ These are planned but not active requirements yet.
 
 ## Phase 19: Browser UI Upgrade
 
-Status: implementation in progress on
-`feature/p19-web-ui-upgrade`; draft PR #140. Planning:
-`planning/web_ui_upgrade_plan.md`. GitHub issue activation is pending
-maintainer review.
+Status: completed and merged to `main` via PR #140. Planning:
+`planning/web_ui_upgrade_plan.md`.
 
 Phase 19 replaces the document-style catalog page with an application shell:
 a Browse workspace with search, facets, pagination, preview thumbnails, and a
@@ -320,12 +318,12 @@ hosted workers, a database, or a frontend build pipeline.
 - [x] P19.9 Complete full-library 2048 px previews for all 2,183 records, including virtual layers and the sparse pine-beetle rasters previously marked not previewable, and reproject the full set to EPSG:3857.
 - [x] P19.10 Add on-demand 1-ha source raster tiles (`/api/tiles/{id}/{z}/{x}/{y}.png`) with Web-Mercator reprojection, legend colors, nodata handling, and disk caching; MapLibre uses raster tiles when the service is available and falls back to the static preview otherwise.
 - [x] P19.11 Add demo service operations: detached `demo_ctl.sh`, systemd/env/cloudflared templates, public-origin health checker, and LRU tile-cache pruning.
-- [ ] P19.7 Verify, document, and close the browser UI upgrade phase.
+- [x] P19.7 Verify, document, and close the browser UI upgrade phase.
 
 ## Phase 20: Agent GIS Assistant And AOI Bundles
 
-Status: implementation in progress on `feature/p19-web-ui-upgrade`; draft PR
-#140. Planning: `planning/agent_gis_bundles.md`.
+Status: implementation in progress on `main`; foundation merged via PR #140.
+Planning: `planning/agent_gis_bundles.md`.
 
 Phase 20 adds an optional FastAPI service and browser assistant that can explain
 the UI, search the recovered raster catalog, resolve FEMIC/BC Data Catalogue
@@ -339,12 +337,12 @@ service.
 - [x] P20.4 Add the optional FastAPI service, static mounts, agent API, layer search, AOI, and bundle endpoints.
 - [x] P20.5 Add the browser "Ask" assistant panel with UI help and tool-driven AOI/bundle workflows.
 - [x] P20.6 Add agent tools, tests, docs, and the separate demo deployment.
+- [x] P20.8 Add the browser Clip AOI drawer with boundary candidates, mouse/touch drawing, searchable layer selection, validated GeoJSON bundle requests, and recent bundle links.
 - [ ] P20.7 Verify and close the agent GIS assistant phase.
 
 ## Current Next Steps
 
-1. Run the Phase 19 browser/static/logic smoke checks and review the app at
-   desktop, tablet, and mobile widths.
-2. Open the Phase 19 pull request from `feature/p19-web-ui-upgrade` to `main`.
-3. Activate or close the Phase 19 GitHub parent/child issues once the
-   maintainer confirms the issue numbering.
+1. Verify the Clip AOI drawer and assistant through the protected public demo.
+2. Add a bundle job/polling API if six large layers approach proxy timeouts.
+3. Close the Phase 19/20 GitHub issue tree or create a follow-up issue for the
+   Clip AOI drawer and remaining hardening.

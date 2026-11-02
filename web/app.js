@@ -78,6 +78,24 @@
       session: null,
       busy: false,
     },
+    serviceAvailable: false,
+    mapHandle: null,
+    clip: {
+      open: false,
+      datasetId: null,
+      query: "timber supply area boundary",
+      name: "",
+      aoi: null,
+      geometry: null,
+      candidates: [],
+      selected: new Set(),
+      search: "",
+      busy: false,
+      message: "",
+      error: false,
+      lastResult: null,
+      recent: [],
+    },
   };
 
   let els = null;
@@ -117,6 +135,9 @@
       assistantStatus: document.querySelector("#assistant-status"),
       assistantNew: document.querySelector("#assistant-new"),
       assistantClose: document.querySelector("#assistant-close"),
+      clipPanel: document.querySelector("#clip-panel"),
+      clipBody: document.querySelector("#clip-body"),
+      clipClose: document.querySelector("#clip-close"),
     };
     bindEvents();
     const header = document.querySelector(".app-header");
@@ -126,6 +147,7 @@
     renderLoading();
     loadCatalog();
     void loadAssistantInfo();
+    void loadServiceInfo();
   }
 
   /* --------------------------------------------------------------- loading */
@@ -412,6 +434,7 @@
 
   function renderBrowse() {
     window.HectaresBCMap?.destroy();
+    closeClipPanel();
     document.body.dataset.view = "catalog";
     document.body.classList.remove("filters-open", "inspector-open");
     if (!state.ready) {
@@ -908,6 +931,7 @@
   async function renderDataset() {
     const token = ++state.renderToken;
     window.HectaresBCMap?.destroy();
+    closeClipPanel();
     document.body.dataset.view = "dataset";
     document.body.classList.remove("filters-open", "inspector-open");
     els.content.innerHTML = loadingTemplate("Loading dataset…");
@@ -1278,6 +1302,10 @@
       }
       state.selectedId = datasetId;
     }
+    if (state.clip.open && state.clip.datasetId && state.clip.datasetId !== datasetId) {
+      resetClipState();
+      state.clip.datasetId = datasetId;
+    }
     await loadDetails();
     if (token !== state.renderToken) {
       return;
@@ -1355,7 +1383,7 @@
     els.content.querySelector("h1")?.focus();
 
     try {
-      await window.HectaresBCMap.create({
+      state.mapHandle = await window.HectaresBCMap.create({
         container: document.querySelector("#map-canvas"),
         previewUrl: tileUrl ? null : previewUrl,
         tileUrl,
@@ -1384,7 +1412,11 @@
           }
         },
       });
+      if (state.clip.geometry && !els.clipPanel.hidden) {
+        state.mapHandle.__hbc?.setAoi(state.clip.geometry, { fit: false });
+      }
     } catch (error) {
+      state.mapHandle = null;
       if (token !== state.renderToken) {
         return;
       }
@@ -1419,6 +1451,7 @@
             <a class="secondary-button" href="${datasetHref}">Dataset</a>
             <a class="secondary-button" href="${state.lastBrowseHash || "#/catalog"}">Browse</a>
             <a class="secondary-button" href="#/catalog?preview=available">Preview layers</a>
+            <button class="secondary-button" type="button" data-open-clip ${state.serviceAvailable ? "" : "hidden"}>Clip AOI</button>
             <button class="secondary-button" type="button" data-copy="${Catalog.escapeHtml(record.dataset_id)}">Copy ID</button>
           </div>
         </div>
@@ -1664,6 +1697,11 @@ python scripts/fetch_web_previews.py</pre>
 
   function handleContentClick(event) {
     const target = event.target;
+    const openClip = target.closest("[data-open-clip]");
+    if (openClip) {
+      void openClipPanel();
+      return;
+    }
     const copy = target.closest("[data-copy]");
     if (copy) {
       copyText(copy.dataset.copy);
@@ -1819,6 +1857,9 @@ python scripts/fetch_web_previews.py</pre>
       document.body.classList.remove("filters-open", "inspector-open");
       if (els.helpDialog.open) {
         els.helpDialog.close();
+      }
+      if (els.clipPanel && !els.clipPanel.hidden) {
+        closeClipPanel();
       }
       if (els.assistantPanel && !els.assistantPanel.hidden) {
         closeAssistant();
@@ -1982,6 +2023,14 @@ python scripts/fetch_web_previews.py</pre>
 
   /* --------------------------------------------------------------- assistant */
 
+  async function loadServiceInfo() {
+    const health = await fetchJson("../api/health");
+    state.serviceAvailable = health?.status === "ok";
+    document.querySelectorAll("[data-open-clip]").forEach((button) => {
+      button.hidden = !state.serviceAvailable;
+    });
+  }
+
   async function loadAssistantInfo() {
     const info = await fetchJson("../api/agent");
     if (!info || !info.enabled) {
@@ -2028,6 +2077,9 @@ python scripts/fetch_web_previews.py</pre>
   function openAssistant() {
     if (!state.assistant.enabled) {
       return;
+    }
+    if (els.clipPanel && !els.clipPanel.hidden) {
+      closeClipPanel();
     }
     els.assistantPanel.hidden = false;
     els.assistantButton.setAttribute("aria-expanded", "true");
@@ -2160,6 +2212,464 @@ python scripts/fetch_web_previews.py</pre>
     }
   }
 
+  /* -------------------------------------------------------------- clip panel */
+
+  function currentMapDatasetId() {
+    return state.route.datasetId || state.selectedId || null;
+  }
+
+  function resetClipState() {
+    state.clip.aoi = null;
+    state.clip.geometry = null;
+    state.clip.candidates = [];
+    state.clip.selected = new Set();
+    state.clip.lastResult = null;
+    state.clip.message = "";
+    state.clip.error = false;
+    state.mapHandle?.__hbc?.cancelRectangleDraw?.();
+    state.mapHandle?.__hbc?.clearAoi?.();
+  }
+
+  function clipLayerOptions() {
+    if (!state.previewIndex) {
+      return [];
+    }
+    return [...state.previewIndex.values()]
+      .filter((artifact) =>
+        ["source_derived_preview", "already_present"].includes(
+          artifact.artifact_status || artifact.status
+        )
+      )
+      .map((artifact) => ({
+        dataset_id: artifact.dataset_id,
+        title: artifact.title || artifact.dataset_id,
+        family: artifact.source_family || "",
+        search: Catalog.normalizeText(
+          `${artifact.title || ""} ${artifact.dataset_id || ""}`
+        ),
+      }))
+      .sort((left, right) =>
+        left.title.localeCompare(right.title, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        })
+      );
+  }
+
+  function clipCandidateOptions() {
+    return (state.clip.candidates || []).map((candidate) =>
+      typeof candidate === "string"
+        ? { label: candidate, name: candidate }
+        : candidate
+    );
+  }
+
+  function clipAoiSummary() {
+    if (state.clip.aoi) {
+      const area = Number(state.clip.aoi.area_ha || 0);
+      return `${state.clip.aoi.name || "AOI"} · ${Catalog.formatNumber(area)} ha`;
+    }
+    if (state.clip.geometry) {
+      return "Drawn AOI on the map";
+    }
+    return "No AOI selected.";
+  }
+
+  function clipResultTemplate() {
+    const result = state.clip.lastResult;
+    if (!result) {
+      return "";
+    }
+    const failures = Array.isArray(result.failures) ? result.failures : [];
+    const layers = Array.isArray(result.layers) ? result.layers : [];
+    const tone = result.status === "failed" ? " error" : "";
+    const parts = [
+      `<strong>${Catalog.escapeHtml(result.status || "complete")}</strong>`,
+      `${layers.length} layer${layers.length === 1 ? "" : "s"}`,
+      result.zip_bytes ? Catalog.formatBytes(result.zip_bytes) : "",
+      failures.length ? `${failures.length} failure${failures.length === 1 ? "" : "s"}` : "",
+    ].filter(Boolean);
+    return `<div class="clip-result${tone}">
+      ${parts.join(" · ")}
+      ${result.download_url ? `<a href="${Catalog.escapeHtml(result.download_url)}" target="_blank" rel="noreferrer">Download bundle ZIP</a>` : ""}
+    </div>`;
+  }
+
+  function clipRecentTemplate() {
+    if (!state.clip.recent.length) {
+      return '<p class="clip-status">No bundles yet.</p>';
+    }
+    return `<div class="clip-recent">${state.clip.recent
+      .slice(0, 8)
+      .map(
+        (bundle) =>
+          `<a href="${Catalog.escapeHtml(bundle.download_url || "#")}" target="_blank" rel="noreferrer">
+            <span>${Catalog.escapeHtml(bundle.aoi?.name || bundle.bundle_id || "bundle")}</span>
+            <span>${Catalog.formatNumber(bundle.layer_count || 0)} layer${Number(bundle.layer_count) === 1 ? "" : "s"} · ${Catalog.escapeHtml(bundle.status || "")}</span>
+          </a>`
+      )
+      .join("")}</div>`;
+  }
+
+  function renderClipLayers() {
+    const node = els.clipBody?.querySelector("#clip-layer-results");
+    if (!node) {
+      return;
+    }
+    const query = Catalog.normalizeText(state.clip.search);
+    const layers = clipLayerOptions()
+      .filter((layer) => !query || layer.search.includes(query))
+      .slice(0, 40);
+    if (!layers.length) {
+      node.innerHTML = '<p class="clip-status">No matching previewable layers.</p>';
+      return;
+    }
+    node.innerHTML = layers
+      .map((layer) => {
+        const selected = state.clip.selected.has(layer.dataset_id);
+        const disabled = !selected && state.clip.selected.size >= 6;
+        return `<label class="clip-layer${disabled ? " is-disabled" : ""}">
+          <input type="checkbox" data-clip-layer value="${Catalog.escapeHtml(layer.dataset_id)}" ${selected ? "checked" : ""} ${disabled ? "disabled" : ""}>
+          <span><b>${Catalog.escapeHtml(layer.title)}</b><small>${Catalog.escapeHtml(layer.dataset_id)}</small></span>
+        </label>`;
+      })
+      .join("");
+  }
+
+  function renderClipPanel() {
+    if (!els.clipBody) {
+      return;
+    }
+    const selected = clipLayerOptions().filter((layer) =>
+      state.clip.selected.has(layer.dataset_id)
+    );
+    const candidates = clipCandidateOptions();
+    const canPrepare =
+      !state.clip.busy &&
+      state.clip.selected.size > 0 &&
+      Boolean(state.clip.geometry);
+    els.clipBody.innerHTML = `
+      <section class="clip-section">
+        <h3>Area of interest</h3>
+        <label class="clip-field">Boundary layer
+          <input id="clip-query" type="text" value="${Catalog.escapeHtml(state.clip.query)}" placeholder="timber supply area boundary">
+        </label>
+        <label class="clip-field">Feature name
+          <input id="clip-name" type="text" value="${Catalog.escapeHtml(state.clip.name)}" placeholder="e.g. TSA 27 or Revelstoke TSA">
+        </label>
+        <div class="clip-actions">
+          <button class="primary-button" type="button" data-clip-resolve ${state.clip.busy ? "disabled" : ""}>Resolve boundary</button>
+          <button class="secondary-button" type="button" data-clip-draw ${state.clip.busy ? "disabled" : ""}>Draw box</button>
+          <button class="secondary-button" type="button" data-clip-clear>Clear AOI</button>
+        </div>
+        <p class="clip-status${state.clip.error ? " error" : ""}">${Catalog.escapeHtml(state.clip.message || clipAoiSummary())}</p>
+        ${candidates.length ? `<div class="clip-candidates">${candidates
+          .map(
+            (candidate) =>
+              `<button class="clip-candidate" type="button" data-clip-candidate data-name="${Catalog.escapeHtml(candidate.name)}">${Catalog.escapeHtml(candidate.label)}</button>`
+          )
+          .join("")}</div>` : ""}
+      </section>
+      <section class="clip-section">
+        <h3>Layers <span class="muted">${state.clip.selected.size}/6</span></h3>
+        <label class="clip-field">Find a previewable layer
+          <input id="clip-layer-search" type="search" value="${Catalog.escapeHtml(state.clip.search)}" placeholder="Search layers…" autocomplete="off">
+        </label>
+        <div class="clip-selected">${selected
+          .map(
+            (layer) =>
+              `<span class="clip-chip">${Catalog.escapeHtml(layer.title)}<button type="button" data-clip-remove="${Catalog.escapeHtml(layer.dataset_id)}" aria-label="Remove ${Catalog.escapeHtml(layer.title)}">×</button></span>`
+          )
+          .join("")}</div>
+        <div id="clip-layer-results" class="clip-layer-results"></div>
+      </section>
+      <section class="clip-section">
+        <h3>Bundle</h3>
+        <button class="primary-button" type="button" data-clip-prepare ${canPrepare ? "" : "disabled"}>${state.clip.busy ? "Preparing…" : "Prepare bundle"}</button>
+        ${clipResultTemplate()}
+        <p class="clip-status">Bundles are limited to 6 layers and 10,000,000 ha. Clipping runs from the recovered source rasters.</p>
+      </section>
+      <section class="clip-section">
+        <h3>Recent bundles</h3>
+        ${clipRecentTemplate()}
+      </section>
+    `;
+    renderClipLayers();
+  }
+
+  async function openClipPanel() {
+    if (!state.serviceAvailable) {
+      showToast("Bundle service unavailable.");
+      return;
+    }
+    closeAssistant();
+    const datasetId = currentMapDatasetId();
+    if (state.clip.datasetId && datasetId && state.clip.datasetId !== datasetId) {
+      resetClipState();
+    }
+    state.clip.datasetId = datasetId;
+    state.clip.open = true;
+    els.clipPanel.hidden = false;
+    if (datasetId && state.previewIndex) {
+      const artifact = state.previewIndex.get(datasetId);
+      if (
+        artifact &&
+        ["source_derived_preview", "already_present"].includes(
+          artifact.artifact_status || artifact.status
+        ) &&
+        !state.clip.selected.has(datasetId) &&
+        state.clip.selected.size < 6
+      ) {
+        state.clip.selected.add(datasetId);
+      }
+    }
+    renderClipPanel();
+    void loadRecentBundles();
+  }
+
+  function closeClipPanel() {
+    state.clip.open = false;
+    els.clipPanel.hidden = true;
+    state.mapHandle?.__hbc?.cancelRectangleDraw?.();
+  }
+
+  async function resolveClipAoi() {
+    if (state.clip.busy) {
+      return;
+    }
+    const queryInput = els.clipBody.querySelector("#clip-query");
+    const nameInput = els.clipBody.querySelector("#clip-name");
+    state.clip.query = queryInput?.value.trim() || "";
+    state.clip.name = nameInput?.value.trim() || "";
+    if (!state.clip.query) {
+      state.clip.message = "Enter a boundary layer query.";
+      state.clip.error = true;
+      renderClipPanel();
+      return;
+    }
+    state.clip.busy = true;
+    state.clip.error = false;
+    state.clip.message = "Resolving boundary…";
+    renderClipPanel();
+    try {
+      const response = await fetch("../api/aoi/resolve", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          query: state.clip.query,
+          name: state.clip.name || null,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.detail || `resolve failed (${response.status})`);
+      }
+      if (payload.status === "ok" && payload.geometry) {
+        state.clip.aoi = payload;
+        state.clip.geometry = payload.geometry;
+        state.clip.name = payload.name || state.clip.name;
+        state.clip.candidates = [];
+        state.clip.message = `${payload.name || "AOI"} · ${Catalog.formatNumber(payload.area_ha || 0)} ha`;
+        state.mapHandle?.__hbc?.setAoi(payload.geometry, { fit: true });
+      } else {
+        state.clip.aoi = null;
+        state.clip.geometry = null;
+        state.clip.candidates =
+          payload.candidate_options || payload.candidates || [];
+        state.clip.message =
+          payload.status === "ambiguous"
+            ? "Multiple features match; choose one."
+            : "Choose a boundary feature.";
+        state.mapHandle?.__hbc?.clearAoi?.();
+      }
+    } catch (error) {
+      state.clip.error = true;
+      state.clip.message = `Could not resolve AOI: ${error.message}`;
+    } finally {
+      state.clip.busy = false;
+      renderClipPanel();
+    }
+  }
+
+  function drawClipAoi() {
+    if (!state.mapHandle?.__hbc) {
+      showToast("Open a map first.");
+      return;
+    }
+    if (!state.mapHandle.__hbcReady) {
+      state.clip.message = "The map is still loading; try again in a moment.";
+      state.clip.error = true;
+      renderClipPanel();
+      return;
+    }
+    const narrow = window.matchMedia("(max-width: 760px)").matches;
+    state.clip.message = "Drag a box on the map to define the AOI.";
+    state.clip.error = false;
+    renderClipPanel();
+    if (narrow) {
+      els.clipPanel.hidden = true;
+      showToast("Drag a box on the map.");
+    }
+    state.mapHandle.__hbc.startRectangleDraw((geometry) => {
+      state.clip.aoi = null;
+      state.clip.geometry = geometry;
+      state.clip.name = "Drawn AOI";
+      state.clip.candidates = [];
+      state.clip.message = "Drawn AOI ready on the map.";
+      state.mapHandle.__hbc.setAoi(geometry, { fit: false });
+      if (narrow) {
+        els.clipPanel.hidden = false;
+      }
+      renderClipPanel();
+    });
+  }
+
+  async function prepareClipBundle() {
+    if (state.clip.busy) {
+      return;
+    }
+    const layerIds = [...state.clip.selected];
+    if (!layerIds.length) {
+      state.clip.message = "Select at least one layer.";
+      state.clip.error = true;
+      renderClipPanel();
+      return;
+    }
+    if (!state.clip.geometry) {
+      state.clip.message = "Resolve or draw an AOI first.";
+      state.clip.error = true;
+      renderClipPanel();
+      return;
+    }
+    state.clip.busy = true;
+    state.clip.error = false;
+    state.clip.lastResult = null;
+    state.clip.message = `Preparing ${layerIds.length} layer${layerIds.length === 1 ? "" : "s"}…`;
+    renderClipPanel();
+    try {
+      const response = await fetch("../api/bundles", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          layer_ids: layerIds,
+          aoi_geometry: state.clip.geometry,
+          aoi_name: state.clip.aoi?.name || state.clip.name || "Drawn AOI",
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.detail || `bundle failed (${response.status})`);
+      }
+      if (payload.status === "needs_name" || payload.status === "ambiguous") {
+        state.clip.candidates =
+          payload.aoi?.candidate_options || payload.aoi?.candidates || [];
+        state.clip.message = "Choose a boundary feature.";
+      } else {
+        state.clip.lastResult = payload;
+        state.clip.message =
+          payload.status === "complete"
+            ? "Bundle ready."
+            : payload.status === "partial"
+              ? "Bundle ready with some layer failures."
+              : "Bundle failed; inspect the failures.";
+        state.clip.error = payload.status === "failed";
+      }
+    } catch (error) {
+      state.clip.error = true;
+      state.clip.message = `Could not prepare bundle: ${error.message}`;
+    } finally {
+      state.clip.busy = false;
+      await loadRecentBundles();
+      renderClipPanel();
+    }
+  }
+
+  async function loadRecentBundles() {
+    const payload = await fetchJson("../api/bundles");
+    if (payload?.bundles) {
+      state.clip.recent = payload.bundles;
+    }
+    if (state.clip.open) {
+      renderClipPanel();
+    }
+  }
+
+  function handleClipClick(event) {
+    const target = event.target;
+    const close = target.closest("[data-clip-close]");
+    if (close) {
+      closeClipPanel();
+      return;
+    }
+    if (target.closest("[data-clip-resolve]")) {
+      void resolveClipAoi();
+      return;
+    }
+    if (target.closest("[data-clip-draw]")) {
+      drawClipAoi();
+      return;
+    }
+    if (target.closest("[data-clip-clear]")) {
+      state.clip.aoi = null;
+      state.clip.geometry = null;
+      state.clip.candidates = [];
+      state.clip.message = "AOI cleared.";
+      state.clip.error = false;
+      state.mapHandle?.__hbc?.clearAoi?.();
+      renderClipPanel();
+      return;
+    }
+    if (target.closest("[data-clip-prepare]")) {
+      void prepareClipBundle();
+      return;
+    }
+    const candidate = target.closest("[data-clip-candidate]");
+    if (candidate) {
+      state.clip.name = candidate.dataset.name || "";
+      const input = els.clipBody.querySelector("#clip-name");
+      if (input) {
+        input.value = state.clip.name;
+      }
+      void resolveClipAoi();
+      return;
+    }
+    const remove = target.closest("[data-clip-remove]");
+    if (remove) {
+      state.clip.selected.delete(remove.dataset.clipRemove);
+      renderClipPanel();
+    }
+  }
+
+  function handleClipInput(event) {
+    const target = event.target;
+    if (target.id === "clip-query") {
+      state.clip.query = target.value;
+    } else if (target.id === "clip-name") {
+      state.clip.name = target.value;
+    } else if (target.id === "clip-layer-search") {
+      state.clip.search = target.value;
+      renderClipLayers();
+    }
+  }
+
+  function handleClipChange(event) {
+    const input = event.target.closest("[data-clip-layer]");
+    if (!input) {
+      return;
+    }
+    if (input.checked) {
+      if (state.clip.selected.size >= 6) {
+        input.checked = false;
+        showToast("Select at most 6 layers.");
+        return;
+      }
+      state.clip.selected.add(input.value);
+    } else {
+      state.clip.selected.delete(input.value);
+    }
+    renderClipPanel();
+  }
+
   /* ---------------------------------------------------------------- events */
 
   function bindEvents() {
@@ -2217,6 +2727,11 @@ python scripts/fetch_web_previews.py</pre>
         void sendAssistantMessage(button.dataset.assistantPrompt);
       }
     });
+
+    els.clipClose?.addEventListener("click", closeClipPanel);
+    els.clipPanel?.addEventListener("click", handleClipClick);
+    els.clipPanel?.addEventListener("input", handleClipInput);
+    els.clipPanel?.addEventListener("change", handleClipChange);
 
     document.addEventListener("keydown", handleGlobalKeydown);
     window.addEventListener("hashchange", scheduleSync);

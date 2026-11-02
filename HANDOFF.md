@@ -1,9 +1,9 @@
 # Agent Handoff
 
 Date: 2026-11-02
-Branch: `feature/p19-web-ui-upgrade`
-Draft PR: https://github.com/UBC-FRESH/fresh-hectaresbc/pull/140
-Latest code commit at handoff: `a0f1abd`
+Branch: `main`
+Demo host: `https://fresh-hectaresbc.01101.dev`
+Latest merged PR: #140 (P19/P20 browser UI and agent GIS assistant)
 
 ## What Is Implemented
 
@@ -68,10 +68,25 @@ Latest code commit at handoff: `a0f1abd`
   - catalog/layer search
   - FEMIC AOI resolution
   - clipped raster bundle creation and download links
+- Browser **Clip AOI** drawer on the map workspace:
+  - resolve a FEMIC/BCDC boundary by layer query and feature name, with
+    structured candidate choices for ambiguous queries
+  - draw a rectangle on the map with mouse or touch; mobile panel hands off to
+    the map while drawing
+  - search all 2,183 previewable layers, select up to six, and submit the exact
+    AOI geometry
+  - show AOI overlay, bundle progress, ZIP size, download link, and recent
+    bundles
+  - enabled only when `/api/health` reports a running service
 - FEMIC bridge: `src/fresh_hectaresbc/femic_bridge.py`
   - resolves BC Data Catalogue boundary packages
   - materializes WFS features through FEMIC
   - matches named/numeric features (e.g. TSA 27 -> Revelstoke TSA)
+  - returns `candidate_options` with human-readable names for the UI
+- The bundle API accepts either a FEMIC `aoi_query`/`aoi_name` or a validated
+  GeoJSON Polygon/MultiPolygon in `aoi_geometry`; geometry is written under
+  `var/bundles/aoi/` and clipped through the same pipeline.
+- `GET /api/aoi/search?q=` exposes boundary-package search.
 - Clipping: `src/fresh_hectaresbc/clip.py`
   - windowed reads, AOI reprojection/masking, preserves CRS/dtype/nodata
 - Bundles: `src/fresh_hectaresbc/bundle.py`
@@ -99,7 +114,7 @@ port: 8030
 bind: 0.0.0.0
 origin: http://10.232.253.210:8030
 public URL: https://fresh-hectaresbc.01101.dev
-log: /tmp/hbc-demo-service.log
+log: /srv/shared-data/gep/ws4/fresh-hectaresbc-demo/var/demo-service.log
 ```
 
 The service is currently running. For detached management:
@@ -223,14 +238,20 @@ python scripts/agent_tools.py list-bundles
 
 ## Verified At Handoff
 
-- Web/agent tests: 13 passed.
+- Web/agent tests: 7 passed in `tests/test_agent_gis.py`, including a drawn
+  GeoJSON bundle and candidate-name extraction.
 - Browser smoke: desktop/tablet/mobile, search, facets, inspector, dataset,
   `#/map`, map fallback, legacy routes, keyboard.
-- Sphinx `-W`: passed.
+- Sphinx `-W`: passed (recheck after documentation edits).
 - TSA 27 resolved to Revelstoke TSA (758,443 ha).
 - BCTS + BEC clipped bundle produced (1.27 MB ZIP) and downloaded.
 - Assistant used the tool CLI and returned the real bundle download link.
-- Demo app, preview index, high-res index, map, and assistant chat checked.
+- Clip AOI drawer exercised locally and through
+  `https://fresh-hectaresbc.01101.dev`: boundary candidate resolution, mouse
+  draw, touch draw, 1–6 layer selection, bundle creation, ZIP download, and
+  recent-bundle links.
+- Public protected check with the saved CWL session: 13/13.
+- Public bundle download returned a valid `application/zip`.
 
 The full Python suite still has environment-dependent failures unrelated to
 this work, mainly missing raw DataLad/archive payloads for older preview and
@@ -238,12 +259,11 @@ resolution tests. Use the web/agent test command above for this feature set.
 
 ## Next Steps
 
-1. Confirm the cloudflared route and Cloudflare Access/Globus OAuth policy for
-   `fresh-hectaresbc.01101.dev`.
-2. Decide whether to activate the P19/P20 GitHub issue tree or keep PR #140 as
-   the tracking surface.
-3. Mark PR #140 ready for review and merge after the demo is verified through
-   the public hostname.
+1. Keep the Cloudflare Access/Globus OAuth policy restricted to UBC CWL.
+2. Consider a bundle job/polling API if six large layers approach the
+   Cloudflare request timeout.
+3. Optionally harden tile throughput with COG/TiTiler if tile latency becomes
+   visible.
 4. If more layers should be sharp, continue generating 2048 px overrides with
    `scripts/generate_highres_web_previews.py --family data_layer ...` and
    `--reindex-only` after interrupted runs.

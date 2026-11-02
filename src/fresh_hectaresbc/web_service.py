@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import math
 import os
 import shutil
 import subprocess
 import sys
+import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -59,6 +61,9 @@ class BundleRequest(BaseModel):
     layer_ids: list[str] = Field(min_length=1, max_length=20)
     aoi_query: str | None = Field(default=None, max_length=300)
     aoi_name: str | None = Field(default=None, max_length=300)
+    # A GeoJSON Polygon/MultiPolygon drawn in the browser. The service writes
+    # it to the bundle root; clients never provide filesystem paths.
+    aoi_geometry: dict[str, Any] | None = None
 
 
 @dataclass(slots=True)
@@ -473,16 +478,45 @@ def create_app(config: ServiceConfig) -> FastAPI:
         except FemicBridgeError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    @app.get("/api/aoi/search")
+    def aoi_search(
+        q: str = Query(min_length=1, max_length=300),
+        limit: int = Query(default=5, ge=1, le=10),
+    ) -> dict[str, Any]:
+        from fresh_hectaresbc.femic_bridge import FemicBridgeError, search_aoi_layers
+
+        try:
+            return search_aoi_layers(q, limit=limit, femic_src=config.femic_src)
+        except FemicBridgeError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
     @app.post("/api/bundles")
     def bundle_create(body: BundleRequest) -> dict[str, Any]:
         from fresh_hectaresbc.bundle import BundleError, prepare_bundle
 
+        if body.aoi_geometry is not None and body.aoi_query:
+            raise HTTPException(
+                status_code=422,
+                detail="provide either aoi_geometry or aoi_query, not both",
+            )
+        if body.aoi_geometry is None and not body.aoi_query:
+            raise HTTPException(
+                status_code=422,
+                detail="provide aoi_geometry or aoi_query",
+            )
+        aoi_path = None
+        if body.aoi_geometry is not None:
+            try:
+                aoi_path = _write_drawn_aoi(config, body.aoi_geometry)
+            except ValueError as exc:
+                raise HTTPException(status_code=422, detail=str(exc)) from exc
         try:
             return prepare_bundle(
                 layer_ids=body.layer_ids,
                 output_root=config.bundle_root,
                 aoi_query=body.aoi_query,
-                aoi_name=body.aoi_name,
+                aoi_name=body.aoi_name or ("Drawn AOI" if aoi_path else None),
+                aoi_geojson=aoi_path,
                 archive_root=config.archive_root,
                 femic_src=config.femic_src,
                 max_layers=config.max_layers,
@@ -535,6 +569,66 @@ def create_app(config: ServiceConfig) -> FastAPI:
         )
 
     return app
+
+
+def _write_drawn_aoi(config: ServiceConfig, geometry: dict[str, Any]) -> Path:
+    """Validate a browser-drawn GeoJSON geometry and write it under the bundle root."""
+
+    if not isinstance(geometry, dict):
+        raise ValueError("aoi_geometry must be a GeoJSON geometry object")
+    if geometry.get("type") not in {"Polygon", "MultiPolygon"}:
+        raise ValueError("aoi_geometry must be a Polygon or MultiPolygon")
+    coordinates = geometry.get("coordinates")
+    if not isinstance(coordinates, list):
+        raise ValueError("aoi_geometry is missing coordinates")
+
+    count = 0
+
+    def walk(value: Any) -> None:
+        nonlocal count
+        if isinstance(value, (list, tuple)):
+            for item in value:
+                walk(item)
+            return
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            if not math.isfinite(float(value)):
+                raise ValueError("aoi_geometry contains a non-finite coordinate")
+            count += 1
+            if count > 500_000:
+                raise ValueError("aoi_geometry has too many coordinates")
+            return
+        raise ValueError("aoi_geometry coordinates must be numeric")
+
+    walk(coordinates)
+    try:
+        from shapely.geometry import mapping, shape
+
+        parsed = shape(geometry)
+    except Exception as exc:  # noqa: BLE001 - malformed client geometry
+        raise ValueError(f"aoi_geometry could not be parsed: {exc}") from exc
+    if parsed.is_empty or not parsed.is_valid:
+        raise ValueError("aoi_geometry is empty or invalid")
+
+    aoi_dir = config.bundle_root / "aoi"
+    aoi_dir.mkdir(parents=True, exist_ok=True)
+    path = aoi_dir / f"drawn-{uuid.uuid4().hex}.geojson"
+    path.write_text(
+        json.dumps(
+            {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {"name": "Drawn AOI"},
+                        "geometry": mapping(parsed),
+                    }
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return path
 
 
 def _bundle_manifest(config: ServiceConfig, bundle_id: str) -> Path | None:

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light">
     <title>HectaresBC — Recovered Catalog</title>
-    <link rel="stylesheet" href="styles.css?v=20261102-p24">
+    <link rel="stylesheet" href="styles.css?v=20261102-p25">
   </head>
   <body data-view="catalog">
     <a class="skip-link" href="#content">Skip to catalog</a>
@@ -105,6 +105,17 @@
       <p id="assistant-status" class="assistant-status"></p>
     </aside>
 
+    <aside id="clip-panel" class="clip-panel" hidden aria-label="AOI clip and bundle">
+      <div class="clip-head">
+        <div>
+          <strong>Clip &amp; bundle</strong>
+          <span id="clip-subtitle" class="clip-subtitle">Resolve or draw an AOI, then choose layers</span>
+        </div>
+        <button id="clip-close" class="icon-button" type="button" aria-label="Close clip panel">×</button>
+      </div>
+      <div id="clip-body" class="clip-body"></div>
+    </aside>
+
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
     <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-title">
@@ -131,8 +142,8 @@
       <p class="noscript">This catalog needs JavaScript to search and render dataset details.</p>
     </noscript>
 
-    <script src="catalog.js?v=20261102-p24" defer></script>
-    <script src="map.js?v=20261102-p24" defer></script>
-    <script src="app.js?v=20261102-p24" defer></script>
+    <script src="catalog.js?v=20261102-p25" defer></script>
+    <script src="map.js?v=20261102-p25" defer></script>
+    <script src="app.js?v=20261102-p25" defer></script>
   </body>
 </html>
