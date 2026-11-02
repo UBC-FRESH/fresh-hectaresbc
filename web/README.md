@@ -133,7 +133,20 @@ python scripts/reproject_map_previews.py --workers 8
 ```
 
 The output is ignored `web/data/map_previews_3857/`; the map route uses it,
-while native previews remain the list thumbnails. A dataset with a usable
+while native previews remain the list thumbnails.
+
+To make the entire library sharp, generate 2048 px overrides for the remaining
+virtual layers and then reproject only the new maps:
+
+```bash
+python scripts/generate_highres_web_previews.py \
+  --family virtual_layer --max-size 2048 --workers 32 \
+  --local-archive-root /path/to/hectaresbc
+python scripts/reproject_map_previews.py --workers 32
+```
+
+The reprojection pass is incremental: existing `map.png` files and index
+entries are preserved. A dataset with a usable
 `wgs84_bounds` and `preview.png` opens in MapLibre with an OpenStreetMap basemap
 and an "Offline" basemap option. Preview images without bounds fall back to a
 static lightbox; `not_previewable` records show an explanatory status panel.

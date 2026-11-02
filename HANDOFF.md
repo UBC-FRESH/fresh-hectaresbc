@@ -33,6 +33,16 @@ Latest code commit at handoff: `a0f1abd`
   `scripts/reproject_map_previews.py` writes ignored EPSG:3857 map overlays
   under `web/data/map_previews_3857/`; the map route uses those so overlays
   align with the Web-Mercator basemap. Native previews remain thumbnails.
+- Full-library sharpness: generate 2048 px overrides for the remaining virtual
+  layers, then reproject only the new maps:
+  ```bash
+  python scripts/generate_highres_web_previews.py \
+    --family virtual_layer --max-size 2048 --workers 32 \
+    --local-archive-root /path/to/hectaresbc
+  python scripts/reproject_map_previews.py --workers 32
+  ```
+  The reproject pass is incremental: it skips existing `map.png` files and
+  preserves their index entries.
 
 ### Agent Service And GIS Bundles (P20)
 
