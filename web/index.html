@@ -50,6 +50,9 @@
       <div class="header-meta">
         <span id="preview-status" class="header-pill" hidden></span>
         <span id="status" class="header-status" role="status">Loading catalog…</span>
+        <button id="assistant-button" class="assistant-button" type="button" hidden>
+          <span aria-hidden="true">✦</span> Ask
+        </button>
         <button id="help-button" class="icon-button" type="button" title="Keyboard shortcuts and help" aria-label="Help">
           ?
         </button>
@@ -72,6 +75,36 @@
     </main>
 
     <div id="sheet-backdrop" class="sheet-backdrop"></div>
+    <aside id="assistant-panel" class="assistant-panel" hidden aria-label="HectaresBC assistant">
+      <div class="assistant-head">
+        <div>
+          <strong>HectaresBC assistant</strong>
+          <span id="assistant-model" class="assistant-model">checking…</span>
+        </div>
+        <div class="assistant-head-actions">
+          <button id="assistant-new" class="link-button" type="button">New</button>
+          <button id="assistant-close" class="icon-button" type="button" aria-label="Close assistant">×</button>
+        </div>
+      </div>
+      <div id="assistant-log" class="assistant-log" aria-live="polite">
+        <p class="hint">
+          Ask about the catalog, a layer, AOI clipping, or how to use the map.
+          Try “Find old-growth layers” or “Clip TSA 27 to BEC and BCTS”.
+        </p>
+      </div>
+      <div class="assistant-quick">
+        <button type="button" data-assistant-prompt="What can I do in this catalog?">What can I do?</button>
+        <button type="button" data-assistant-prompt="Find raster layers related to old-growth forest structure.">Find layers</button>
+        <button type="button" data-assistant-prompt="Help me clip a few rasters to TSA 27.">Clip TSA 27</button>
+      </div>
+      <form id="assistant-form" class="assistant-form">
+        <label class="sr-only" for="assistant-input">Message the assistant</label>
+        <textarea id="assistant-input" rows="2" placeholder="Ask about layers, AOIs, or bundles…" spellcheck="false"></textarea>
+        <button id="assistant-send" class="primary-button" type="submit">Send</button>
+      </form>
+      <p id="assistant-status" class="assistant-status"></p>
+    </aside>
+
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
     <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-title">

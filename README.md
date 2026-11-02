@@ -362,6 +362,41 @@ In restricted environments that cannot bind a loopback socket,
 `scripts/smoke_test_web_static_app.py` still validates static assets and catalog
 content and reports the HTTP serving check as skipped.
 
+## Web Service, Assistant, and AOI Bundles
+
+The optional service wraps the static app with an OpenCode-backed assistant,
+FEMIC BC Data Catalogue AOI resolution, and clipped raster bundle creation:
+
+```bash
+python scripts/run_web_service.py \
+  --host 127.0.0.1 --port 8030 \
+  --allow-agent \
+  --archive-root /path/to/hectaresbc \
+  --femic-src /path/to/femic/src
+```
+
+The assistant can answer UI/catalog questions, search for raster layers, resolve
+TSAs or administrative boundaries through FEMIC, and prepare a ZIP containing
+clipped GeoTIFFs, the AOI, and a provenance manifest. Demo limits are six layers
+and 10,000,000 ha per bundle. See `planning/agent_gis_bundles.md`.
+
+Assistant tools are also directly runnable:
+
+```bash
+python scripts/agent_tools.py search-layers --query "old growth" --limit 10
+python scripts/agent_tools.py resolve-aoi \
+  --query "timber supply area boundary" --name "TSA 27"
+python scripts/agent_tools.py prepare-bundle \
+  --aoi-query "timber supply area boundary" --aoi-name "TSA 27" \
+  --layer-id dl_adminunits_bcts --layer-id dl_bec_becv10
+```
+
+The service is loopback-only by default. A non-loopback demo bind requires
+`--allow-remote` and should sit behind an authenticating proxy such as
+Cloudflare Access/Zero Trust. `scripts/start_demo_service.sh` wraps the demo
+bind and reads `FRESH_HECTARESBC_ARCHIVE_ROOT`, `FRESH_HECTARESBC_FEMIC_SRC`,
+`PORT`, and `FRESH_HECTARESBC_PUBLIC_URL`.
+
 ## DataLad Retrieval
 
 The development extra installs Python-side DataLad support through `datalad[full]`. Real retrieval may still require the external `git-annex` binary, initialized submodules, configured storage remotes, and user-local credentials.

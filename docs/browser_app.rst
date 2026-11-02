@@ -117,6 +117,30 @@ and a static fallback when WebGL, bounds, or the preview index is unavailable.
 The app does not use dynamic tile services or raw payload retrieval in the
 browser.
 
+Optional Web Service And GIS Assistant
+--------------------------------------
+
+The static app can also run under an optional FastAPI service:
+
+.. code-block:: bash
+
+   python scripts/run_web_service.py \
+     --host 127.0.0.1 --port 8030 \
+     --allow-agent \
+     --archive-root /path/to/hectaresbc \
+     --femic-src /path/to/femic/src
+
+The service adds an OpenCode-backed assistant panel, catalog/layer search APIs,
+FEMIC BC Data Catalogue AOI resolution, and clipped raster bundle creation.
+The assistant can resolve a named TSA or administrative boundary, search the
+recovered raster library, and prepare a ZIP with clipped GeoTIFFs, the AOI, and
+a provenance manifest. Demo limits are six layers and 10,000,000 ha.
+
+The assistant is opt-in with ``--allow-agent``. The service binds loopback by
+default; a non-loopback demo bind requires ``--allow-remote`` and should sit
+behind an authenticating proxy such as Cloudflare Access/Zero Trust. See
+``planning/agent_gis_bundles.md`` for endpoints, limits, and the demo workflow.
+
 Default tests and smoke checks do not require UBC CWL, hosted workers, DataLad
 network retrieval, raw ZIP content, Arbutus/Chinook credentials, or an object
 store. Reading annexed preview PNG payloads from a cold checkout requires

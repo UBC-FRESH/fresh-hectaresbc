@@ -1767,6 +1767,221 @@ kbd {
   transform: translateX(-50%);
 }
 
+/* --------------------------------------------------------------- assistant */
+
+.assistant-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 2rem;
+  padding: 0.1rem 0.6rem;
+  border: 1px solid #b9d4cd;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.assistant-button:hover {
+  background: #dcece7;
+}
+
+.assistant-panel {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 75;
+  display: flex;
+  flex-direction: column;
+  width: min(26rem, calc(100vw - 2rem));
+  height: min(36rem, calc(100vh - 7rem));
+  border: 1px solid var(--line-strong);
+  border-radius: 0.6rem;
+  background: var(--panel);
+  box-shadow: 0 18px 50px rgba(31, 41, 51, 0.2);
+}
+
+.assistant-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.8rem 0.55rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.assistant-head strong {
+  display: block;
+  font-size: 0.82rem;
+}
+
+.assistant-model {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+.assistant-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.assistant-head-actions .icon-button {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+
+.assistant-log {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.7rem 0.8rem;
+}
+
+.assistant-msg {
+  max-width: 94%;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: var(--panel-soft);
+  color: var(--ink);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.assistant-msg.user {
+  align-self: flex-end;
+  border-color: #c7d8f2;
+  background: #eef5ff;
+}
+
+.assistant-msg.agent {
+  align-self: flex-start;
+  background: var(--panel);
+}
+
+.assistant-msg.error {
+  border-color: #e6bcbc;
+  background: var(--danger-soft);
+  color: #8f1d1d;
+}
+
+.assistant-msg.thinking {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.assistant-msg p {
+  margin: 0 0 0.35rem;
+}
+
+.assistant-msg p:last-child {
+  margin-bottom: 0;
+}
+
+.assistant-msg pre {
+  overflow: auto;
+  margin: 0.35rem 0;
+  padding: 0.4rem;
+  border-radius: 0.25rem;
+  background: #f4f7f9;
+  font-size: 0.7rem;
+}
+
+.assistant-msg code {
+  padding: 0 0.15rem;
+  border-radius: 0.2rem;
+  background: #f4f7f9;
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
+
+.assistant-msg a {
+  color: var(--accent-strong);
+}
+
+.assistant-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  margin-top: 0.35rem;
+}
+
+.assistant-action {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.62rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assistant-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0 0.8rem 0.45rem;
+}
+
+.assistant-quick button {
+  padding: 0.15rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-soft);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.64rem;
+}
+
+.assistant-quick button:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.assistant-form {
+  display: flex;
+  gap: 0.4rem;
+  align-items: stretch;
+  padding: 0.55rem 0.8rem 0.45rem;
+  border-top: 1px solid var(--line);
+}
+
+.assistant-form textarea {
+  flex: 1;
+  min-height: 2.3rem;
+  max-height: 7rem;
+  resize: vertical;
+  padding: 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 0.76rem;
+}
+
+.assistant-form button {
+  flex: none;
+  align-self: flex-end;
+}
+
+.assistant-status {
+  min-height: 1rem;
+  margin: 0;
+  padding: 0 0.8rem 0.5rem;
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
 .noscript {
   padding: 2rem;
   text-align: center;
@@ -2011,6 +2226,14 @@ kbd {
 
   .map-view .maplibregl-ctrl-bottom-right {
     bottom: 42%;
+  }
+
+  .assistant-panel {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
   }
 
   .dataset-actions {

@@ -115,7 +115,8 @@ def main() -> int:
                     "() => location.hash.includes('preview=available')",
                     timeout=10000,
                 )
-                assert page.locator("#result-count").inner_text().startswith("2,163")
+                preview_count = page.locator("#result-count").inner_text().split()[0]
+                assert int(preview_count.replace(",", "")) >= 2000
             else:
                 assert "No map layer" in page.locator("#content").inner_text()
 

@@ -71,6 +71,12 @@
     renderToken: 0,
     searchTimer: null,
     searchRaf: null,
+    assistant: {
+      enabled: false,
+      available: false,
+      session: null,
+      busy: false,
+    },
   };
 
   let els = null;
@@ -99,6 +105,17 @@
       helpButton: document.querySelector("#help-button"),
       helpDialog: document.querySelector("#help-dialog"),
       helpClose: document.querySelector("#help-close"),
+      assistantButton: document.querySelector("#assistant-button"),
+      assistantPanel: document.querySelector("#assistant-panel"),
+      assistantModel: document.querySelector("#assistant-model"),
+      assistantLog: document.querySelector("#assistant-log"),
+      assistantQuick: document.querySelector("#assistant-quick"),
+      assistantForm: document.querySelector("#assistant-form"),
+      assistantInput: document.querySelector("#assistant-input"),
+      assistantSend: document.querySelector("#assistant-send"),
+      assistantStatus: document.querySelector("#assistant-status"),
+      assistantNew: document.querySelector("#assistant-new"),
+      assistantClose: document.querySelector("#assistant-close"),
     };
     bindEvents();
     const header = document.querySelector(".app-header");
@@ -107,6 +124,7 @@
     }
     renderLoading();
     loadCatalog();
+    void loadAssistantInfo();
   }
 
   /* --------------------------------------------------------------- loading */
@@ -1732,6 +1750,9 @@ python scripts/fetch_web_previews.py</pre>
       if (els.helpDialog.open) {
         els.helpDialog.close();
       }
+      if (els.assistantPanel && !els.assistantPanel.hidden) {
+        closeAssistant();
+      }
       return;
     }
     if (typing) {
@@ -1889,6 +1910,186 @@ python scripts/fetch_web_previews.py</pre>
     );
   }
 
+  /* --------------------------------------------------------------- assistant */
+
+  async function loadAssistantInfo() {
+    const info = await fetchJson("../api/agent");
+    if (!info || !info.enabled) {
+      if (els.assistantButton) {
+        els.assistantButton.hidden = true;
+      }
+      return;
+    }
+    state.assistant.enabled = true;
+    state.assistant.available = Boolean(info.available);
+    els.assistantButton.hidden = false;
+    els.assistantButton.setAttribute("aria-expanded", "false");
+    const model = info.model ? String(info.model).split("/").pop() : "agent";
+    els.assistantModel.textContent = info.available ? model : "opencode unavailable";
+    if (!info.available) {
+      els.assistantInput.disabled = true;
+      els.assistantSend.disabled = true;
+      els.assistantStatus.textContent = "opencode is not on the service PATH";
+    }
+  }
+
+  function assistantContext() {
+    const record = state.selectedId ? getRecordSync(state.selectedId) : null;
+    return {
+      route: window.location.hash,
+      view: state.route.view,
+      dataset_id: state.route.datasetId || state.selectedId || null,
+      dataset_title: record ? Catalog.titleLabel(record) : null,
+      query: state.route.query || "",
+      family: state.route.family || "all",
+      preview: state.route.preview || "all",
+      verification: state.route.verification || "all",
+      size: state.route.size || "all",
+      visible_results:
+        document.querySelectorAll(".result-row").length ||
+        document.querySelectorAll(".result-card").length,
+      map_layer:
+        document.querySelector(".map-title-card h1")?.textContent?.trim() || null,
+      preview_index: state.previewMeta?.available || 0,
+      highres_previews: state.previewMeta?.highresCount || 0,
+    };
+  }
+
+  function openAssistant() {
+    if (!state.assistant.enabled) {
+      return;
+    }
+    els.assistantPanel.hidden = false;
+    els.assistantButton.setAttribute("aria-expanded", "true");
+    els.assistantInput.focus();
+  }
+
+  function closeAssistant() {
+    els.assistantPanel.hidden = true;
+    els.assistantButton.setAttribute("aria-expanded", "false");
+  }
+
+  function newAssistantChat() {
+    state.assistant.session = null;
+    els.assistantLog.replaceChildren();
+    const hint = document.createElement("p");
+    hint.className = "hint";
+    hint.textContent =
+      "New conversation. Ask about the catalog, a layer, AOI clipping, or the map.";
+    els.assistantLog.append(hint);
+    els.assistantStatus.textContent = "";
+    els.assistantInput.focus();
+  }
+
+  function appendAssistantMessage(role, content, { html = false } = {}) {
+    const node = document.createElement("div");
+    node.className = `assistant-msg ${role}`;
+    if (html) {
+      node.innerHTML = content;
+    } else {
+      node.textContent = content;
+    }
+    els.assistantLog.append(node);
+    els.assistantLog.scrollTop = els.assistantLog.scrollHeight;
+    return node;
+  }
+
+  function renderAssistantMarkdown(text) {
+    const value = String(text || "");
+    const segments = value.split(/```/);
+    return segments
+      .map((segment, index) => {
+        if (index % 2 === 1) {
+          return `<pre><code>${Catalog.escapeHtml(segment.trim())}</code></pre>`;
+        }
+        return renderAssistantInline(segment);
+      })
+      .join("");
+  }
+
+  function renderAssistantInline(text) {
+    let escaped = Catalog.escapeHtml(text);
+    escaped = escaped.replace(/`([^`]+)`/g, "<code>$1</code>");
+    escaped = escaped.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    escaped = escaped.replace(
+      /\[([^\]]+)\]\((https?:\/\/[^)\s]+|\/[^)\s]+)\)|(https?:\/\/[^\s<]+|\/api\/[^\s<]+)/g,
+      (match, label, href, bare) => {
+        const url = href || bare;
+        if (!url) {
+          return match;
+        }
+        return `<a href="${url}" target="_blank" rel="noreferrer">${label || url}</a>`;
+      }
+    );
+    return escaped.replace(/\n/g, "<br>");
+  }
+
+  async function sendAssistantMessage(text) {
+    if (!state.assistant.enabled || state.assistant.busy) {
+      return;
+    }
+    if (!state.assistant.available) {
+      els.assistantStatus.textContent = "The assistant process is not available.";
+      return;
+    }
+    const message = String(text || "").trim();
+    if (!message) {
+      return;
+    }
+    appendAssistantMessage("user", message);
+    const thinking = appendAssistantMessage("agent", "thinking…");
+    thinking.classList.add("thinking");
+    state.assistant.busy = true;
+    els.assistantSend.disabled = true;
+    els.assistantStatus.textContent = "";
+    try {
+      const response = await fetch("../api/agent/chat", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          message,
+          session: state.assistant.session,
+          context: assistantContext(),
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.detail || `assistant failed (${response.status})`);
+      }
+      state.assistant.session = payload.session || state.assistant.session;
+      thinking.remove();
+      const reply = appendAssistantMessage(
+        "agent",
+        renderAssistantMarkdown(payload.reply || "(no reply)"),
+        { html: true }
+      );
+      if (Array.isArray(payload.actions) && payload.actions.length) {
+        const row = document.createElement("div");
+        row.className = "assistant-actions";
+        for (const action of payload.actions) {
+          const chip = document.createElement("span");
+          chip.className = "assistant-action";
+          chip.textContent = `${action.tool}${action.summary ? `: ${action.summary}` : ""}`;
+          chip.title = chip.textContent;
+          row.append(chip);
+        }
+        reply.append(row);
+      }
+    } catch (error) {
+      thinking.remove();
+      const node = appendAssistantMessage(
+        "error",
+        `Assistant unavailable: ${error.message}`
+      );
+      node.classList.add("error");
+    } finally {
+      state.assistant.busy = false;
+      els.assistantSend.disabled = false;
+      els.assistantInput.focus();
+      els.assistantLog.scrollTop = els.assistantLog.scrollHeight;
+    }
+  }
+
   /* ---------------------------------------------------------------- events */
 
   function bindEvents() {
@@ -1915,6 +2116,35 @@ python scripts/fetch_web_previews.py</pre>
     els.helpDialog.addEventListener("click", (event) => {
       if (event.target === els.helpDialog) {
         els.helpDialog.close();
+      }
+    });
+
+    els.assistantButton?.addEventListener("click", () => {
+      if (els.assistantPanel.hidden) {
+        openAssistant();
+      } else {
+        closeAssistant();
+      }
+    });
+    els.assistantClose?.addEventListener("click", closeAssistant);
+    els.assistantNew?.addEventListener("click", newAssistantChat);
+    els.assistantForm?.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const message = els.assistantInput.value;
+      els.assistantInput.value = "";
+      void sendAssistantMessage(message);
+    });
+    els.assistantInput?.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        els.assistantForm.requestSubmit();
+      }
+    });
+    els.assistantQuick?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-assistant-prompt]");
+      if (button) {
+        openAssistant();
+        void sendAssistantMessage(button.dataset.assistantPrompt);
       }
     });
 

@@ -14,6 +14,12 @@
 - Pushed `feature/p19-web-ui-upgrade` and opened draft PR #140 for review.
 - Fixed map discovery after review: initialized the data submodule, fetched the 2,163 published preview PNG payloads from Arbutus (about 37 MB), made `#/map` open a useful default preview layer, enabled the Map tab directly from Browse, added "Preview layers" links and a searchable change-layer control, and added `scripts/fetch_web_previews.py` plus a visible missing-preview-image banner for cold checkouts.
 - Improved full-screen preview sharpness: recorded that the published artifacts are 256 px, added `scripts/generate_highres_web_previews.py` and ignored `web/data/map_previews_highres/v1/` overrides at 2048 px, taught the browser to prefer high-resolution local previews over the published index, and switched categorical raster previews to nearest-neighbor sampling.
+- Added the optional FastAPI web service (`fresh_hectaresbc.web_service`, `scripts/run_web_service.py`) with static app/preview mounts, catalog search, agent status/chat, FEMIC AOI resolution, and clipped bundle endpoints.
+- Added `femic_bridge.py` to resolve BCDC boundary packages and materialize WFS features through FEMIC, with named/numeric feature matching and compact candidate responses.
+- Added windowed raster clipping (`clip.py`) and bundle assembly (`bundle.py`): AOI GeoJSON, clipped GeoTIFFs preserving CRS/dtype/nodata, manifest/provenance, ZIP, six-layer/10M-ha demo limits, and safe bundle IDs.
+- Added `scripts/agent_tools.py` for assistant-driven layer search, boundary search/resolution, bundle preparation, and recent-bundle listing.
+- Added the browser "Ask" assistant panel with UI help, current catalog/map context, tool action chips, markdown links, and bundle download links; it stays hidden unless the service reports an enabled assistant.
+- Added `planning/agent_gis_bundles.md`, web service/agent tests with a synthetic archive, and README/Sphinx documentation for the service, limits, and protected demo deployment.
 
 ## 2026-06-20
 

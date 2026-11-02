@@ -131,6 +131,24 @@ static lightbox; `not_previewable` records show an explanatory status panel.
 The map route lazy-loads `web/vendor/maplibre-gl.js` and
 `web/vendor/maplibre-gl.css`. Browse never loads MapLibre.
 
+## Optional Service And Assistant
+
+The static app also runs under the optional FastAPI service:
+
+```bash
+python scripts/run_web_service.py \
+  --host 127.0.0.1 --port 8030 \
+  --allow-agent \
+  --archive-root /path/to/hectaresbc \
+  --femic-src /path/to/femic/src
+```
+
+The service adds the "Ask" assistant panel, catalog/layer search APIs, FEMIC
+BCDC AOI resolution, and clipped multi-layer bundle downloads. The assistant is
+opt-in (`--allow-agent`) and the service is loopback-only unless
+`--allow-remote` is supplied for a protected deployment. See
+`planning/agent_gis_bundles.md`.
+
 ## Verification
 
 ```bash

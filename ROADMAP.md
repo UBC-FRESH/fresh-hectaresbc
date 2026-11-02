@@ -318,6 +318,25 @@ hosted workers, a database, or a frontend build pipeline.
 - [x] P19.6 Make the Map workspace open a useful default preview layer, enable Map from Browse, add preview-layer discovery links and a searchable change-layer control, add `scripts/fetch_web_previews.py` plus a missing-image banner, and add ignored 2048 px local preview overrides for sharper full-screen maps.
 - [ ] P19.7 Verify, document, and close the browser UI upgrade phase.
 
+## Phase 20: Agent GIS Assistant And AOI Bundles
+
+Status: implementation in progress on `feature/p19-web-ui-upgrade`; draft PR
+#140. Planning: `planning/agent_gis_bundles.md`.
+
+Phase 20 adds an optional FastAPI service and browser assistant that can explain
+the UI, search the recovered raster catalog, resolve FEMIC/BC Data Catalogue
+boundaries into AOIs, clip selected rasters to those AOIs, and prepare
+downloadable multi-layer bundles. The static app remains usable without the
+service.
+
+- [x] P20.1 Add the FEMIC BCDC boundary resolution/materialization bridge with name and numeric-feature matching.
+- [x] P20.2 Add windowed raster clipping that preserves CRS, dtype, and nodata.
+- [x] P20.3 Add bundle assembly with AOI, manifest, provenance, ZIP, and demo limits.
+- [x] P20.4 Add the optional FastAPI service, static mounts, agent API, layer search, AOI, and bundle endpoints.
+- [x] P20.5 Add the browser "Ask" assistant panel with UI help and tool-driven AOI/bundle workflows.
+- [x] P20.6 Add agent tools, tests, docs, and the separate demo deployment.
+- [ ] P20.7 Verify and close the agent GIS assistant phase.
+
 ## Current Next Steps
 
 1. Run the Phase 19 browser/static/logic smoke checks and review the app at
