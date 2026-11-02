@@ -1446,7 +1446,7 @@
         </aside>
         <div class="map-status-card">
           <h2>${Catalog.escapeHtml(preview.label)}</h2>
-          <p>${Catalog.escapeHtml(previewExplanation(record, preview))}</p>
+          <p>${tileMeta ? "Live 1-ha raster tiles from the recovered source data." : Catalog.escapeHtml(previewExplanation(record, preview))}</p>
           <dl class="kv-list" style="margin-top:0.5rem">
             <dt>Bounds</dt><dd class="mono">${Catalog.escapeHtml(formatBounds(bounds))}</dd>
             <dt>Map CRS</dt><dd>${Catalog.escapeHtml(artifact?._map_crs || artifact?.crs || "unknown")}</dd>
