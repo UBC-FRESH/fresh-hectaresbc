@@ -41,6 +41,14 @@ def _get(url: str, timeout: float) -> tuple[int, bytes, dict[str, str]]:
         return exc.code, exc.read(), dict(exc.headers)
 
 
+def _header(headers: dict[str, str], name: str) -> str:
+    wanted = name.casefold()
+    for key, value in headers.items():
+        if key.casefold() == wanted:
+            return value
+    return ""
+
+
 def _json(url: str, timeout: float) -> Any:
     status, body, _ = _get(url, timeout)
     if status != 200:
@@ -82,7 +90,7 @@ def main() -> int:
 
     try:
         status, body, headers = _get(f"{base}/api/health", args.timeout)
-        location = headers.get("location") or headers.get("Location") or ""
+        location = _header(headers, "location")
         access_redirect = "cloudflareaccess.com" in location or any(
             "cloudflareaccess.com" in str(value) for value in headers.values()
         )
@@ -167,7 +175,7 @@ def main() -> int:
                 "tile PNG",
                 status == 200
                 and body.startswith(b"\x89PNG")
-                and headers.get("content-type") == "image/png",
+                and _header(headers, "content-type") == "image/png",
                 f"HTTP {status} {len(body)} bytes",
             )
         except (URLError, HTTPError, RuntimeError, json.JSONDecodeError) as exc:
