@@ -315,7 +315,8 @@ hosted workers, a database, or a frontend build pipeline.
 - [x] P19.3 Add the dataset inspector and grouped detail/provenance views with copy/download actions.
 - [x] P19.4 Add the MapLibre map workspace with layer controls, legend, and static/offline fallback.
 - [x] P19.5 Add gzip/cache server behavior, real-browser smoke coverage, and updated docs.
-- [ ] P19.6 Verify, document, and close the browser UI upgrade phase.
+- [x] P19.6 Make the Map workspace open a useful default preview layer, enable Map from Browse, add preview-layer discovery links, and add `scripts/fetch_web_previews.py` plus a missing-image banner.
+- [ ] P19.7 Verify, document, and close the browser UI upgrade phase.
 
 ## Current Next Steps
 

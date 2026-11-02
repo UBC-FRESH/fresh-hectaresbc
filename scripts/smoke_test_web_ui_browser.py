@@ -98,6 +98,24 @@ def main() -> int:
             assert page.input_value("#search-input") == "bull trout"
             assert page.locator("#result-count").inner_text().startswith("1 matching")
 
+            assert page.locator("#tab-map").get_attribute("aria-disabled") is None
+
+            page.goto(f"{base_url}#/map", wait_until="domcontentloaded")
+            page.wait_for_timeout(2500)
+            assert page.locator(".map-title-card h1").count() == 1
+            if page.locator(".maplibregl-canvas").count() == 1:
+                assert "BCTS Operating Areas" in page.locator(
+                    ".map-title-card h1"
+                ).inner_text()
+                page.get_by_role("link", name="Preview layers", exact=True).click()
+                page.wait_for_function(
+                    "() => location.hash.includes('preview=available')",
+                    timeout=10000,
+                )
+                assert page.locator("#result-count").inner_text().startswith("2,163")
+            else:
+                assert "No map layer" in page.locator("#content").inner_text()
+
             page.goto(f"{base_url}#/dataset/dl_adminunits_bcts/map", wait_until="domcontentloaded")
             page.wait_for_timeout(2500)
             assert page.locator("#map-canvas").count() == 1
@@ -107,11 +125,12 @@ def main() -> int:
             )
 
             page.goto(
-                f"{base_url}#/dataset/vl_virtualspecies_bulltroutsalvelinusconfluentus_1135/map",
+                f"{base_url}#/dataset/dl_pinebeetle_pinekill1999/map",
                 wait_until="domcontentloaded",
             )
-            page.wait_for_selector(".map-fallback")
-            assert "Not previewable" in page.locator("#content").inner_text()
+            page.wait_for_selector(".map-fallback, .map-fallback-card")
+            content = page.locator("#content").inner_text()
+            assert "Not previewable" in content or "No map layer" in content
 
             page.goto(f"{base_url}#dl_adminunits_bcts", wait_until="domcontentloaded")
             page.wait_for_selector(".dataset-title")

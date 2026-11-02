@@ -528,9 +528,9 @@
     }
 
     if (path === "map") {
-      state.view = "dataset";
+      state.view = "map";
       state.map = true;
-      state.datasetId = params.get("id");
+      state.datasetId = params.get("id") || null;
       return state;
     }
 
@@ -585,6 +585,12 @@
     if (state.view === "dataset" && state.datasetId) {
       const suffix = state.map ? "/map" : "";
       return `#/dataset/${encodeURIComponent(state.datasetId)}${suffix}`;
+    }
+
+    if (state.view === "map") {
+      return state.datasetId
+        ? `#/dataset/${encodeURIComponent(state.datasetId)}/map`
+        : "#/map";
     }
 
     const params = new URLSearchParams();

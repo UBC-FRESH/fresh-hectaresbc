@@ -61,9 +61,15 @@ In a JupyterHub/code-server proxy, use the corresponding proxied `/web/` URL.
 ```text
 #/catalog
 #/catalog?q=bull+trout&family=virtual_layer&preview=available&sort=title&page=1
+#/map
 #/dataset/dl_adminunits_bcts
 #/dataset/dl_adminunits_bcts/map
 ```
+
+`#/map` opens the map workspace with a useful default preview layer (BCTS
+Operating Areas when available). The Map tab is enabled directly from Browse,
+and the map's "Preview layers" link opens the catalog filtered to preview-ready
+records.
 
 Search, family, preview availability, verification, size bucket, sort, page, and
 page size are encoded in the hash. Opening a dataset preserves the browse
@@ -90,8 +96,20 @@ If it is not reachable, it falls back to local ignored development artifacts:
 web/data/map_previews/manifest.json
 ```
 
-The catalog still renders when neither is available; preview filters and
-thumbnails are simply marked unavailable. A dataset with a usable
+The index and per-layer manifests are Git-tracked, but the preview PNG payloads
+are annexed. Fetch them from the Arbutus remote after sourcing user-local
+credentials:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+source ~/.config/fresh-hectaresbc/arbutus_env.sh
+python scripts/fetch_web_previews.py
+```
+
+Use `--dataset-id dl_adminunits_bcts` to fetch one preview while developing.
+The catalog still renders when neither the index nor the payloads are available.
+When the index is present but an image is missing, the map shows an explicit
+"preview image missing locally" banner rather than a blank canvas. A dataset with a usable
 `wgs84_bounds` and `preview.png` opens in MapLibre with an OpenStreetMap basemap
 and an "Offline" basemap option. Preview images without bounds fall back to a
 static lightbox; `not_previewable` records show an explanatory status panel.

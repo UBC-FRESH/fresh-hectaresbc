@@ -158,6 +158,12 @@ assert.strictEqual(malformed.sort, "relevance");
 assert.strictEqual(malformed.page, 1);
 assert.strictEqual(malformed.pageSize, 50);
 
+const mapRoute = browser.parseRoute("#/map");
+assert.strictEqual(mapRoute.view, "map");
+assert.strictEqual(mapRoute.map, true);
+assert.strictEqual(mapRoute.datasetId, null);
+assert.strictEqual(browser.buildRoute(mapRoute), "#/map");
+
 const legacyDetail = browser.parseRoute("#dl_adminunits_bcts");
 assert.strictEqual(legacyDetail.view, "dataset");
 assert.strictEqual(legacyDetail.datasetId, "dl_adminunits_bcts");

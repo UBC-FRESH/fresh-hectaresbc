@@ -217,6 +217,20 @@ source-derived preview PNGs and 20 `not_previewable` records. Compact indexes an
 per-layer manifests are Git-tracked in `UBC-FRESH/fresh-hectaresbc-data`; preview
 PNG payloads are annexed and published to `arbutus-s3`.
 
+A cold checkout therefore knows which layers are previewable but does not have
+the preview images themselves. Fetch them from the Arbutus remote with a
+DataLad-enabled environment and user-local credentials:
+
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+source ~/.config/fresh-hectaresbc/arbutus_env.sh
+python scripts/fetch_web_previews.py
+```
+
+Use `--dataset-id dl_adminunits_bcts` to fetch a single preview while
+developing. Without the payloads, the map lists a real layer but shows an
+explicit "preview image missing locally" banner instead of an empty map.
+
 The older local BCTS preview generator remains useful as a development fallback
 and for the source-derived basemap/reference artifact:
 
@@ -292,6 +306,7 @@ Representative routes:
 ```text
 http://localhost:8023/web/#/catalog
 http://localhost:8023/web/#/catalog?q=bull+trout
+http://localhost:8023/web/#/map
 http://localhost:8023/web/#/dataset/dl_adminunits_bcts
 http://localhost:8023/web/#/dataset/dl_adminunits_bcts/map
 http://localhost:8023/web/#/dataset/vl_virtualspecies_bulltroutsalvelinusconfluentus_1135

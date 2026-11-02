@@ -317,7 +317,7 @@
       renderBrowse();
       return;
     }
-    if (route.map) {
+    if (route.view === "map" || route.map) {
       void renderMap();
     } else {
       void renderDataset();
@@ -1140,12 +1140,51 @@
 
   /* ------------------------------------------------------------------- map */
 
+  function previewArtifactAvailable(datasetId) {
+    const artifact = state.previewIndex?.get(datasetId);
+    return Boolean(
+      artifact &&
+        ["source_derived_preview", "already_present"].includes(
+          artifact.artifact_status || artifact.status
+        )
+    );
+  }
+
+  function defaultPreviewDatasetId() {
+    if (!state.previewIndex) {
+      return null;
+    }
+    if (previewArtifactAvailable("dl_adminunits_bcts")) {
+      return "dl_adminunits_bcts";
+    }
+    for (const datasetId of state.previewIndex.keys()) {
+      if (previewArtifactAvailable(datasetId)) {
+        return datasetId;
+      }
+    }
+    return null;
+  }
+
   async function renderMap() {
     const token = ++state.renderToken;
     document.body.dataset.view = "map";
     document.body.classList.remove("filters-open", "inspector-open");
     els.content.innerHTML = loadingTemplate("Loading map preview…");
-    const datasetId = state.route.datasetId;
+    let datasetId = state.route.datasetId;
+    if (!datasetId) {
+      datasetId = defaultPreviewDatasetId();
+      if (!datasetId) {
+        els.content.innerHTML = mapEmptyTemplate();
+        document.title = "Map · HectaresBC";
+        if (els.liveStatus) {
+          els.liveStatus.textContent = "No map layer is available.";
+        }
+        els.content.querySelector("h1")?.focus();
+        updateTabs();
+        return;
+      }
+      state.selectedId = datasetId;
+    }
     await loadDetails();
     if (token !== state.renderToken) {
       return;
@@ -1175,6 +1214,7 @@
 
     if (!canMap) {
       els.content.innerHTML = mapFallbackTemplate(record, preview, artifact, previewUrl);
+      updateHeader();
       updateTabs();
       if (els.liveStatus) {
         els.liveStatus.textContent = `Map preview unavailable for ${Catalog.titleLabel(record)}. ${previewExplanation(record, preview)}`;
@@ -1189,6 +1229,7 @@
       ? artifactUrl(reference, reference.artifact_path)
       : null;
     els.content.innerHTML = mapTemplate(record, preview, artifact, bounds);
+    updateHeader();
     updateTabs();
     if (els.liveStatus) {
       els.liveStatus.textContent = `Map preview for ${Catalog.titleLabel(record)}.`;
@@ -1209,7 +1250,14 @@
           const card = document.querySelector(".map-status-card p");
           if (card) {
             card.textContent =
-              "The preview image could not be loaded. It may still be annexed in the data repository.";
+              "The preview image could not be loaded. It is still annexed in the data repository.";
+          }
+          if (!document.querySelector(".map-image-error")) {
+            const banner = document.createElement("div");
+            banner.className = "map-image-error";
+            banner.innerHTML =
+              "<strong>Preview image missing locally.</strong> Fetch preview payloads with <code>python scripts/fetch_web_previews.py</code>.";
+            document.querySelector(".map-view")?.append(banner);
           }
         },
       });
@@ -1247,6 +1295,7 @@
           <div class="map-actions">
             <a class="secondary-button" href="${datasetHref}">Dataset</a>
             <a class="secondary-button" href="${state.lastBrowseHash || "#/catalog"}">Browse</a>
+            <a class="secondary-button" href="#/catalog?preview=available">Preview layers</a>
             <button class="secondary-button" type="button" data-copy="${Catalog.escapeHtml(record.dataset_id)}">Copy ID</button>
           </div>
         </div>
@@ -1295,6 +1344,39 @@
       .join("")}</ul>`;
   }
 
+  function mapEmptyTemplate() {
+    const hasIndex = Boolean(state.previewIndex);
+    const message = hasIndex
+      ? "The preview index is present, but it does not expose a usable preview artifact."
+      : "The published preview index is not reachable from this checkout, so no map layers can be listed.";
+    return `
+      <div class="map-view">
+        <div class="map-topbar">
+          <div class="map-title-card">
+            <h1 tabindex="-1">Map layers</h1>
+            <p>Choose a previewable recovered layer to explore spatially.</p>
+          </div>
+          <div class="map-actions">
+            <a class="secondary-button" href="${state.lastBrowseHash || "#/catalog"}">Browse</a>
+          </div>
+        </div>
+        <div class="map-fallback">
+          <div class="map-fallback-card">
+            <h1>No map layer available</h1>
+            <p>${Catalog.escapeHtml(message)}</p>
+            <p><a class="primary-button" href="#/catalog?preview=available">Browse previewable layers</a></p>
+            <details style="margin-top:0.8rem;text-align:left">
+              <summary>Maintainer details</summary>
+              <p class="muted" style="margin-top:0.5rem">Initialize the DataLad submodule and fetch the preview payloads:</p>
+              <pre style="white-space:pre-wrap">git submodule update --init external/fresh-hectaresbc-data
+python scripts/fetch_web_previews.py</pre>
+            </details>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function mapFallbackTemplate(record, preview, artifact, previewUrl, errorMessage = "") {
     const datasetHref = `#/dataset/${encodeURIComponent(record.dataset_id)}`;
     const canShowImage = Boolean(previewUrl);
@@ -1313,6 +1395,7 @@
           <div class="map-actions">
             <a class="secondary-button" href="${datasetHref}">Dataset</a>
             <a class="secondary-button" href="${state.lastBrowseHash || "#/catalog"}">Browse</a>
+            <a class="secondary-button" href="#/catalog?preview=available">Preview layers</a>
           </div>
         </div>
         <div class="map-fallback">
@@ -1686,16 +1769,18 @@
     );
     if (datasetId) {
       els.tabMap.href = `#/dataset/${encodeURIComponent(datasetId)}/map`;
-      els.tabMap.removeAttribute("aria-disabled");
       els.tabMap.title = "Open the map workspace for the selected layer";
     } else {
-      els.tabMap.href = "#/catalog";
-      els.tabMap.setAttribute("aria-disabled", "true");
-      els.tabMap.title = "Select a layer to open its map";
+      els.tabMap.href = "#/map";
+      els.tabMap.title = "Open the map workspace";
     }
+    els.tabMap.removeAttribute("aria-disabled");
     els.tabMap.setAttribute(
       "aria-selected",
-      state.route.view === "dataset" && state.route.map ? "true" : "false"
+      state.route.view === "map" ||
+        (state.route.view === "dataset" && state.route.map)
+        ? "true"
+        : "false"
     );
   }
 

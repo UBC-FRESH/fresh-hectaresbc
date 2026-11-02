@@ -33,6 +33,19 @@ payloads are annexed in the data submodule and published to ``arbutus-s3``.
 Per-layer manifests and the compact index are Git-tracked in the data
 repository.
 
+A cold checkout has the index and manifests but not the preview images. Fetch
+the payloads with user-local Arbutus credentials:
+
+.. code-block:: bash
+
+   export PATH="$HOME/.local/bin:$PATH"
+   source ~/.config/fresh-hectaresbc/arbutus_env.sh
+   python scripts/fetch_web_previews.py
+
+Use ``--dataset-id dl_adminunits_bcts`` for a single preview while developing.
+If an image is indexed but missing locally, the map shows an explicit
+"preview image missing locally" banner instead of an empty canvas.
+
 The older local BCTS preview generator remains available as a development
 fallback and for the current NRS administrative basemap/reference artifact:
 
@@ -53,6 +66,7 @@ Representative routes:
 
    http://localhost:8023/web/#/catalog
    http://localhost:8023/web/#/catalog?q=bull+trout
+   http://localhost:8023/web/#/map
    http://localhost:8023/web/#/dataset/dl_adminunits_bcts
    http://localhost:8023/web/#/dataset/dl_adminunits_bcts/map
    http://localhost:8023/web/#/dataset/vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
