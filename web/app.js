@@ -63,6 +63,7 @@
     previewIndex: null,
     previewMeta: null,
     previewKind: "loading",
+    mapPreviewVersion: "",
     referenceLayers: [],
     route: Catalog.defaultState(),
     lastBrowseHash: "#/catalog",
@@ -289,6 +290,7 @@
       }
       mercatorCount += 1;
     }
+    state.mapPreviewVersion = mercator?.generated_at || "";
 
     state.referenceLayers = references.map((layer) => ({
       ...layer,
@@ -1287,11 +1289,14 @@
     const bounds =
       window.HectaresBCMap?.validBounds(artifact?._map_bounds_wgs84) ||
       window.HectaresBCMap?.validBounds(artifact?.wgs84_bounds);
-    const previewUrl = artifact?._map_path
+    let previewUrl = artifact?._map_path
       ? artifactUrl({ _base: artifact._map_base }, artifact._map_path)
       : artifact?.artifact_path
         ? artifactUrl(artifact, artifact.artifact_path)
         : null;
+    if (previewUrl && artifact?._map_path && state.mapPreviewVersion) {
+      previewUrl += `${previewUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(state.mapPreviewVersion)}`;
+    }
     const canMap = preview.status === "available" && previewUrl && bounds;
 
     if (!canMap) {
