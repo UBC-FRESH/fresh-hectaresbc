@@ -1,0 +1,9 @@
+# Example only. Replace the tunnel UUID and origin with the local deployment.
+# The Cloudflare Access application should cover the entire hostname.
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: /etc/cloudflared/REPLACE_WITH_TUNNEL_UUID.json
+
+ingress:
+  - hostname: fresh-hectaresbc.01101.dev
+    service: http://10.232.253.210:8030
+  - service: http_status:404

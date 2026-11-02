@@ -64,6 +64,12 @@ def main() -> int:
         type=Path,
         default=REPO_ROOT / "var" / "tile-cache",
     )
+    parser.add_argument(
+        "--tile-cache-max-bytes",
+        type=int,
+        default=4 * 1024**3,
+        help="Prune least-recently-used tile files above this cache size.",
+    )
     parser.add_argument("--max-layers", type=int, default=6)
     parser.add_argument("--max-area-ha", type=float, default=10_000_000.0)
     parser.add_argument(
@@ -86,6 +92,7 @@ def main() -> int:
         femic_src=args.femic_src,
         bundle_root=args.bundle_root,
         tile_cache_root=args.tile_cache_root,
+        tile_cache_max_bytes=args.tile_cache_max_bytes,
         max_layers=args.max_layers,
         max_area_ha=args.max_area_ha,
         public_url=args.public_url,

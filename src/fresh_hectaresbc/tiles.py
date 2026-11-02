@@ -40,6 +40,8 @@ PUBLISHED_ROOT = (
 )
 TILE_SIZE = 256
 WEB_MERCATOR = "EPSG:3857"
+DEFAULT_TILE_CACHE_MAX_BYTES = 4 * 1024**3
+_TILE_WRITE_COUNT = 0
 PALETTE = (
     (20, 81, 117, 230),
     (219, 94, 47, 230),
@@ -218,6 +220,40 @@ def _rgba_from_values(
     return rgba
 
 
+def prune_tile_cache(
+    cache_root: str | Path,
+    *,
+    max_bytes: int = DEFAULT_TILE_CACHE_MAX_BYTES,
+) -> dict[str, int]:
+    """Delete least-recently-used tile files until the cache is under budget."""
+
+    root = Path(cache_root).expanduser().resolve()
+    if not root.is_dir():
+        return {"files": 0, "bytes": 0, "removed": 0}
+    files: list[Path] = []
+    total = 0
+    for path in root.rglob("*.png"):
+        try:
+            total += path.stat().st_size
+            files.append(path)
+        except OSError:
+            continue
+    removed = 0
+    if total > max_bytes:
+        files.sort(key=lambda path: path.stat().st_mtime)
+        for path in files:
+            if total <= max_bytes:
+                break
+            try:
+                size = path.stat().st_size
+                path.unlink()
+                total -= size
+                removed += 1
+            except OSError:
+                continue
+    return {"files": len(files) - removed, "bytes": total, "removed": removed}
+
+
 def _transparent_png() -> bytes:
     buffer = tempfile.SpooledTemporaryFile()
     Image.new("RGBA", (TILE_SIZE, TILE_SIZE), (0, 0, 0, 0)).save(buffer, "PNG")
@@ -233,6 +269,7 @@ def render_tile(
     *,
     archive_root: str | Path | None = None,
     cache_root: str | Path | None = None,
+    cache_max_bytes: int = DEFAULT_TILE_CACHE_MAX_BYTES,
 ) -> bytes:
     """Render one Web-Mercator PNG tile from the recovered source raster."""
 
@@ -307,4 +344,8 @@ def render_tile(
         with _TILE_LOCK:
             temp_path.write_bytes(png)
             temp_path.replace(cache_path)
+            global _TILE_WRITE_COUNT
+            _TILE_WRITE_COUNT += 1
+            if _TILE_WRITE_COUNT % 200 == 0:
+                prune_tile_cache(cache_path.parents[3], max_bytes=cache_max_bytes)
     return png

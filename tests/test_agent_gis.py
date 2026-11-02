@@ -139,6 +139,23 @@ def test_tiles_render_source_raster_without_preview(tmp_path: Path) -> None:
     assert (tmp_path / "tiles" / "dl_adminunits_bcts" / "0" / "0" / "0.png").is_file()
 
 
+def test_prune_tile_cache_removes_oldest_files(tmp_path: Path) -> None:
+    import os
+
+    from fresh_hectaresbc.tiles import prune_tile_cache
+
+    root = tmp_path / "cache"
+    for index in range(3):
+        path = root / "layer" / str(index) / "0" / "0.png"
+        path.parent.mkdir(parents=True)
+        path.write_bytes(b"x" * 100)
+        os.utime(path, (index + 1, index + 1))
+    result = prune_tile_cache(root, max_bytes=150)
+    assert result["removed"] >= 1
+    assert result["bytes"] <= 150
+    assert not (root / "layer" / "0" / "0" / "0.png").exists()
+
+
 def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
     from fastapi.testclient import TestClient
 

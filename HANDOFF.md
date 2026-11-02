@@ -102,15 +102,42 @@ public URL: https://fresh-hectaresbc.01101.dev
 log: /tmp/hbc-demo-service.log
 ```
 
-The service is currently running. If it stops, restart with:
+The service is currently running. For detached management:
 
 ```bash
 cd /srv/shared-data/gep/ws4/fresh-hectaresbc-demo
+export FRESH_HECTARESBC_ARCHIVE_ROOT=/srv/shared-data/gep/fresh-hectaresbc/hectaresbc
+export FRESH_HECTARESBC_FEMIC_SRC=/srv/shared-data/gep/ws4/femic/src
+export PORT=8030
+export FRESH_HECTARESBC_PUBLIC_URL=https://fresh-hectaresbc.01101.dev
+bash scripts/demo_ctl.sh start
+bash scripts/demo_ctl.sh status
+bash scripts/demo_ctl.sh logs
+```
+
+Or run it in the foreground:
+
+```bash
 FRESH_HECTARESBC_ARCHIVE_ROOT=/srv/shared-data/gep/fresh-hectaresbc/hectaresbc \
 FRESH_HECTARESBC_FEMIC_SRC=/srv/shared-data/gep/ws4/femic/src \
 PORT=8030 \
 FRESH_HECTARESBC_PUBLIC_URL=https://fresh-hectaresbc.01101.dev \
 bash scripts/start_demo_service.sh
+```
+
+Production/demo templates:
+
+- `deploy/fresh-hectaresbc-demo.service`
+- `deploy/fresh-hectaresbc-demo.env.example`
+- `deploy/cloudflared-ingress.example.yml`
+- `deploy/README.md`
+
+Verify a local or public origin (does not start an agent chat or create a
+bundle):
+
+```bash
+python scripts/check_demo_service.py --base-url http://127.0.0.1:8030
+python scripts/check_demo_service.py --base-url https://fresh-hectaresbc.01101.dev
 ```
 
 Demo data materialized in the clone:

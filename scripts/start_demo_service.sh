@@ -13,6 +13,7 @@ ARCHIVE_ROOT="${FRESH_HECTARESBC_ARCHIVE_ROOT:-}"
 FEMIC_SRC="${FRESH_HECTARESBC_FEMIC_SRC:-}"
 BUNDLE_ROOT="${FRESH_HECTARESBC_BUNDLE_ROOT:-${REPO_ROOT}/var/bundles}"
 TILE_CACHE_ROOT="${FRESH_HECTARESBC_TILE_CACHE_ROOT:-${REPO_ROOT}/var/tile-cache}"
+TILE_CACHE_MAX_BYTES="${FRESH_HECTARESBC_TILE_CACHE_MAX_BYTES:-4294967296}"
 
 args=(
   "--host" "0.0.0.0"
@@ -22,6 +23,7 @@ args=(
   "--workspace" "${REPO_ROOT}"
   "--bundle-root" "${BUNDLE_ROOT}"
   "--tile-cache-root" "${TILE_CACHE_ROOT}"
+  "--tile-cache-max-bytes" "${TILE_CACHE_MAX_BYTES}"
   "--public-url" "${PUBLIC_URL}"
 )
 if [[ -n "${ARCHIVE_ROOT}" ]]; then

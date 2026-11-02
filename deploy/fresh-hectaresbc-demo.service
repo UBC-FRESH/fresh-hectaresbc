@@ -1,0 +1,21 @@
+[Unit]
+Description=HectaresBC demo web service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=gep
+Group=gep
+WorkingDirectory=/srv/shared-data/gep/ws4/fresh-hectaresbc-demo
+EnvironmentFile=/etc/fresh-hectaresbc-demo.env
+ExecStart=/bin/bash scripts/start_demo_service.sh
+Restart=always
+RestartSec=5
+# The service runs an enabled OpenCode assistant with the service user's
+# permissions. Keep this origin behind Cloudflare Access/Zero Trust.
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

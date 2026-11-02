@@ -24,6 +24,7 @@
 - Fixed map overlay alignment: preview PNGs are rendered in native CRS (usually EPSG:3005), so added `scripts/reproject_map_previews.py` to write ignored EPSG:3857 map overlays and bounds under `web/data/map_previews_3857/`; the map route now uses the reprojected image, while native previews remain thumbnails. Bumped browser asset versions so cached pre-fix JS/CSS is not reused.
 - Completed full-library sharpness: generated 2048 px overrides for all 1,765 virtual layers, reprojected all 2,183 previewable layers to EPSG:3857 (934 MB), and fixed WMS range-legend parsing plus palette fallback so the 19 sparse pine-beetle rasters that the published batch marked `not_previewable_empty_preview` now render. All 2,183 recovered records have a map preview; the demo clone has the full high-res/3857 set.
 - Added zoom-dependent 1-ha raster tiles: `tiles.py` renders 256 px EPSG:3857 tiles on demand from the recovered 100 m BC Albers GeoTIFFs with `WarpedVRT`, applies exact/range legends and nodata handling, and caches under `var/tile-cache/`. The service exposes `/api/tiles/{dataset_id}/metadata` and `/api/tiles/{dataset_id}/{z}/{x}/{y}.png`; MapLibre uses a raster tile source when available and falls back to the static 3857 preview otherwise.
+- Added demo operations: `scripts/demo_ctl.sh` for detached start/stop/restart/status/logs, systemd/env/cloudflared templates under `deploy/`, `scripts/check_demo_service.py` for public-origin verification, and LRU tile-cache pruning with a 4 GiB default budget.
 
 ## 2026-06-20
 

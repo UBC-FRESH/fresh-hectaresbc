@@ -79,6 +79,7 @@ class ServiceConfig:
     tile_cache_root: Path = field(
         default_factory=lambda: REPO_ROOT / "var" / "tile-cache"
     )
+    tile_cache_max_bytes: int = 4 * 1024**3
     max_layers: int = 6
     max_area_ha: float = 10_000_000.0
     public_url: str | None = None
@@ -243,6 +244,11 @@ def create_app(config: ServiceConfig) -> FastAPI:
     config.bundle_root.mkdir(parents=True, exist_ok=True)
     config.tile_cache_root = Path(config.tile_cache_root).expanduser().resolve()
     config.tile_cache_root.mkdir(parents=True, exist_ok=True)
+    from fresh_hectaresbc.tiles import prune_tile_cache
+
+    prune_tile_cache(
+        config.tile_cache_root, max_bytes=config.tile_cache_max_bytes
+    )
     app = FastAPI(title=config.title, version="0.0.0")
     app.state.config = config
     app.add_middleware(GZipMiddleware, minimum_size=1024)
@@ -402,6 +408,7 @@ def create_app(config: ServiceConfig) -> FastAPI:
                 y,
                 archive_root=config.archive_root,
                 cache_root=config.tile_cache_root,
+                cache_max_bytes=config.tile_cache_max_bytes,
             )
         except TileError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
