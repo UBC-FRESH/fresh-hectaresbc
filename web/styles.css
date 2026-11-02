@@ -1432,7 +1432,7 @@ details.technical pre {
   left: 0.8rem;
   z-index: 4;
   width: 17rem;
-  max-height: calc(100% - 12rem);
+  max-height: calc(100% - 24rem);
   overflow: auto;
   padding: 0.75rem;
 }

@@ -67,7 +67,7 @@
     ];
   }
 
-  function styleFor({ previewUrl, referenceUrl, referenceBounds, bounds }) {
+  function styleFor({ previewUrl, referenceUrl, referenceBounds, bounds, categorical }) {
     const sources = {
       osm: {
         type: "raster",
@@ -114,7 +114,11 @@
       id: "preview",
       type: "raster",
       source: "preview",
-      paint: { "raster-opacity": 0.88 },
+      paint: {
+        "raster-opacity": 0.88,
+        "raster-resampling": categorical ? "nearest" : "linear",
+        "raster-fade-duration": 0,
+      },
     });
 
     return { version: 8, sources, layers };
@@ -178,6 +182,7 @@
       panel = null,
       loading = null,
       onError = null,
+      categorical = false,
     } = options;
 
     const parsed = validBounds(bounds);
@@ -198,6 +203,7 @@
         referenceUrl,
         referenceBounds: validBounds(referenceBounds),
         bounds: parsed,
+        categorical,
       }),
       bounds: [
         [parsed[0], parsed[1]],

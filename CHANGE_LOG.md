@@ -13,6 +13,7 @@
 - Updated the static asset checks, catalog logic checks, generator tests, server tests, README, web README, and Sphinx browser guide for the new routes, artifacts, and verification commands.
 - Pushed `feature/p19-web-ui-upgrade` and opened draft PR #140 for review.
 - Fixed map discovery after review: initialized the data submodule, fetched the 2,163 published preview PNG payloads from Arbutus (about 37 MB), made `#/map` open a useful default preview layer, enabled the Map tab directly from Browse, added "Preview layers" links and a searchable change-layer control, and added `scripts/fetch_web_previews.py` plus a visible missing-preview-image banner for cold checkouts.
+- Improved full-screen preview sharpness: recorded that the published artifacts are 256 px, added `scripts/generate_highres_web_previews.py` and ignored `web/data/map_previews_highres/v1/` overrides at 2048 px, taught the browser to prefer high-resolution local previews over the published index, and switched categorical raster previews to nearest-neighbor sampling.
 
 ## 2026-06-20
 

@@ -192,9 +192,12 @@
   }
 
   async function loadPreviewIndex() {
-    const published = await fetchJson(`${PublishedPreviewRoot}/index.json`);
-    const local = await fetchJson(`${LocalPreviewRoot}/manifest.json`);
-    const manifest = published || local;
+    const [published, local, highres] = await Promise.all([
+      fetchJson(`${PublishedPreviewRoot}/index.json`),
+      fetchJson(`${LocalPreviewRoot}/manifest.json`),
+      fetchJson("data/map_previews_highres/v1/index.json"),
+    ]);
+    const manifest = published || local || highres;
     if (!manifest) {
       state.previewKind = "unavailable";
       state.previewIndex = null;
@@ -207,8 +210,12 @@
       return;
     }
 
-    const manifestKind = published ? "published" : "local";
-    const base = published ? PublishedPreviewRoot : LocalPreviewRoot;
+    const manifestKind = published ? "published" : local ? "local" : "highres";
+    const base = published
+      ? PublishedPreviewRoot
+      : local
+        ? LocalPreviewRoot
+        : "data/map_previews_highres/v1";
     const layers = manifest.layers || manifest.artifacts || [];
     const references = manifest.reference_layers || [];
     state.previewKind = manifestKind;
@@ -218,20 +225,43 @@
         { ...layer, _base: base, _source: manifestKind },
       ])
     );
+
+    // Local 2048-pixel previews override the published 256-pixel images when
+    // they exist. A failed high-resolution generation never hides a published
+    // preview: only usable high-resolution artifacts are merged.
+    let highresCount = 0;
+    for (const layer of highres?.layers || []) {
+      const status = layer.artifact_status || layer.status;
+      if (
+        !["source_derived_preview", "already_present"].includes(status) ||
+        !layer.artifact_path
+      ) {
+        continue;
+      }
+      state.previewIndex.set(layer.dataset_id, {
+        ...layer,
+        _base: "data/map_previews_highres/v1",
+        _source: "highres",
+      });
+      highresCount += 1;
+    }
+
     state.referenceLayers = references.map((layer) => ({
       ...layer,
       _base: base,
       _source: manifestKind,
     }));
+    const available = [...state.previewIndex.values()].filter((layer) =>
+      ["source_derived_preview", "already_present"].includes(
+        layer.artifact_status || layer.status
+      )
+    ).length;
     state.previewMeta = {
       kind: manifestKind,
       generatedAt: manifest.generated_at,
-      total: layers.length,
-      available: layers.filter((layer) =>
-        ["source_derived_preview", "already_present"].includes(
-          layer.artifact_status || layer.status
-        )
-      ).length,
+      total: state.previewIndex.size,
+      available,
+      highresCount,
       document: manifest,
     };
     updateHeader();
@@ -968,6 +998,9 @@
 
   function previewExplanation(record, preview) {
     if (preview.status === "available") {
+      if (preview.artifact?._source === "highres") {
+        return "A high-resolution local preview artifact is available for this layer.";
+      }
       return state.previewKind === "published"
         ? "A published preview artifact is available for this layer."
         : "A local preview artifact is available for this layer.";
@@ -1245,6 +1278,9 @@
         referenceUrl,
         referenceBounds: reference?.wgs84_bounds || null,
         bounds,
+        categorical: Boolean(
+          artifact?.value_class_count || artifact?.value_classes?.length
+        ),
         panel: document.querySelector("#map-layer-panel"),
         loading: document.querySelector("#map-loading"),
         onError: () => {
@@ -1810,8 +1846,10 @@ python scripts/fetch_web_previews.py</pre>
       els.previewStatus.classList.remove("warn");
       const count = state.previewMeta.available;
       els.previewStatus.textContent = `${Catalog.formatNumber(count)} ${count === 1 ? "preview" : "previews"}`;
-      els.previewStatus.title =
-        state.previewMeta.kind === "published"
+      const highres = state.previewMeta.highresCount || 0;
+      els.previewStatus.title = highres
+        ? `Published DataLad preview index with ${Catalog.formatNumber(highres)} high-resolution local overrides`
+        : state.previewMeta.kind === "published"
           ? "Published DataLad preview index"
           : "Local preview artifacts";
     } else if (state.previewKind === "loading") {

@@ -231,6 +231,21 @@ Use `--dataset-id dl_adminunits_bcts` to fetch a single preview while
 developing. Without the payloads, the map lists a real layer but shows an
 explicit "preview image missing locally" banner instead of an empty map.
 
+The published previews are 256 px, which is sharp at thumbnail scale but soft
+on a full-screen map. Generate ignored local 2048 px overrides from the source
+archive when sharper map output is needed:
+
+```bash
+python scripts/generate_highres_web_previews.py \
+  --family data_layer --max-size 2048 --workers 8 \
+  --local-archive-root /path/to/hectaresbc
+```
+
+The browser prefers `web/data/map_previews_highres/v1/` overrides when present
+and falls back to the published previews otherwise. Use `--dataset-id` to
+regenerate selected layers, or `--reindex-only` to rebuild the override index
+after an interrupted run.
+
 The older local BCTS preview generator remains useful as a development fallback
 and for the source-derived basemap/reference artifact:
 

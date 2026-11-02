@@ -46,6 +46,21 @@ Use ``--dataset-id dl_adminunits_bcts`` for a single preview while developing.
 If an image is indexed but missing locally, the map shows an explicit
 "preview image missing locally" banner instead of an empty canvas.
 
+The published previews are intentionally compact (256 px), which is sharp at
+thumbnail scale but soft on a full-screen map. Generate ignored local 2048 px
+overrides from the recovered source archive:
+
+.. code-block:: bash
+
+   python scripts/generate_highres_web_previews.py \
+     --family data_layer --max-size 2048 --workers 8 \
+     --local-archive-root /path/to/hectaresbc
+
+The browser prefers ``web/data/map_previews_highres/v1/`` when present and falls
+back to the published previews for layers without an override. Use
+``--dataset-id`` for selected layers or ``--reindex-only`` after an interrupted
+run.
+
 The older local BCTS preview generator remains available as a development
 fallback and for the current NRS administrative basemap/reference artifact:
 
