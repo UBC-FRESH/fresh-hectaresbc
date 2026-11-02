@@ -2,7 +2,8 @@
 
 Date: 2026-11-02
 Branch: `main`
-Latest merged PR: #142 (browser Clip AOI drawer and drawn-geometry bundles)
+Latest code commit: `0c71a82`
+Latest merged PR: #143 (assistant guide); Clip AOI drawer: #142
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
