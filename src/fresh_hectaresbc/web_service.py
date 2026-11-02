@@ -100,7 +100,10 @@ The UI has three surfaces:
   Python/CLI commands, JSON download, and an "Open map" action.
 - #/dataset/<dataset_id>/map and #/map: MapLibre map with a searchable layer
   switcher, visibility, opacity, legend, OpenStreetMap/offline basemaps, and
-  fit-to-layer. #/map opens BCTS Operating Areas by default.
+  fit-to-layer. #/map opens BCTS Operating Areas by default. The "Clip AOI"
+  button opens a drawer that resolves a boundary or draws a rectangle, lets the
+  user search and select up to six previewable layers, prepares a bundle, and
+  lists recent downloads.
 
 Preview facts: the published DataLad index has 2,163 previews and 20
 not-previewable records. Published PNGs are 256 px; ignored 2048 px local
@@ -120,6 +123,8 @@ AOI/bundle rules:
   specific name or TSA number (e.g. "TSA 27" or "Revelstoke TSA").
 - If resolve-aoi returns status needs_name or ambiguous, show the candidate
   labels and ask the user to choose; do not guess.
+- Tell users they can also use the map's Clip AOI drawer to resolve a boundary
+  or draw a box, select layers, and download the bundle directly.
 - Before preparing a bundle, use search-layers to find raster dataset IDs.
 - Bundles are limited to 6 layers and 10,000,000 ha in the demo. Only use
   dataset IDs returned by search-layers or present in the catalog.
