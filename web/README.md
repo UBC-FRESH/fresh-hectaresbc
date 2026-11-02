@@ -146,7 +146,13 @@ python scripts/reproject_map_previews.py --workers 32
 ```
 
 The reprojection pass is incremental: existing `map.png` files and index
-entries are preserved. A dataset with a usable
+entries are preserved.
+
+In the current demo data set, all **2,183 recovered records** have a 2048 px
+preview and an EPSG:3857 map overlay. This includes the 19 sparse pine-beetle
+rasters that the published batch previously marked
+`not_previewable_empty_preview`; their WMS range legends are now parsed and
+uncovered valid pixels receive a palette fallback. A dataset with a usable
 `wgs84_bounds` and `preview.png` opens in MapLibre with an OpenStreetMap basemap
 and an "Offline" basemap option. Preview images without bounds fall back to a
 static lightbox; `not_previewable` records show an explanatory status panel.

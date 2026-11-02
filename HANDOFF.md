@@ -25,16 +25,20 @@ Latest code commit at handoff: `a0f1abd`
   - `web/data/catalog.json` (compatibility)
 - Published previews are 256 px. Local high-resolution overrides live under
   ignored `web/data/map_previews_highres/v1/` and are preferred when present.
-- `scripts/generate_highres_web_previews.py` generates/clips 2048 px overrides
-  from the recovered source archive and can reindex partial runs.
+- `scripts/generate_highres_web_previews.py` generates 2048 px overrides from
+  the recovered source archive and can reindex partial runs.
 - `scripts/fetch_web_previews.py` fetches the published preview PNG payloads
   from the Arbutus DataLad remote.
 - Preview PNGs are rendered in native CRS (usually EPSG:3005 / BC Albers).
   `scripts/reproject_map_previews.py` writes ignored EPSG:3857 map overlays
   under `web/data/map_previews_3857/`; the map route uses those so overlays
   align with the Web-Mercator basemap. Native previews remain thumbnails.
-- Full-library sharpness: generate 2048 px overrides for the remaining virtual
-  layers, then reproject only the new maps:
+- Full library is complete in the current checkout: **2,183 previewable
+  records**, 2,183 high-resolution previews (~537 MB), and 2,183 EPSG:3857
+  map overlays (~934 MB). The 19 sparse pine-beetle rasters that the published
+  batch marked `not_previewable_empty_preview` were recovered by fixing WMS
+  range-legend parsing and adding a palette fallback.
+- Regeneration commands:
   ```bash
   python scripts/generate_highres_web_previews.py \
     --family virtual_layer --max-size 2048 --workers 32 \
@@ -103,7 +107,8 @@ Demo data materialized in the clone:
 
 - generated catalog artifacts
 - 2,163 published preview PNGs (copied as regular files for the demo)
-- 399 local 2048 px preview overrides (~393 MB)
+- 2,183 local 2048 px preview overrides (~537 MB)
+- 2,183 EPSG:3857 map overlays (~934 MB)
 - writable `var/bundles/`
 
 The demo clone has uncommitted generated/ignored data and copied preview files.

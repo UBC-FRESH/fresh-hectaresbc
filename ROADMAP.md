@@ -317,6 +317,7 @@ hosted workers, a database, or a frontend build pipeline.
 - [x] P19.5 Add gzip/cache server behavior, real-browser smoke coverage, and updated docs.
 - [x] P19.6 Make the Map workspace open a useful default preview layer, enable Map from Browse, add preview-layer discovery links and a searchable change-layer control, add `scripts/fetch_web_previews.py` plus a missing-image banner, and add ignored 2048 px local preview overrides for sharper full-screen maps.
 - [x] P19.8 Reproject map preview overlays to EPSG:3857 so they align with the Web-Mercator basemap; keep native previews for thumbnails.
+- [x] P19.9 Complete full-library 2048 px previews for all 2,183 records, including virtual layers and the sparse pine-beetle rasters previously marked not previewable, and reproject the full set to EPSG:3857.
 - [ ] P19.7 Verify, document, and close the browser UI upgrade phase.
 
 ## Phase 20: Agent GIS Assistant And AOI Bundles

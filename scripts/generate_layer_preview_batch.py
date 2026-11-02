@@ -386,7 +386,28 @@ def _rgba_from_array(array: Any, classes: list[dict[str, Any]]) -> Any:
     rgba = np.zeros((data.shape[0], data.shape[1], 4), dtype=np.uint8)
     if classes:
         for item in classes:
-            rgba[(data == item["value"]) & valid] = item["rgba"]
+            if "value_min" in item and "value_max" in item:
+                selected = (
+                    (data >= item["value_min"])
+                    & (data <= item["value_max"])
+                    & valid
+                )
+            else:
+                selected = (data == item["value"]) & valid
+            rgba[selected] = item["rgba"]
+
+        # Some WMS legends use ranges plus a single exact value (for example,
+        # "0" plus "0.001:100"). Recovered rasters can still contain values that
+        # the ranges do not cover, so color any remaining valid pixels from the
+        # palette rather than dropping the layer as an empty preview.
+        uncovered = valid & (rgba[:, :, 3] == 0)
+        if uncovered.any():
+            remaining_values = np.unique(data[uncovered])
+            for index, value in enumerate(remaining_values[: len(PALETTE)]):
+                color = PALETTE[index]
+                if float(value) == 0.0:
+                    color = (177, 185, 178, 48)
+                rgba[(data == value) & uncovered] = color
         return rgba
 
     values = np.asarray(array.compressed())
@@ -436,11 +457,33 @@ def _read_wms_classes(zip_path: Path, wms_member: str) -> list[dict[str, Any]]:
         red = int((entry.findtext("color/red") or "0").strip())
         green = int((entry.findtext("color/green") or "0").strip())
         blue = int((entry.findtext("color/blue") or "0").strip())
+        label = (entry.findtext("legend_entry") or "").strip()
+        if ":" in value_text:
+            for part in value_text.split(","):
+                pieces = part.strip().split(":", 1)
+                if len(pieces) != 2:
+                    continue
+                try:
+                    value_min = float(pieces[0])
+                    value_max = float(pieces[1])
+                except ValueError:
+                    continue
+                classes.append(
+                    {
+                        "value": value_text,
+                        "value_min": value_min,
+                        "value_max": value_max,
+                        "label": label,
+                        "rgb": [red, green, blue],
+                        "rgba": [red, green, blue, 220],
+                    }
+                )
+            continue
         for value in _parse_integer_legend_values(value_text):
             classes.append(
                 {
                     "value": value,
-                    "label": (entry.findtext("legend_entry") or "").strip(),
+                    "label": label,
                     "rgb": [red, green, blue],
                     "rgba": [red, green, blue, 220],
                 }

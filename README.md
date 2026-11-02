@@ -255,7 +255,10 @@ python scripts/reproject_map_previews.py --workers 8
 ```
 
 This writes ignored `web/data/map_previews_3857/` overlays with EPSG:3857
-bounds. The map route uses those; native previews remain the thumbnails.
+bounds. The map route uses those; native previews remain the thumbnails. The
+current demo build has 2048 px previews and EPSG:3857 overlays for all 2,183
+records, including the sparse pine-beetle rasters recovered by the range-legend
+fix.
 
 The older local BCTS preview generator remains useful as a development fallback
 and for the source-derived basemap/reference artifact:

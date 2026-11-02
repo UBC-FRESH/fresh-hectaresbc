@@ -1090,6 +1090,19 @@
     `;
   }
 
+  function legendItemLabel(item) {
+    if (!item) {
+      return "";
+    }
+    if (item.value_min !== undefined && item.value_max !== undefined) {
+      return item.label || `${item.value_min}–${item.value_max}`;
+    }
+    if (item.value === undefined || item.value === null || item.value === "") {
+      return item.label || "";
+    }
+    return `${item.value}: ${item.label}`;
+  }
+
   function previewPanel(record, preview, artifact, mapHref) {
     const blocks = [];
     if (preview.status === "available" && artifact?.artifact_path) {
@@ -1118,7 +1131,7 @@
         `<ul class="layer-legend">${artifact.value_classes
           .map(
             (item) =>
-              `<li><span class="layer-swatch" style="background: rgb(${(item.rgb || []).join(", ")})"></span>${Catalog.escapeHtml(`${item.value}: ${item.label}`)}</li>`
+              `<li><span class="layer-swatch" style="background: rgb(${(item.rgb || []).join(", ")})"></span>${Catalog.escapeHtml(legendItemLabel(item))}</li>`
           )
           .join("")}</ul>`
       );
@@ -1496,7 +1509,7 @@
     return `<ul class="layer-legend">${classes
       .map(
         (item) =>
-          `<li><span class="layer-swatch" style="background: rgb(${(item.rgb || []).join(", ")})"></span>${Catalog.escapeHtml(`${item.value}: ${item.label}`)}</li>`
+          `<li><span class="layer-swatch" style="background: rgb(${(item.rgb || []).join(", ")})"></span>${Catalog.escapeHtml(legendItemLabel(item))}</li>`
       )
       .join("")}</ul>`;
   }
