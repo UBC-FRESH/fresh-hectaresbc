@@ -298,8 +298,9 @@ These are planned but not active requirements yet.
 ## Phase 19: Browser UI Upgrade
 
 Status: implementation in progress on
-`feature/p19-web-ui-upgrade`. Planning: `planning/web_ui_upgrade_plan.md`.
-GitHub issue activation is pending maintainer review.
+`feature/p19-web-ui-upgrade`; draft PR #140. Planning:
+`planning/web_ui_upgrade_plan.md`. GitHub issue activation is pending
+maintainer review.
 
 Phase 19 replaces the document-style catalog page with an application shell:
 a Browse workspace with search, facets, pagination, preview thumbnails, and a

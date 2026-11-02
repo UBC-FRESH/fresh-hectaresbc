@@ -11,6 +11,7 @@
 - Added gzip compression, conservative cache headers, and safer response headers to `scripts/serve_web_app.py`; the compact index drops from about 2.6 MB to about 230 KB over the wire.
 - Replaced the hand-written fake-DOM smoke harness with `scripts/smoke_test_web_ui_browser.py`, which checks desktop/tablet/mobile overflow, search-to-inspector navigation, dataset metadata, map loading/fallback, legacy routes, and keyboard focus when Playwright is available.
 - Updated the static asset checks, catalog logic checks, generator tests, server tests, README, web README, and Sphinx browser guide for the new routes, artifacts, and verification commands.
+- Pushed `feature/p19-web-ui-upgrade` and opened draft PR #140 for review.
 
 ## 2026-06-20
 
