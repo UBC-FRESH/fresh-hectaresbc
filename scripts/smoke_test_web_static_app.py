@@ -84,18 +84,22 @@ def _check_static_assets(web_root: Path) -> None:
 
     expected_ids = {
         "status",
-        "record-count",
-        "data-layer-count",
-        "virtual-layer-count",
-        "catalog-controls",
+        "live-status",
+        "preview-status",
         "search-input",
-        "sort-select",
-        "page-size-select",
-        "record-list",
-        "record-detail",
-        "detail-status",
-        "map-status",
-        "map-preview",
+        "tab-browse",
+        "tab-map",
+        "filter-rail",
+        "facets",
+        "preview-note",
+        "clear-filters",
+        "content",
+        "inspector",
+        "sheet-backdrop",
+        "toast",
+        "help-button",
+        "help-dialog",
+        "help-close",
     }
     missing_ids = sorted(expected_ids.difference(parser.ids))
     _require(not missing_ids, f"missing expected DOM ids: {missing_ids}")
@@ -106,7 +110,15 @@ def _check_static_assets(web_root: Path) -> None:
         asset_path = web_root / urlsplit(asset_url).path
         _require(asset_path.is_file(), f"referenced asset is missing: {asset_url}")
 
-    for relative_path in ("catalog.js", "app.js", "styles.css", "README.md"):
+    for relative_path in (
+        "catalog.js",
+        "map.js",
+        "app.js",
+        "styles.css",
+        "README.md",
+        "vendor/maplibre-gl.js",
+        "vendor/maplibre-gl.css",
+    ):
         _require((web_root / relative_path).is_file(), f"missing web asset: {relative_path}")
 
 
@@ -191,11 +203,13 @@ def _check_http_serving(web_root: Path) -> str:
 
         base_url = f"http://127.0.0.1:{httpd.server_address[1]}"
         for path, expected in (
-            ("/", "Recovered HectaresBC Catalog"),
+            ("/", "HectaresBC"),
             ("/catalog.js", "CatalogBrowser"),
+            ("/map.js", "HectaresBCMap"),
             ("/app.js", "loadCatalog"),
-            ("/styles.css", "record-detail"),
+            ("/styles.css", "result-table"),
             ("/data/catalog.json", '"record_count": 2183'),
+            ("/data/catalog.index.json", '"record_count":2183'),
         ):
             with urllib.request.urlopen(base_url + path, timeout=10) as response:
                 body = response.read().decode("utf-8")

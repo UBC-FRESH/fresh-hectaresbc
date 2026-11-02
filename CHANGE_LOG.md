@@ -1,5 +1,17 @@
 # Change Log
 
+## 2026-11-02
+
+- Added `planning/web_ui_upgrade_plan.md`, a UI/UX review and phased upgrade plan benchmarking the catalog against the WS4 and FHOPS application shells and recording measured navigation, responsive, preview-semantics, and payload issues.
+- Added `catalog.index.json`, `catalog.details.json`, and `catalog.meta.json` generation alongside the compatibility `catalog.json`; the Browse workspace now loads the compact index and fetches full detail records lazily.
+- Replaced the stacked catalog page with a responsive application shell: compact header, global search, family/preview/verification/size facets, URL-addressable browse state, sortable results, pagination, preview thumbnails, and a contextual dataset inspector.
+- Added a dedicated dataset route with grouped metadata, provenance, known gaps/uncertainty, preview evidence, human-readable labels, copyable Python/CLI commands, JSON download, and raw-record disclosure.
+- Added a MapLibre map workspace with a vendored library, WGS84 preview-image overlay, visibility/opacity controls, legend classes, OpenStreetMap and offline basemaps, fit-to-layer, and static/status fallbacks for missing or non-previewable artifacts.
+- Preserved legacy `#<dataset_id>` and `#map=<dataset_id>` routes through canonical redirects, and preserved browse search/filter state when opening a dataset or returning to results.
+- Added gzip compression, conservative cache headers, and safer response headers to `scripts/serve_web_app.py`; the compact index drops from about 2.6 MB to about 230 KB over the wire.
+- Replaced the hand-written fake-DOM smoke harness with `scripts/smoke_test_web_ui_browser.py`, which checks desktop/tablet/mobile overflow, search-to-inspector navigation, dataset metadata, map loading/fallback, legacy routes, and keyboard focus when Playwright is available.
+- Updated the static asset checks, catalog logic checks, generator tests, server tests, README, web README, and Sphinx browser guide for the new routes, artifacts, and verification commands.
+
 ## 2026-06-20
 
 - Activated Phase 15 Sphinx docs and GitHub Pages publication with parent issue #121, branch `feature/p15-sphinx-github-pages-docs`, and child issues #124, #123, and #122.

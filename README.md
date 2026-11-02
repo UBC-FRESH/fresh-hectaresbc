@@ -186,24 +186,39 @@ Catalog operations do not read bulky ZIP payloads, require the data submodule co
 
 ## Browser Catalog Development
 
-Generate the static browser catalog artifact from the Python package API:
+Generate the static browser catalog and its lazy Browse/detail artifacts from the
+Python package API:
 
 ```bash
 python scripts/generate_web_catalog.py
 python scripts/smoke_test_web_static_app.py
 node scripts/smoke_test_web_catalog_ui.js web/data/catalog.json
-node scripts/smoke_test_web_app_dom.js web/data/catalog.json
+python scripts/smoke_test_web_ui_browser.py
 ```
 
-The browser first discovers published full-layer preview artifacts from the DataLad submodule:
+The generator writes four ignored artifacts under `web/data/`:
+
+```text
+web/data/catalog.json          full compatibility payload
+web/data/catalog.index.json    compact Browse/search rows
+web/data/catalog.details.json  full records, loaded on dataset open
+web/data/catalog.meta.json     counts and generation timestamp
+```
+
+The browser first discovers published full-layer preview artifacts from the
+DataLad submodule:
 
 ```text
 external/fresh-hectaresbc-data/derived/web_map_previews/v1/index.json
 ```
 
-That publication currently covers 2,183 recovered records, with 2,163 source-derived preview PNGs and 20 `not_previewable` records. Compact indexes and per-layer manifests are Git-tracked in `UBC-FRESH/fresh-hectaresbc-data`; preview PNG payloads are annexed and published to `arbutus-s3`.
+That publication currently covers 2,183 recovered records, with 2,163
+source-derived preview PNGs and 20 `not_previewable` records. Compact indexes and
+per-layer manifests are Git-tracked in `UBC-FRESH/fresh-hectaresbc-data`; preview
+PNG payloads are annexed and published to `arbutus-s3`.
 
-The older local BCTS preview generator remains useful as a development fallback and for the source-derived basemap/reference artifact:
+The older local BCTS preview generator remains useful as a development fallback
+and for the source-derived basemap/reference artifact:
 
 ```bash
 python scripts/generate_map_preview_artifacts.py --dataset-id dl_adminunits_bcts
@@ -216,23 +231,28 @@ The local preview generator reads the real BCTS raster from:
 data_layers/adminunits_bcts.zip!bcts.tiff
 ```
 
-It resolves that ZIP from the DataLad submodule when annex content is present, or from the ignored local archive fallback:
+It resolves that ZIP from the DataLad submodule when annex content is present, or
+from the ignored local archive fallback:
 
 ```text
 tmp/shared-data/hectaresbc/data_layers/adminunits_bcts.zip
 ```
 
-The generated local browser files are ignored because they are reproducible outputs:
+The generated local browser files are ignored because they are reproducible
+outputs:
 
 ```text
 web/data/catalog.json
+web/data/catalog.index.json
+web/data/catalog.details.json
+web/data/catalog.meta.json
 web/data/map_previews/manifest.json
 web/data/map_previews/dl_adminunits_bcts/preview.png
 web/data/map_previews/context/bc_admin_reference.png
 ```
 
 The preview artifact manifest records `EPSG:3005`, native and WGS84 bounds,
-source ZIP and internal TIFF/WMS paths, raster dimensions, nodata, 12
+source ZIP and internal TIFF/WMS paths, raster dimensions, nodata,
 legend/classes, and derivation status. Use `--max-size 256` for faster local
 smoke iterations; the default maximum preview dimension is 768 pixels.
 
@@ -247,7 +267,8 @@ That artifact uses the recovered NRS administrative boundary raster to provide
 BC/province-like valid-data edges and major administrative boundaries. It is not
 an external tile basemap and does not require network map tiles.
 
-Serve the static app from the repository root when using the published DataLad preview index:
+Serve the static app from the repository root when using the published DataLad
+preview index:
 
 ```bash
 python scripts/serve_web_app.py --host 0.0.0.0 --port 8023
@@ -259,26 +280,57 @@ Then open:
 http://localhost:8023/web/
 ```
 
-The project server redirects `/` to the proxy-relative `web/` path, serves only browser assets plus the published preview artifact tree, and disables directory listings. Serving only the `web/` directory still works for catalog browsing and the ignored local `web/data/map_previews/` fallback, but it cannot read sibling paths under `external/fresh-hectaresbc-data/`.
+The project server redirects `/` to the proxy-relative `web/` path, serves only
+browser assets plus the published preview artifact tree, disables directory
+listings, gzips textual responses, and sets conservative cache headers. Serving
+only the `web/` directory still works for catalog browsing and the ignored local
+`web/data/map_previews/` fallback, but it cannot read sibling paths under
+`external/fresh-hectaresbc-data/`.
 
-Representative detail views use stable hash routes:
-
-```text
-http://localhost:8023/web/#dl_adminunits_bcts
-http://localhost:8023/web/#vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
-```
-
-Representative map preview routes use `#map=<dataset_id>`:
+Representative routes:
 
 ```text
-http://localhost:8023/web/#map=dl_adminunits_bcts
-http://localhost:8023/web/#map=vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
-http://localhost:8023/web/#map=dl_pinebeetle_pinekill1999
+http://localhost:8023/web/#/catalog
+http://localhost:8023/web/#/catalog?q=bull+trout
+http://localhost:8023/web/#/dataset/dl_adminunits_bcts
+http://localhost:8023/web/#/dataset/dl_adminunits_bcts/map
+http://localhost:8023/web/#/dataset/vl_virtualspecies_bulltroutsalvelinusconfluentus_1135
 ```
 
-The `dl_adminunits_bcts` and Bull Trout routes load source-derived PNG previews through the published DataLad preview index. The `dl_pinebeetle_pinekill1999` route exercises a published `not_previewable` state. The layer panel includes visibility and opacity controls, real CRS and bounds metadata, legend classes when available, preview derivation metadata, artifact source metadata, basemap source metadata, and a link back to the recovered catalog detail route. Opening `#map=<dataset_id>` directly also synchronizes the visible catalog result and dataset detail, so manual search is not required.
+Legacy hashes redirect automatically:
 
-These are real source-derived raster previews, not the Phase 11 fixture geometry, but they are still single static overlay images rather than a tile service or pan/zoom GIS renderer. Browser catalog development does not require UBC CWL, hosted workers, or external map tiles. Reading annexed preview PNG payloads from a cold checkout requires DataLad/git-annex retrieval from the configured storage remote before the browser can display those local files. Node is still a system prerequisite for the browser smoke scripts; it is not installed by the Python `.venv` setup. In restricted environments that cannot bind a loopback socket, `scripts/smoke_test_web_static_app.py` still validates static assets and catalog content and reports the HTTP serving check as skipped.
+```text
+#dl_adminunits_bcts    -> #/dataset/dl_adminunits_bcts
+#map=dl_adminunits_bcts -> #/dataset/dl_adminunits_bcts/map
+```
+
+Browse includes search, family/preview/verification/size facets, sortable
+results, pagination, preview thumbnails, and a contextual inspector. Search and
+filter state live in the hash, so views are shareable and browser Back returns
+to the previous result set. Opening a dataset preserves the browse context.
+
+The dataset view groups recovered metadata, provenance, known gaps and
+uncertainty, preview evidence, and copyable Python/CLI commands. Raw record JSON
+is available behind a technical-details disclosure.
+
+The map route lazy-loads MapLibre and renders the published preview PNG as an
+image overlay using its recovered WGS84 bounds. It includes layer visibility,
+opacity, legend classes, an OpenStreetMap basemap, an offline basemap option, and
+a static fallback when WebGL, bounds, or the preview index is unavailable.
+`not_previewable` records show an explanatory status panel instead of an empty
+map. Browse never loads MapLibre.
+
+These are real source-derived raster previews, not the Phase 11 fixture geometry,
+but they remain single static overlay images rather than a tile service. Browser
+catalog development does not require UBC CWL, hosted workers, DataLad network
+retrieval, raw ZIP content, or object-store access. Reading annexed preview PNG
+payloads from a cold checkout requires DataLad/git-annex retrieval from the
+configured storage remote before the browser can display those local files. Node
+is a system prerequisite for the pure catalog smoke script; Playwright/Chromium
+is optional for the browser smoke check, which reports `skipped` when unavailable.
+In restricted environments that cannot bind a loopback socket,
+`scripts/smoke_test_web_static_app.py` still validates static assets and catalog
+content and reports the HTTP serving check as skipped.
 
 ## DataLad Retrieval
 

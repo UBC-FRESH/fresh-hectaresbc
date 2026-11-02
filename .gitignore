@@ -8,4 +8,7 @@ build/
 dist/
 docs/_build/
 web/data/catalog.json
+web/data/catalog.index.json
+web/data/catalog.details.json
+web/data/catalog.meta.json
 web/data/map_previews/

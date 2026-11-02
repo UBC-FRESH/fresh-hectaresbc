@@ -13,6 +13,8 @@ from fresh_hectaresbc import DatasetRecord, HectaresBC
 
 
 DEFAULT_OUTPUT = Path("web/data/catalog.json")
+CATALOG_INDEX_SCHEMA_VERSION = 1
+CATALOG_DETAILS_SCHEMA_VERSION = 1
 REPRESENTATIVE_PREVIEW_RECORDS = {
     "data_layer_candidate": "dl_adminunits_bcts",
     "unavailable_record": "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135",
@@ -75,7 +77,11 @@ def main() -> int:
 
     payload = build_catalog_payload()
     write_catalog_payload(payload, args.output)
-    print(f"wrote {args.output} ({payload['record_count']} records)")
+    write_catalog_artifacts(payload, args.output)
+    print(
+        f"wrote {args.output} ({payload['record_count']} records) "
+        "and catalog index/detail/meta artifacts"
+    )
     return 0
 
 
@@ -106,6 +112,133 @@ def write_catalog_payload(payload: dict[str, Any], output: Path) -> None:
         json.dumps(payload, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
+
+
+def write_catalog_artifacts(payload: dict[str, Any], catalog_output: Path) -> None:
+    """Write the browse index, lazy details, and compact metadata artifacts."""
+
+    output_dir = catalog_output.parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+    index = build_catalog_index(payload)
+    details = build_catalog_details(payload)
+    meta = build_catalog_meta(payload)
+    for name, document in (
+        ("catalog.index.json", index),
+        ("catalog.details.json", details),
+        ("catalog.meta.json", meta),
+    ):
+        _validate_payload(document)
+        (output_dir / name).write_text(
+            json.dumps(document, separators=(",", ":"), sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+
+def build_catalog_index(payload: dict[str, Any]) -> dict[str, Any]:
+    """Build the compact rows the browser loads for search, facets, and results."""
+
+    rows = [record_to_index(record) for record in payload["records"]]
+    index: dict[str, Any] = {
+        "schema_version": CATALOG_INDEX_SCHEMA_VERSION,
+        "generated_at": payload["generated_at"],
+        "record_count": len(rows),
+        "family_counts": payload["family_counts"],
+        "preview_eligibility_counts": payload["preview_eligibility_counts"],
+        "representative_preview_records": payload["representative_preview_records"],
+        "records": rows,
+    }
+    _validate_payload(index)
+    return index
+
+
+def build_catalog_details(payload: dict[str, Any]) -> dict[str, Any]:
+    """Build the lazily loaded full-record payload, keyed by dataset ID."""
+
+    details: dict[str, Any] = {
+        "schema_version": CATALOG_DETAILS_SCHEMA_VERSION,
+        "generated_at": payload["generated_at"],
+        "record_count": payload["record_count"],
+        "records": {
+            record["dataset_id"]: record for record in payload["records"]
+        },
+    }
+    _validate_payload(details)
+    return details
+
+
+def build_catalog_meta(payload: dict[str, Any]) -> dict[str, Any]:
+    """Build the small boot payload with counts and freshness information."""
+
+    return {
+        "schema_version": CATALOG_INDEX_SCHEMA_VERSION,
+        "generated_at": payload["generated_at"],
+        "record_count": payload["record_count"],
+        "family_counts": payload["family_counts"],
+        "preview_eligibility_counts": payload["preview_eligibility_counts"],
+        "representative_preview_records": payload["representative_preview_records"],
+    }
+
+
+def record_to_index(record: dict[str, Any]) -> dict[str, Any]:
+    """Return the smallest useful record shape for the browse list."""
+
+    preview = record.get("preview") or {}
+    format_label = _format_label(preview)
+    search_text = _search_text(record)
+    return {
+        "dataset_id": record["dataset_id"],
+        "title": record["title"],
+        "source_family": record["source_family"],
+        "source_stem": record["source_stem"],
+        "source_filename": record["source_filename"],
+        "source_zip_path": record["source_zip_path"],
+        "manifest_size_bytes": record["manifest_size_bytes"],
+        "verification_status": record["verification_status"],
+        "has_known_gaps": bool(record.get("known_gaps")),
+        "has_uncertainty": bool(record.get("uncertainty_notes")),
+        "format_label": format_label,
+        "preview_eligibility_status": preview.get("eligibility_status", "unknown"),
+        "preview_eligibility_blockers": preview.get("eligibility_blockers", []),
+        "search_text": search_text,
+    }
+
+
+def _format_label(preview: dict[str, Any]) -> str:
+    has_raster = bool(preview.get("has_raster"))
+    has_wms = bool(preview.get("has_wms"))
+    if has_raster and has_wms:
+        return "TIFF + WMS"
+    if has_raster:
+        return "TIFF"
+    if has_wms:
+        return "WMS"
+    return "Other"
+
+
+def _search_text(record: dict[str, Any]) -> str:
+    parts: list[str] = [
+        str(record.get("dataset_id", "")),
+        str(record.get("title", "")),
+        str(record.get("source_family", "")),
+        str(record.get("source_stem", "")),
+        str(record.get("source_filename", "")),
+        str(record.get("source_zip_path", "")),
+    ]
+    metadata = record.get("metadata")
+    if isinstance(metadata, dict):
+        parts.extend(_flatten_text(value) for value in metadata.values())
+    text = " ".join(part for part in parts if part)
+    return " ".join(text.lower().split())
+
+
+def _flatten_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        return " ".join(_flatten_text(item) for item in value)
+    if isinstance(value, dict):
+        return " ".join(_flatten_text(item) for item in value.values())
+    return str(value)
 
 
 def record_to_web(record: DatasetRecord) -> dict[str, Any]:

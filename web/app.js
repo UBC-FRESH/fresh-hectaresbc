@@ -1,1156 +1,1829 @@
-const statusNode = document.querySelector("#status");
-const recordCountNode = document.querySelector("#record-count");
-const dataLayerCountNode = document.querySelector("#data-layer-count");
-const virtualLayerCountNode = document.querySelector("#virtual-layer-count");
-const resultCountNode = document.querySelector("#result-count");
-const recordListNode = document.querySelector("#record-list");
-const emptyStateNode = document.querySelector("#empty-state");
-const detailStatusNode = document.querySelector("#detail-status");
-const recordDetailNode = document.querySelector("#record-detail");
-const mapStatusNode = document.querySelector("#map-status");
-const mapPreviewNode = document.querySelector("#map-preview");
-const controlsNode = document.querySelector("#catalog-controls");
-const searchInputNode = document.querySelector("#search-input");
-const sortSelectNode = document.querySelector("#sort-select");
-const pageSizeSelectNode = document.querySelector("#page-size-select");
+(function initHectaresApp() {
+  const Catalog = window.CatalogBrowser;
+  const PublishedPreviewRoot =
+    "../external/fresh-hectaresbc-data/derived/web_map_previews/v1";
+  const LocalPreviewRoot = "data/map_previews";
+  const NarrowInspectorQuery = "(max-width: 1080px)";
 
-const DEFAULT_LAYER_OPTIONS = {
-  visible: true,
-  opacity: 0.85,
-};
-const PUBLISHED_PREVIEW_ROOT = "../external/fresh-hectaresbc-data/derived/web_map_previews/v1";
-const LOCAL_PREVIEW_ROOT = "data/map_previews";
+  const METADATA_LABELS = {
+    parent_layer_title: "Parent layer",
+    fixed_layer_name: "Layer name",
+    fixed_grid_name: "Grid",
+    description: "Description",
+    coverage: "Coverage",
+    creator: "Creator",
+    publisher: "Publisher",
+    rights: "Rights",
+    units: "Units",
+    lineage: "Lineage",
+    license_or_use_constraints: "License / use constraints",
+    crs: "CRS",
+    spatial_extent: "Spatial extent",
+    original_layer_id: "Original layer ID",
+    hkey: "HKEY",
+    layer_name: "Layer name",
+    date_created: "Date created",
+    source_table: "Source table",
+    source_column: "Source column",
+    priority: "Priority",
+    element_subnational_id: "Element subnational ID",
+    status_flags: "Status flags",
+  };
 
-const state = {
-  catalog: null,
-  previewManifest: null,
-  localPreviewManifest: null,
-  previewManifestStatus: "loading",
-  previewArtifactCache: new Map(),
-  previewManifestCache: new Map(),
-  previewRenderToken: 0,
-  mapLayerOptions: new Map(),
-  query: "",
-  family: "all",
-  sort: "title",
-  pageSize: "50",
-};
+  const PROVENANCE_LABELS = {
+    manifest_row_source: "Manifest row",
+    root_listing_source: "Root listing",
+    root_metadata_source: "Root metadata",
+    zip_metadata_source: "ZIP metadata",
+    recovery_sources: "Recovery sources",
+    recovery_method: "Recovery method",
+    recovered_at: "Recovered at",
+    zip_read_status: "ZIP read status",
+    manifest_zip_status: "Manifest ZIP status",
+    zip_metadata_read_status: "ZIP metadata status",
+  };
 
-async function loadCatalog() {
-  try {
-    const response = await fetch("data/catalog.json");
-    if (!response.ok) {
-      throw new Error(`Catalog request failed with ${response.status}`);
+  const SORT_OPTIONS = [
+    { value: "relevance", label: "Relevance" },
+    { value: "title", label: "Title" },
+    { value: "dataset_id", label: "Dataset ID" },
+    { value: "family", label: "Family" },
+    { value: "size_desc", label: "Size (largest)" },
+    { value: "size_asc", label: "Size (smallest)" },
+  ];
+
+  const state = {
+    ready: false,
+    loadingError: null,
+    records: [],
+    meta: null,
+    details: null,
+    detailsError: false,
+    detailsPromise: null,
+    previewIndex: null,
+    previewMeta: null,
+    previewKind: "loading",
+    referenceLayers: [],
+    route: Catalog.defaultState(),
+    lastBrowseHash: "#/catalog",
+    selectedId: null,
+    browseScroll: 0,
+    renderToken: 0,
+    searchTimer: null,
+    searchRaf: null,
+  };
+
+  let els = null;
+
+  document.addEventListener("DOMContentLoaded", init);
+
+  function init() {
+    syncHeaderHeight();
+    window.addEventListener("resize", syncHeaderHeight);
+    els = {
+      status: document.querySelector("#status"),
+      liveStatus: document.querySelector("#live-status"),
+      previewStatus: document.querySelector("#preview-status"),
+      searchForm: document.querySelector("#search-form"),
+      searchInput: document.querySelector("#search-input"),
+      tabBrowse: document.querySelector("#tab-browse"),
+      tabMap: document.querySelector("#tab-map"),
+      filterRail: document.querySelector("#filter-rail"),
+      facets: document.querySelector("#facets"),
+      previewNote: document.querySelector("#preview-note"),
+      clearFilters: document.querySelector("#clear-filters"),
+      content: document.querySelector("#content"),
+      inspector: document.querySelector("#inspector"),
+      sheetBackdrop: document.querySelector("#sheet-backdrop"),
+      toast: document.querySelector("#toast"),
+      helpButton: document.querySelector("#help-button"),
+      helpDialog: document.querySelector("#help-dialog"),
+      helpClose: document.querySelector("#help-close"),
+    };
+    bindEvents();
+    const header = document.querySelector(".app-header");
+    if (header && window.ResizeObserver) {
+      new ResizeObserver(() => syncHeaderHeight()).observe(header);
     }
-    const catalog = await response.json();
-    state.catalog = catalog;
-    await loadPreviewManifest();
-    renderCatalogSummary(catalog);
-    syncRouteState();
-    renderResults();
-    renderRoute();
-  } catch (error) {
-    statusNode.textContent = "Catalog data unavailable. Run the generator first.";
-    emptyStateNode.hidden = false;
-    emptyStateNode.innerHTML = `
-      Generate <code>web/data/catalog.json</code> with
-      <code>python3 scripts/generate_web_catalog.py</code>, then serve the
-      <code>web/</code> directory with a local static server.
+    renderLoading();
+    loadCatalog();
+  }
+
+  /* --------------------------------------------------------------- loading */
+
+  async function loadCatalog() {
+    state.loadingError = null;
+    try {
+      const [meta, index] = await Promise.all([
+        fetchJson("data/catalog.meta.json"),
+        fetchJson("data/catalog.index.json"),
+      ]);
+      if (index?.records?.length) {
+        state.records = index.records;
+        state.meta = meta || index;
+      } else {
+        const full = await fetchJson("data/catalog.json");
+        if (!full?.records?.length) {
+          throw new Error("The generated catalog could not be loaded.");
+        }
+        state.records = indexFromFullCatalog(full);
+        state.meta = full;
+      }
+      state.ready = true;
+      syncFromLocation();
+      void loadPreviewIndex();
+    } catch (error) {
+      state.loadingError = error;
+      renderLoadError(error);
+    }
+  }
+
+  function indexFromFullCatalog(catalog) {
+    return catalog.records.map((record) => ({
+      dataset_id: record.dataset_id,
+      title: Catalog.titleLabel(record),
+      source_family: record.source_family,
+      source_stem: record.source_stem,
+      source_filename: record.source_filename,
+      source_zip_path: record.source_zip_path,
+      manifest_size_bytes: record.manifest_size_bytes,
+      verification_status: record.verification_status,
+      has_known_gaps: Boolean((record.known_gaps || []).length),
+      has_uncertainty: Boolean((record.uncertainty_notes || []).length),
+      format_label: Catalog.formatLabel(record),
+      preview_eligibility_status: record.preview?.eligibility_status || "unknown",
+      preview_eligibility_blockers: record.preview?.eligibility_blockers || [],
+      search_text: Catalog.normalizeText(
+        [
+          record.dataset_id,
+          record.title,
+          record.source_family,
+          record.source_stem,
+          record.source_filename,
+          record.source_zip_path,
+          flatten(record.metadata),
+        ].join(" ")
+      ),
+    }));
+  }
+
+  async function loadDetails() {
+    if (state.details) {
+      return state.details;
+    }
+    if (state.detailsPromise) {
+      return state.detailsPromise;
+    }
+    state.detailsPromise = (async () => {
+      const document = await fetchJson("data/catalog.details.json");
+      if (document?.records) {
+        state.details = new Map(Object.entries(document.records));
+        state.detailsError = false;
+      } else {
+        state.detailsError = true;
+      }
+      return state.details;
+    })();
+    try {
+      return await state.detailsPromise;
+    } finally {
+      state.detailsPromise = null;
+    }
+  }
+
+  async function loadPreviewIndex() {
+    const published = await fetchJson(`${PublishedPreviewRoot}/index.json`);
+    const local = await fetchJson(`${LocalPreviewRoot}/manifest.json`);
+    const manifest = published || local;
+    if (!manifest) {
+      state.previewKind = "unavailable";
+      state.previewIndex = null;
+      state.previewMeta = null;
+      state.referenceLayers = [];
+      updateHeader();
+      if (state.ready) {
+        renderCurrent();
+      }
+      return;
+    }
+
+    const manifestKind = published ? "published" : "local";
+    const base = published ? PublishedPreviewRoot : LocalPreviewRoot;
+    const layers = manifest.layers || manifest.artifacts || [];
+    const references = manifest.reference_layers || [];
+    state.previewKind = manifestKind;
+    state.previewIndex = new Map(
+      layers.map((layer) => [
+        layer.dataset_id,
+        { ...layer, _base: base, _source: manifestKind },
+      ])
+    );
+    state.referenceLayers = references.map((layer) => ({
+      ...layer,
+      _base: base,
+      _source: manifestKind,
+    }));
+    state.previewMeta = {
+      kind: manifestKind,
+      generatedAt: manifest.generated_at,
+      total: layers.length,
+      available: layers.filter((layer) =>
+        ["source_derived_preview", "already_present"].includes(
+          layer.artifact_status || layer.status
+        )
+      ).length,
+      document: manifest,
+    };
+    updateHeader();
+    if (state.ready) {
+      renderCurrent();
+    }
+  }
+
+  async function loadArtifactDetails(artifact) {
+    if (!artifact || artifact._detailed || !artifact.manifest_path) {
+      return artifact;
+    }
+    const document = await fetchJson(artifactUrl(artifact, artifact.manifest_path));
+    if (!document) {
+      return artifact;
+    }
+    const merged = {
+      ...artifact,
+      ...document,
+      _base: artifact._base,
+      _source: artifact._source,
+      _detailed: true,
+    };
+    state.previewIndex?.set(artifact.dataset_id, merged);
+    return merged;
+  }
+
+  function fetchJson(path) {
+    return fetch(path, { cache: "no-cache" })
+      .then((response) => (response.ok ? response.json() : null))
+      .catch(() => null);
+  }
+
+  function flatten(value) {
+    if (value === null || value === undefined) {
+      return "";
+    }
+    if (Array.isArray(value)) {
+      return value.map(flatten).join(" ");
+    }
+    if (typeof value === "object") {
+      return Object.values(value).map(flatten).join(" ");
+    }
+    return String(value);
+  }
+
+  /* ---------------------------------------------------------------- routing */
+
+  function syncFromLocation() {
+    if (!state.ready) {
+      return;
+    }
+    const route = Catalog.parseRoute(window.location.hash);
+    const canonical = Catalog.buildRoute(route);
+    if (window.location.hash !== canonical) {
+      window.history.replaceState({}, "", canonical);
+    }
+    applyRoute(route);
+  }
+
+  function navigate(route, { replace = false } = {}) {
+    const hash = Catalog.buildRoute(route);
+    if (hash !== window.location.hash) {
+      if (replace) {
+        window.history.replaceState({}, "", hash);
+      } else {
+        window.history.pushState({}, "", hash);
+      }
+    }
+    if (route.view === "catalog") {
+      state.lastBrowseHash = hash;
+    }
+    applyRoute(route);
+  }
+
+  function applyRoute(route) {
+    state.route = route;
+    if (route.datasetId) {
+      state.selectedId = route.datasetId;
+    }
+    if (route.view === "catalog") {
+      state.lastBrowseHash = Catalog.buildRoute(route);
+      renderBrowse();
+      return;
+    }
+    if (route.map) {
+      void renderMap();
+    } else {
+      void renderDataset();
+    }
+  }
+
+  function renderCurrent() {
+    if (!state.ready) {
+      return;
+    }
+    applyRoute(state.route);
+  }
+
+  /* ----------------------------------------------------------------- browse */
+
+  function renderBrowse() {
+    window.HectaresBCMap?.destroy();
+    document.body.dataset.view = "catalog";
+    document.body.classList.remove("filters-open", "inspector-open");
+    if (!state.ready) {
+      renderLoading();
+      return;
+    }
+
+    const route = state.route;
+    state.lastBrowseHash = Catalog.buildRoute(route);
+    const focusKey = document.activeElement?.dataset?.focusKey;
+    const filtered = filteredRecords();
+    const sorted = Catalog.sortRecords(filtered, route.sort, route.query);
+    const page = Catalog.paginate(sorted, route.page, route.pageSize);
+    const facets = Catalog.computeFacets(state.records, route, state.previewIndex);
+    const scroll = state.browseScroll || 0;
+
+    renderFacets(facets, route);
+    els.content.innerHTML = browseTemplate(page, route, filtered.length);
+    renderResults(page, route);
+    renderInspector();
+    updateHeader(page.total);
+    updateTabs();
+    if (els.liveStatus) {
+      els.liveStatus.textContent = `${Catalog.formatNumber(page.total)} matching records. Showing ${page.start} to ${page.end}.`;
+    }
+    document.title =
+      page.total === state.records.length
+        ? "HectaresBC — Recovered Catalog"
+        : `${Catalog.formatNumber(page.total)} matching layers · HectaresBC`;
+
+    if (els.searchInput.value !== route.query) {
+      els.searchInput.value = route.query;
+    }
+    els.content.scrollTop = scroll;
+    if (focusKey) {
+      document.querySelector(`[data-focus-key="${focusKey}"]`)?.focus();
+    }
+  }
+
+  function filteredRecords() {
+    if (!state.previewIndex && state.route.preview !== "all") {
+      return [];
+    }
+    return Catalog.filterRecords(state.records, state.route, state.previewIndex);
+  }
+
+  function browseTemplate(page, route, filteredCount) {
+    const noPreviewIndex = !state.previewIndex;
+    const previewBlocked = noPreviewIndex && route.preview !== "all";
+    const countText = previewBlocked
+      ? "Preview filter unavailable"
+      : page.total === state.records.length
+        ? `${Catalog.formatNumber(page.total)} records · showing ${page.start}–${page.end}`
+        : `${Catalog.formatNumber(page.total)} matching · showing ${page.start}–${page.end} of ${Catalog.formatNumber(state.records.length)}`;
+
+    return `
+      <div class="browse-view">
+        <div class="result-toolbar">
+          <p class="result-count" id="result-count">${countText}</p>
+          <span class="toolbar-spacer"></span>
+          <button class="filter-toggle" type="button" data-open-filters>Filters</button>
+          <label class="toolbar-control sort-control">Sort
+            <select id="sort-select" data-sort-select data-focus-key="sort" aria-label="Sort results">
+              ${SORT_OPTIONS.map(
+                (option) =>
+                  `<option value="${option.value}" ${route.sort === option.value ? "selected" : ""}>${option.label}</option>`
+              ).join("")}
+            </select>
+          </label>
+          <label class="toolbar-control">Rows
+            <select id="page-size-select" data-page-size data-focus-key="rows" aria-label="Rows per page">
+              ${["25", "50", "100", "all"]
+                .map(
+                  (value) =>
+                    `<option value="${value}" ${String(route.pageSize) === value ? "selected" : ""}>${value === "all" ? "All" : value}</option>`
+                )
+                .join("")}
+            </select>
+          </label>
+        </div>
+        <div class="active-filters" id="active-filters"></div>
+        <div class="results${page.items.length ? "" : " is-empty"}" id="results">
+          <div class="table-wrap" ${page.items.length ? "" : "hidden"}>
+            <table class="result-table">
+              <caption class="sr-only">Catalog results</caption>
+              <thead>
+                <tr>
+                  <th scope="col" ${sortAria(route, "title")}><button type="button" data-sort="title">Title</button></th>
+                  <th scope="col" class="col-family" ${sortAria(route, "family")}><button type="button" data-sort="family">Family</button></th>
+                  <th scope="col" class="col-format">Format</th>
+                  <th scope="col" class="col-size" ${sortAria(route, "size")}><button type="button" data-sort="size">Size</button></th>
+                </tr>
+              </thead>
+              <tbody id="result-body"></tbody>
+            </table>
+          </div>
+          <div class="result-cards" id="result-cards"></div>
+          <div id="empty-state"></div>
+        </div>
+        <nav class="pagination" id="pagination" aria-label="Result pages"></nav>
+      </div>
     `;
   }
-}
 
-async function loadPreviewManifest() {
-  const published = await fetchJson(`${PUBLISHED_PREVIEW_ROOT}/index.json`);
-  const local = await fetchJson(`${LOCAL_PREVIEW_ROOT}/manifest.json`);
-
-  state.localPreviewManifest = local ? adaptPreviewManifest(local, LOCAL_PREVIEW_ROOT, "local") : null;
-  if (published) {
-    state.previewManifest = adaptPreviewManifest(published, PUBLISHED_PREVIEW_ROOT, "published");
-    state.previewManifestStatus = "published";
-    return;
+  function sortAria(route, column) {
+    if (column === "title" && route.sort === "title") {
+      return 'aria-sort="ascending"';
+    }
+    if (column === "family" && route.sort === "family") {
+      return 'aria-sort="ascending"';
+    }
+    if (column === "size" && route.sort === "size_desc") {
+      return 'aria-sort="descending"';
+    }
+    if (column === "size" && route.sort === "size_asc") {
+      return 'aria-sort="ascending"';
+    }
+    return 'aria-sort="none"';
   }
-  if (state.localPreviewManifest) {
-    state.previewManifest = state.localPreviewManifest;
-    state.previewManifestStatus = "local";
-    return;
+
+  function renderResults(page, route) {
+    const body = document.querySelector("#result-body");
+    const cards = document.querySelector("#result-cards");
+    const empty = document.querySelector("#empty-state");
+    const tableWrap = document.querySelector(".table-wrap");
+    if (!body || !cards || !empty) {
+      return;
+    }
+
+    const previewBlocked = !state.previewIndex && route.preview !== "all";
+    if (page.items.length === 0) {
+      if (tableWrap) {
+        tableWrap.hidden = true;
+      }
+      cards.hidden = true;
+      empty.innerHTML = emptyTemplate(previewBlocked, route);
+    } else {
+      if (tableWrap) {
+        tableWrap.hidden = false;
+      }
+      cards.hidden = false;
+      empty.innerHTML = "";
+      body.innerHTML = page.items.map((record) => rowTemplate(record, route)).join("");
+      cards.innerHTML = page.items
+        .map((record) => cardTemplate(record, route))
+        .join("");
+    }
+
+    document.querySelectorAll("img[data-thumb]").forEach((image) => {
+      image.addEventListener(
+        "error",
+        () => {
+          image.remove();
+        },
+        { once: true }
+      );
+    });
+
+    renderPagination(page);
+    renderActiveFilters(route);
   }
 
-  state.previewManifest = null;
-  state.previewManifestStatus = "unavailable";
-}
+  function rowTemplate(record, route) {
+    const preview = Catalog.previewStatus(record, state.previewIndex);
+    const selected = state.selectedId === record.dataset_id ? " is-selected" : "";
+    const href = `#/dataset/${encodeURIComponent(record.dataset_id)}`;
+    return `
+      <tr class="result-row${selected}" data-dataset-id="${Catalog.escapeHtml(record.dataset_id)}">
+        <td>
+          <div class="result-title-cell">
+            ${thumbnailTemplate(record, preview)}
+            <div class="result-title">
+              <a href="${href}" data-result-link title="${Catalog.escapeHtml(Catalog.titleLabel(record))}">
+                ${Catalog.highlightText(Catalog.titleLabel(record), route.query)}
+              </a>
+              <span class="result-subtitle">${Catalog.escapeHtml(record.dataset_id)}</span>
+              <span class="result-badges">${badgesTemplate(record, preview)}</span>
+            </div>
+          </div>
+        </td>
+        <td>${Catalog.escapeHtml(Catalog.familyLabel(record.source_family))}</td>
+        <td class="col-format">${Catalog.escapeHtml(Catalog.formatLabel(record))}</td>
+        <td class="col-size">${Catalog.formatBytes(record.manifest_size_bytes)}</td>
+      </tr>
+    `;
+  }
 
-async function fetchJson(path) {
-  try {
-    const response = await fetch(path);
-    if (!response.ok) {
+  function cardTemplate(record, route) {
+    const preview = Catalog.previewStatus(record, state.previewIndex);
+    const href = `#/dataset/${encodeURIComponent(record.dataset_id)}`;
+    return `
+      <a class="result-card" href="${href}" data-dataset-id="${Catalog.escapeHtml(record.dataset_id)}">
+        <div class="result-card-head">
+          ${thumbnailTemplate(record, preview)}
+          <div style="min-width:0">
+            <div class="result-card-title">${Catalog.highlightText(Catalog.titleLabel(record), route.query)}</div>
+            <div class="result-subtitle">${Catalog.escapeHtml(record.dataset_id)}</div>
+            <div class="result-badges">${badgesTemplate(record, preview)}</div>
+          </div>
+        </div>
+        <div class="result-card-meta">
+          <span>${Catalog.escapeHtml(Catalog.familyLabel(record.source_family))}</span>
+          <span>${Catalog.escapeHtml(Catalog.formatLabel(record))}</span>
+          <span>${Catalog.formatBytes(record.manifest_size_bytes)}</span>
+        </div>
+      </a>
+    `;
+  }
+
+  function thumbnailTemplate(record, preview) {
+    const artifact = preview.artifact;
+    if (preview.status === "available" && artifact?.artifact_path) {
+      const url = artifactUrl(artifact, artifact.artifact_path);
+      if (url) {
+        return `<span class="result-thumb"><img data-thumb loading="lazy" decoding="async" src="${Catalog.escapeHtml(url)}" alt=""></span>`;
+      }
+    }
+    const abbreviation = record.source_family === "data_layer" ? "DL" : "VL";
+    return `<span class="result-thumb" aria-hidden="true">${abbreviation}</span>`;
+  }
+
+  function badgesTemplate(record, preview) {
+    const badges = [
+      `<span class="badge badge-muted badge-family">${Catalog.escapeHtml(Catalog.familyLabel(record.source_family))}</span>`,
+    ];
+    const completeIndex =
+      state.previewMeta && state.previewMeta.total >= state.records.length * 0.9;
+    if (preview.status === "available") {
+      badges.push('<span class="badge badge-ok">Preview ready</span>');
+    } else if (preview.status === "not_previewable") {
+      badges.push('<span class="badge badge-warn">Not previewable</span>');
+    } else if (preview.status === "missing" && completeIndex) {
+      badges.push('<span class="badge badge-muted">No preview</span>');
+    }
+    if (Catalog.hasConflict(record)) {
+      badges.push('<span class="badge badge-danger badge-conflict">Conflict</span>');
+    }
+    if (Catalog.hasKnownGap(record)) {
+      badges.push('<span class="badge badge-warn">Known gap</span>');
+    }
+    return badges.join("");
+  }
+
+  function emptyTemplate(previewBlocked, route) {
+    if (previewBlocked) {
+      return `
+        <div class="empty-state">
+          <h3>Preview index unavailable</h3>
+          <p>The preview filter cannot be applied in this checkout because the published preview index is not reachable.</p>
+          <button class="secondary-button" type="button" data-clear-facet="preview">Clear preview filter</button>
+        </div>
+      `;
+    }
+    const query = route.query ? ` for “${Catalog.escapeHtml(route.query)}”` : "";
+    return `
+      <div class="empty-state">
+        <h3>No layers match${query}</h3>
+        <p>Try a shorter search, clear a filter, or browse all recovered layers.</p>
+        <button class="secondary-button" type="button" data-clear-all>Clear all filters</button>
+      </div>
+    `;
+  }
+
+  function renderPagination(page) {
+    const node = document.querySelector("#pagination");
+    if (!node) {
+      return;
+    }
+    const items = paginationItems(page.page, page.totalPages);
+    const buttons = items
+      .map((item) => {
+        if (item === "…") {
+          return '<span class="page-ellipsis" aria-hidden="true">…</span>';
+        }
+        return `<button class="page-button" type="button" data-page="${item}" ${item === page.page ? 'aria-current="page"' : ""} aria-label="Page ${item}">${item}</button>`;
+      })
+      .join("");
+    node.innerHTML = `
+      <span class="pagination-info">Showing ${page.start}–${page.end} of ${Catalog.formatNumber(page.total)}</span>
+      <div class="pagination-pages">
+        <button class="page-button" type="button" data-page="${page.page - 1}" ${page.page <= 1 ? "disabled" : ""} aria-label="Previous page">‹</button>
+        ${buttons}
+        <button class="page-button" type="button" data-page="${page.page + 1}" ${page.page >= page.totalPages ? "disabled" : ""} aria-label="Next page">›</button>
+      </div>
+    `;
+  }
+
+  function paginationItems(current, total) {
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, index) => index + 1);
+    }
+    const items = new Set([1, total, current - 1, current, current + 1]);
+    if (current <= 3) {
+      items.add(2);
+      items.add(3);
+      items.add(4);
+    }
+    if (current >= total - 2) {
+      items.add(total - 1);
+      items.add(total - 2);
+      items.add(total - 3);
+    }
+    const sorted = [...items].filter((item) => item >= 1 && item <= total).sort((a, b) => a - b);
+    const result = [];
+    for (let index = 0; index < sorted.length; index += 1) {
+      if (index > 0 && sorted[index] - sorted[index - 1] > 1) {
+        result.push("…");
+      }
+      result.push(sorted[index]);
+    }
+    return result;
+  }
+
+  function renderActiveFilters(route) {
+    const node = document.querySelector("#active-filters");
+    if (!node) {
+      return;
+    }
+    const chips = [];
+    if (route.query) {
+      chips.push(filterChip(`Search: “${Catalog.escapeHtml(route.query)}”`, "query"));
+    }
+    if (route.family && route.family !== "all") {
+      chips.push(filterChip(Catalog.familyLabel(route.family), "family"));
+    }
+    if (route.preview && route.preview !== "all") {
+      chips.push(filterChip(Catalog.PREVIEW_LABELS[route.preview] || route.preview, "preview"));
+    }
+    if (route.verification && route.verification !== "all") {
+      chips.push(filterChip(Catalog.verificationLabel(route.verification), "verification"));
+    }
+    if (route.size && route.size !== "all") {
+      chips.push(filterChip(`Size: ${Catalog.sizeBucketLabel(route.size)}`, "size"));
+    }
+    node.innerHTML = chips.join("");
+  }
+
+  function filterChip(label, facet) {
+    return `<span class="filter-chip">${label}<button type="button" data-clear-facet="${facet}" aria-label="Remove ${Catalog.escapeHtml(label)} filter">×</button></span>`;
+  }
+
+  /* ---------------------------------------------------------------- facets */
+
+  function renderFacets(facets, route) {
+    const active = document.activeElement;
+    const activeFacet = active?.dataset?.facet;
+    const activeValue = active?.value;
+
+    const groups = [
+      facetGroup("family", "Family", facets.family, route.family),
+    ];
+    if (facets.preview) {
+      groups.push(facetGroup("preview", "Preview", facets.preview, route.preview));
+    }
+    groups.push(
+      facetGroup("verification", "Verification", facets.verification, route.verification),
+      facetGroup("size", "Size", facets.size, route.size)
+    );
+    els.facets.innerHTML = groups.join("");
+
+    if (state.previewIndex) {
+      els.previewNote.hidden = true;
+      els.previewNote.textContent = "";
+    } else {
+      els.previewNote.hidden = false;
+      els.previewNote.textContent =
+        state.previewKind === "unavailable"
+          ? "Preview availability is unavailable in this checkout. Browse and metadata still work; preview filters and thumbnails appear when the published preview index is reachable."
+          : "Loading preview availability…";
+    }
+    els.clearFilters.disabled = !hasActiveFilters(route);
+
+    if (activeFacet) {
+      const selector = `[data-facet="${activeFacet}"][value="${cssEscape(activeValue)}"]`;
+      document.querySelector(selector)?.focus();
+    }
+  }
+
+  function facetGroup(name, label, options, selected) {
+    return `
+      <section class="facet-group" aria-labelledby="facet-${name}">
+        <h3 id="facet-${name}">${label}</h3>
+        ${options
+          .map((option) => {
+            const checked = String(selected || "all") === String(option.value);
+            const disabled = option.count === 0 && !checked;
+            return `<label class="facet-option${disabled ? " is-disabled" : ""}">
+              <input type="radio" name="${name}" value="${Catalog.escapeHtml(option.value)}" data-facet="${name}" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}>
+              <span class="facet-label">${Catalog.escapeHtml(option.label)}</span>
+              <span class="facet-count">${Catalog.formatNumber(option.count)}</span>
+            </label>`;
+          })
+          .join("")}
+      </section>
+    `;
+  }
+
+  function hasActiveFilters(route) {
+    return Boolean(
+      route.query ||
+        (route.family && route.family !== "all") ||
+        (route.preview && route.preview !== "all") ||
+        (route.verification && route.verification !== "all") ||
+        (route.size && route.size !== "all")
+    );
+  }
+
+  function cssEscape(value) {
+    if (window.CSS?.escape) {
+      return window.CSS.escape(String(value));
+    }
+    return String(value).replace(/["\\]/g, "\\$&");
+  }
+
+  /* ------------------------------------------------------------- inspector */
+
+  function renderInspector() {
+    if (!state.selectedId) {
+      els.inspector.hidden = false;
+      els.inspector.innerHTML = `
+        <div class="inspector-inner">
+          <div class="inspector-empty">
+            <div>
+              <strong>Select a layer</strong>
+              <p>Click a result to inspect its metadata, provenance, and preview status without leaving the catalog.</p>
+            </div>
+          </div>
+        </div>
+      `;
+      return;
+    }
+    const record = getRecordSync(state.selectedId);
+    if (!record) {
+      els.inspector.hidden = true;
+      els.inspector.innerHTML = "";
+      return;
+    }
+    const preview = Catalog.previewStatus(record, state.previewIndex);
+    els.inspector.hidden = false;
+    els.inspector.innerHTML = inspectorTemplate(record, preview);
+  }
+
+  function inspectorTemplate(record, preview) {
+    const href = `#/dataset/${encodeURIComponent(record.dataset_id)}`;
+    return `
+      <div class="inspector-inner">
+        <div class="inspector-head">
+          <div>
+            <p class="inspector-eyebrow">${Catalog.escapeHtml(Catalog.familyLabel(record.source_family))}</p>
+            <h2 class="inspector-title">${Catalog.escapeHtml(Catalog.titleLabel(record))}</h2>
+            <p class="inspector-id"><span class="mono">${Catalog.escapeHtml(record.dataset_id)}</span></p>
+          </div>
+          <button class="icon-button inspector-close" type="button" data-close-inspector aria-label="Close inspector">×</button>
+        </div>
+        <div class="inspector-actions">
+          <a class="primary-button" href="${href}">Open dataset</a>
+          <a class="secondary-button" href="${href}/map" ${preview.status === "available" ? "" : 'title="Preview is not available for this layer"'}>Map</a>
+          <button class="secondary-button" type="button" data-copy="${Catalog.escapeHtml(record.dataset_id)}">Copy ID</button>
+        </div>
+        <div class="inspector-section">
+          <h3>At a glance</h3>
+          ${definitionList([
+            ["Family", Catalog.familyLabel(record.source_family)],
+            ["Format", Catalog.formatLabel(record)],
+            ["Size", Catalog.formatBytes(record.manifest_size_bytes)],
+            ["Verification", Catalog.verificationLabel(record.verification_status)],
+            ["Preview", preview.label],
+          ])}
+        </div>
+        <div class="inspector-section">
+          <h3>Preview</h3>
+          <p class="muted">${Catalog.escapeHtml(previewExplanation(record, preview))}</p>
+          ${previewBlockersTemplate(record, preview)}
+        </div>
+        <div class="inspector-section">
+          <h3>Source</h3>
+          ${definitionList([
+            ["Source ZIP", record.source_zip_path],
+            ["Source file", record.source_filename],
+          ])}
+        </div>
+        <div class="inspector-section">
+          <h3>Actions</h3>
+          <div class="inspector-actions">
+            <button class="secondary-button" type="button" data-download-json="${Catalog.escapeHtml(record.dataset_id)}">Download metadata</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /* --------------------------------------------------------------- dataset */
+
+  async function renderDataset() {
+    const token = ++state.renderToken;
+    window.HectaresBCMap?.destroy();
+    document.body.dataset.view = "dataset";
+    document.body.classList.remove("filters-open", "inspector-open");
+    els.content.innerHTML = loadingTemplate("Loading dataset…");
+    const datasetId = state.route.datasetId;
+    await loadDetails();
+    if (token !== state.renderToken) {
+      return;
+    }
+    const record = getRecordSync(datasetId);
+    if (!record) {
+      els.content.innerHTML = notFoundTemplate(datasetId);
+      document.title = "Dataset not found · HectaresBC";
+      if (els.liveStatus) {
+        els.liveStatus.textContent = "Dataset not found.";
+      }
+      updateTabs();
+      return;
+    }
+    const artifact = await loadArtifactDetails(
+      Catalog.previewArtifact(record, state.previewIndex)
+    );
+    if (token !== state.renderToken) {
+      return;
+    }
+    const preview = Catalog.previewStatus(record, state.previewIndex);
+    els.content.innerHTML = datasetTemplate(record, preview, artifact);
+    updateHeader();
+    updateTabs();
+    if (els.liveStatus) {
+      els.liveStatus.textContent = `Dataset details for ${Catalog.titleLabel(record)}.`;
+    }
+    document.title = `${Catalog.titleLabel(record)} · HectaresBC`;
+    const heading = els.content.querySelector("h1");
+    heading?.focus();
+  }
+
+  function datasetTemplate(record, preview, artifact) {
+    const back = state.lastBrowseHash || "#/catalog";
+    const mapHref = `#/dataset/${encodeURIComponent(record.dataset_id)}/map`;
+    const metadata = metadataRows(record.metadata);
+    const provenance = provenanceRows(record.provenance);
+    const notes = notesRows(record);
+    return `
+      <article class="dataset-view">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a href="${back}">Browse</a><span aria-hidden="true">/</span>
+          <span>${Catalog.escapeHtml(Catalog.titleLabel(record))}</span>
+        </nav>
+        <header class="dataset-hero">
+          <div class="dataset-hero-main">
+            <div class="dataset-eyebrow">
+              <span class="badge badge-accent">${Catalog.escapeHtml(Catalog.familyLabel(record.source_family))}</span>
+              ${verificationBadge(record)}
+              ${previewBadge(preview)}
+            </div>
+            <h1 class="dataset-title" tabindex="-1">${Catalog.escapeHtml(Catalog.titleLabel(record))}</h1>
+            <p class="dataset-id"><span class="mono">${Catalog.escapeHtml(record.dataset_id)}</span>
+              <button class="copy-button" type="button" data-copy="${Catalog.escapeHtml(record.dataset_id)}">Copy</button>
+            </p>
+            <p class="dataset-status">${Catalog.escapeHtml(previewExplanation(record, preview))}</p>
+          </div>
+          <div class="dataset-actions">
+            <a class="primary-button" href="${mapHref}">Open map</a>
+            <button class="secondary-button" type="button" data-copy="fresh-hectaresbc catalog show ${Catalog.escapeHtml(record.dataset_id)}">Copy CLI</button>
+            <button class="secondary-button" type="button" data-download-json="${Catalog.escapeHtml(record.dataset_id)}">Download JSON</button>
+          </div>
+        </header>
+
+        <section class="dataset-grid" aria-label="Dataset summary">
+          ${statCard("Family", Catalog.familyLabel(record.source_family))}
+          ${statCard("Size", Catalog.formatBytes(record.manifest_size_bytes))}
+          ${statCard("Source format", Catalog.formatLabel(record))}
+          ${statCard("Verification", Catalog.verificationLabel(record.verification_status))}
+        </section>
+
+        <div class="dataset-columns">
+          <div>
+            <section class="panel" aria-labelledby="about-heading">
+              <h2 id="about-heading">About</h2>
+              ${record.metadata?.description
+                ? `<p>${Catalog.escapeHtml(record.metadata.description)}</p>`
+                : '<p class="muted">No description was recovered for this layer.</p>'}
+              ${metadata.length ? definitionList(metadata) : '<p class="muted">No recovered metadata fields.</p>'}
+            </section>
+
+            <section class="panel ${notes.length ? "panel-callout" : ""}" aria-labelledby="gaps-heading">
+              <h2 id="gaps-heading">Known gaps and uncertainty</h2>
+              ${notes.length ? `<ul class="note-list">${notes.map((note) => `<li>${Catalog.escapeHtml(note)}</li>`).join("")}</ul>` : '<p class="muted">No known gaps or uncertainty notes are recorded.</p>'}
+            </section>
+
+            <section class="panel" aria-labelledby="use-heading">
+              <h2 id="use-heading">Use this layer</h2>
+              ${codeBlock("Python", `from fresh_hectaresbc import HectaresBC\n\nrecord = HectaresBC().get("${record.dataset_id}")\nprint(record.title_candidate)`)}
+              ${codeBlock("CLI metadata", `fresh-hectaresbc catalog show ${record.dataset_id}`)}
+              ${codeBlock("Dry-run fetch", `fresh-hectaresbc fetch ${record.dataset_id} --dry-run`)}
+            </section>
+          </div>
+
+          <div>
+            <section class="panel" aria-labelledby="preview-heading">
+              <h2 id="preview-heading">Preview</h2>
+              ${previewPanel(record, preview, artifact, mapHref)}
+            </section>
+
+            <section class="panel" aria-labelledby="provenance-heading">
+              <h2 id="provenance-heading">Provenance</h2>
+              ${provenance.length ? definitionList(provenance) : '<p class="muted">No provenance fields were recovered.</p>'}
+            </section>
+          </div>
+        </div>
+
+        <details class="technical">
+          <summary>Technical details (raw record JSON)</summary>
+          <pre>${Catalog.escapeHtml(JSON.stringify(record, null, 2))}</pre>
+        </details>
+      </article>
+    `;
+  }
+
+  function statCard(label, value) {
+    return `<div class="stat-card"><span class="stat-label">${Catalog.escapeHtml(label)}</span><span class="stat-value">${Catalog.escapeHtml(value)}</span></div>`;
+  }
+
+  function verificationBadge(record) {
+    if (Catalog.hasConflict(record)) {
+      return '<span class="badge badge-danger badge-conflict">Conflict detected</span>';
+    }
+    return `<span class="badge badge-ok">${Catalog.escapeHtml(Catalog.verificationLabel(record.verification_status))}</span>`;
+  }
+
+  function previewBadge(preview) {
+    const tone = preview.tone === "ok" ? "ok" : preview.tone === "warn" ? "warn" : "muted";
+    return `<span class="badge badge-${tone}">${Catalog.escapeHtml(preview.label)}</span>`;
+  }
+
+  function previewExplanation(record, preview) {
+    if (preview.status === "available") {
+      return state.previewKind === "published"
+        ? "A published preview artifact is available for this layer."
+        : "A local preview artifact is available for this layer.";
+    }
+    if (preview.status === "not_previewable") {
+      return "The published preview batch marked this layer as not previewable.";
+    }
+    if (preview.status === "missing") {
+      return "No published preview artifact was found for this layer.";
+    }
+    if (preview.status === "unknown") {
+      return state.previewKind === "unavailable"
+        ? "The preview index is not reachable from this checkout, so preview availability is unknown."
+        : "Preview availability is still loading.";
+    }
+    return "The preview artifact exists but is not currently usable.";
+  }
+
+  function previewBlockersTemplate(record, preview) {
+    const blockers =
+      preview.artifact?.preview_eligibility_blockers ||
+      record.preview_eligibility_blockers ||
+      record.preview?.eligibility_blockers ||
+      [];
+    const eligibility =
+      preview.artifact?.preview_eligibility_status ||
+      record.preview_eligibility_status ||
+      record.preview?.eligibility_status ||
+      "unknown";
+    const reason =
+      preview.artifact?.preview_eligibility_reason ||
+      record.preview?.eligibility_reason ||
+      "";
+    return `
+      <dl class="kv-list">
+        <dt>Metadata eligibility</dt><dd>${Catalog.escapeHtml(Catalog.previewEligibilityLabel(eligibility))}</dd>
+        ${reason ? `<dt>Reason</dt><dd>${Catalog.escapeHtml(reason)}</dd>` : ""}
+        ${blockers.length ? `<dt>Blockers</dt><dd>${Catalog.escapeHtml(blockers.join(", "))}</dd>` : ""}
+      </dl>
+    `;
+  }
+
+  function previewPanel(record, preview, artifact, mapHref) {
+    const blocks = [];
+    if (preview.status === "available" && artifact?.artifact_path) {
+      const url = artifactUrl(artifact, artifact.artifact_path);
+      if (url) {
+        blocks.push(
+          `<p><img data-thumb loading="lazy" decoding="async" src="${Catalog.escapeHtml(url)}" alt="Preview of ${Catalog.escapeHtml(Catalog.titleLabel(record))}" style="max-width:100%;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--panel-soft)"></p>`
+        );
+      }
+    }
+    blocks.push(previewExplanation(record, preview));
+    if (preview.status === "available") {
+      blocks.push(
+        `<details class="technical" style="margin-top:0.6rem"><summary>Metadata eligibility (historical)</summary><div style="padding:0 0.8rem 0.6rem">${previewBlockersTemplate(record, preview)}</div></details>`
+      );
+    } else {
+      blocks.push(previewBlockersTemplate(record, preview));
+    }
+    if (artifact?.wgs84_bounds) {
+      blocks.push(
+        `<dl class="kv-list"><dt>Preview bounds</dt><dd class="mono">${Catalog.escapeHtml(formatBounds(artifact.wgs84_bounds))}</dd><dt>Preview CRS</dt><dd>${Catalog.escapeHtml(artifact.crs || "unknown")}</dd></dl>`
+      );
+    }
+    if (Array.isArray(artifact?.value_classes) && artifact.value_classes.length) {
+      blocks.push(
+        `<ul class="layer-legend">${artifact.value_classes
+          .map(
+            (item) =>
+              `<li><span class="layer-swatch" style="background: rgb(${(item.rgb || []).join(", ")})"></span>${Catalog.escapeHtml(`${item.value}: ${item.label}`)}</li>`
+          )
+          .join("")}</ul>`
+      );
+    }
+    blocks.push(`<p><a class="primary-button" href="${mapHref}">Open map workspace</a></p>`);
+    if (state.previewKind === "local") {
+      blocks.push('<p class="muted">Using local preview artifacts; the published preview index is not reachable from this checkout.</p>');
+    }
+    return blocks.join("");
+  }
+
+  function definitionList(rows) {
+    if (!rows.length) {
+      return '<p class="muted">No values recorded.</p>';
+    }
+    return `<dl class="kv-list">${rows
+      .map(
+        ([label, value]) =>
+          `<dt>${Catalog.escapeHtml(label)}</dt><dd>${formatValue(value)}</dd>`
+      )
+      .join("")}</dl>`;
+  }
+
+  function metadataRows(metadata) {
+    if (!metadata || typeof metadata !== "object") {
+      return [];
+    }
+    return Object.entries(metadata)
+      .filter(([key, value]) => key !== "description" && hasValue(value))
+      .map(([key, value]) => [METADATA_LABELS[key] || humanizeKey(key), value]);
+  }
+
+  function provenanceRows(provenance) {
+    if (!provenance || typeof provenance !== "object") {
+      return [];
+    }
+    return Object.entries(provenance)
+      .filter(([, value]) => hasValue(value))
+      .map(([key, value]) => [PROVENANCE_LABELS[key] || humanizeKey(key), value]);
+  }
+
+  function notesRows(record) {
+    return [
+      ...(record.known_gaps || []).map((text) => `Known gap: ${text}`),
+      ...(record.uncertainty_notes || []).map((text) => text),
+    ];
+  }
+
+  function hasValue(value) {
+    if (Array.isArray(value)) {
+      return value.length > 0;
+    }
+    if (value && typeof value === "object") {
+      return Object.keys(value).length > 0;
+    }
+    return value !== null && value !== undefined && String(value).trim() !== "";
+  }
+
+  function formatValue(value) {
+    if (Array.isArray(value)) {
+      return `<ul class="note-list">${value.map((item) => `<li>${formatValue(item)}</li>`).join("")}</ul>`;
+    }
+    if (value && typeof value === "object") {
+      return `<dl class="kv-list">${Object.entries(value)
+        .map(([key, item]) => `<dt>${Catalog.escapeHtml(humanizeKey(key))}</dt><dd>${formatValue(item)}</dd>`)
+        .join("")}</dl>`;
+    }
+    const text = String(value ?? "");
+    if (text.length > 260) {
+      return `<details><summary>Show full value</summary><pre class="mono" style="white-space:pre-wrap;overflow-wrap:anywhere">${Catalog.escapeHtml(text)}</pre></details>`;
+    }
+    return Catalog.escapeHtml(text || "unknown");
+  }
+
+  function humanizeKey(key) {
+    const labels = {
+      bclist: "BC list",
+      ecolcomm: "Ecological community",
+      ischanged: "Is changed",
+      sara: "SARA",
+    };
+    if (labels[key]) {
+      return labels[key];
+    }
+    return String(key)
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (character) => character.toUpperCase());
+  }
+
+  function codeBlock(label, code) {
+    return `
+      <div class="code-block">
+        <div class="command-heading"><strong>${Catalog.escapeHtml(label)}</strong></div>
+        <pre>${Catalog.escapeHtml(code)}</pre>
+        <button class="copy-button" type="button" data-copy="${Catalog.escapeHtml(code)}">Copy</button>
+      </div>
+    `;
+  }
+
+  /* ------------------------------------------------------------------- map */
+
+  async function renderMap() {
+    const token = ++state.renderToken;
+    document.body.dataset.view = "map";
+    document.body.classList.remove("filters-open", "inspector-open");
+    els.content.innerHTML = loadingTemplate("Loading map preview…");
+    const datasetId = state.route.datasetId;
+    await loadDetails();
+    if (token !== state.renderToken) {
+      return;
+    }
+    const record = getRecordSync(datasetId);
+    if (!record) {
+      els.content.innerHTML = notFoundTemplate(datasetId);
+      document.title = "Dataset not found · HectaresBC";
+      if (els.liveStatus) {
+        els.liveStatus.textContent = "Dataset not found.";
+      }
+      updateTabs();
+      return;
+    }
+    const artifact = await loadArtifactDetails(
+      Catalog.previewArtifact(record, state.previewIndex)
+    );
+    if (token !== state.renderToken) {
+      return;
+    }
+    const preview = Catalog.previewStatus(record, state.previewIndex);
+    const bounds = window.HectaresBCMap?.validBounds(artifact?.wgs84_bounds);
+    const previewUrl = artifact?.artifact_path
+      ? artifactUrl(artifact, artifact.artifact_path)
+      : null;
+    const canMap = preview.status === "available" && previewUrl && bounds;
+
+    if (!canMap) {
+      els.content.innerHTML = mapFallbackTemplate(record, preview, artifact, previewUrl);
+      updateTabs();
+      if (els.liveStatus) {
+        els.liveStatus.textContent = `Map preview unavailable for ${Catalog.titleLabel(record)}. ${previewExplanation(record, preview)}`;
+      }
+      document.title = `${Catalog.titleLabel(record)} map · HectaresBC`;
+      els.content.querySelector("h1")?.focus();
+      return;
+    }
+
+    const reference = referenceLayer();
+    const referenceUrl = reference?.artifact_path
+      ? artifactUrl(reference, reference.artifact_path)
+      : null;
+    els.content.innerHTML = mapTemplate(record, preview, artifact, bounds);
+    updateTabs();
+    if (els.liveStatus) {
+      els.liveStatus.textContent = `Map preview for ${Catalog.titleLabel(record)}.`;
+    }
+    document.title = `${Catalog.titleLabel(record)} map · HectaresBC`;
+    els.content.querySelector("h1")?.focus();
+
+    try {
+      await window.HectaresBCMap.create({
+        container: document.querySelector("#map-canvas"),
+        previewUrl,
+        referenceUrl,
+        referenceBounds: reference?.wgs84_bounds || null,
+        bounds,
+        panel: document.querySelector("#map-layer-panel"),
+        loading: document.querySelector("#map-loading"),
+        onError: () => {
+          const card = document.querySelector(".map-status-card p");
+          if (card) {
+            card.textContent =
+              "The preview image could not be loaded. It may still be annexed in the data repository.";
+          }
+        },
+      });
+    } catch (error) {
+      if (token !== state.renderToken) {
+        return;
+      }
+      window.HectaresBCMap?.destroy();
+      els.content.innerHTML = mapFallbackTemplate(
+        record,
+        preview,
+        artifact,
+        previewUrl,
+        error.message
+      );
+      els.content.querySelector("h1")?.focus();
+    }
+  }
+
+  function mapTemplate(record, preview, artifact, bounds) {
+    const datasetHref = `#/dataset/${encodeURIComponent(record.dataset_id)}`;
+    const legend = mapLegendTemplate(artifact);
+    return `
+      <div class="map-view">
+        <div id="map-canvas" class="map-canvas" aria-label="Map preview for ${Catalog.escapeHtml(Catalog.titleLabel(record))}"></div>
+        <div class="map-topbar">
+          <div class="map-title-card">
+            <div class="dataset-eyebrow">
+              <span class="badge badge-accent">${Catalog.escapeHtml(Catalog.familyLabel(record.source_family))}</span>
+              ${previewBadge(preview)}
+            </div>
+            <h1 tabindex="-1">${Catalog.escapeHtml(Catalog.titleLabel(record))}</h1>
+            <p>${Catalog.escapeHtml(record.dataset_id)}</p>
+          </div>
+          <div class="map-actions">
+            <a class="secondary-button" href="${datasetHref}">Dataset</a>
+            <a class="secondary-button" href="${state.lastBrowseHash || "#/catalog"}">Browse</a>
+            <button class="secondary-button" type="button" data-copy="${Catalog.escapeHtml(record.dataset_id)}">Copy ID</button>
+          </div>
+        </div>
+        <aside class="map-layer-panel" id="map-layer-panel" aria-label="Map layer controls">
+          <h2>Layer</h2>
+          <label class="layer-control"><input id="layer-visible" type="checkbox" checked> Visible</label>
+          <label class="layer-control">Opacity <input id="layer-opacity" type="range" min="0" max="1" step="0.05" value="0.88"></label>
+          <div class="layer-control"><span>Opacity value</span><output id="layer-opacity-value">88%</output></div>
+          <label class="layer-control">Basemap
+            <select id="basemap-select">
+              <option value="osm">OpenStreetMap</option>
+              <option value="offline">Offline</option>
+            </select>
+          </label>
+          <button id="map-fit-layer" class="secondary-button" type="button">Fit layer</button>
+          <h2>Legend</h2>
+          ${legend}
+          <p class="muted" style="font-size:0.68rem">Preview overlays are static source-derived images placed on a map using their recovered WGS84 bounds.</p>
+        </aside>
+        <div class="map-status-card">
+          <h2>${Catalog.escapeHtml(preview.label)}</h2>
+          <p>${Catalog.escapeHtml(previewExplanation(record, preview))}</p>
+          <dl class="kv-list" style="margin-top:0.5rem">
+            <dt>Bounds</dt><dd class="mono">${Catalog.escapeHtml(formatBounds(bounds))}</dd>
+            <dt>CRS</dt><dd>${Catalog.escapeHtml(artifact?.crs || "unknown")}</dd>
+            <dt>Artifact</dt><dd>${Catalog.escapeHtml(artifact?.artifact_status || "unknown")}</dd>
+          </dl>
+        </div>
+        <div id="map-loading" class="map-loading"><span><span class="spinner"></span>Loading map…</span></div>
+      </div>
+    `;
+  }
+
+  function mapLegendTemplate(artifact) {
+    const classes = Array.isArray(artifact?.value_classes)
+      ? artifact.value_classes
+      : [];
+    if (!classes.length) {
+      return '<p class="muted">No legend classes were recovered for this preview.</p>';
+    }
+    return `<ul class="layer-legend">${classes
+      .map(
+        (item) =>
+          `<li><span class="layer-swatch" style="background: rgb(${(item.rgb || []).join(", ")})"></span>${Catalog.escapeHtml(`${item.value}: ${item.label}`)}</li>`
+      )
+      .join("")}</ul>`;
+  }
+
+  function mapFallbackTemplate(record, preview, artifact, previewUrl, errorMessage = "") {
+    const datasetHref = `#/dataset/${encodeURIComponent(record.dataset_id)}`;
+    const canShowImage = Boolean(previewUrl);
+    const message = previewExplanation(record, preview);
+    return `
+      <div class="map-view">
+        <div class="map-topbar">
+          <div class="map-title-card">
+            <div class="dataset-eyebrow">
+              <span class="badge badge-accent">${Catalog.escapeHtml(Catalog.familyLabel(record.source_family))}</span>
+              ${previewBadge(preview)}
+            </div>
+            <h1 tabindex="-1">${Catalog.escapeHtml(Catalog.titleLabel(record))}</h1>
+            <p>${Catalog.escapeHtml(record.dataset_id)}</p>
+          </div>
+          <div class="map-actions">
+            <a class="secondary-button" href="${datasetHref}">Dataset</a>
+            <a class="secondary-button" href="${state.lastBrowseHash || "#/catalog"}">Browse</a>
+          </div>
+        </div>
+        <div class="map-fallback">
+          ${canShowImage
+            ? `<img src="${Catalog.escapeHtml(previewUrl)}" alt="Preview of ${Catalog.escapeHtml(Catalog.titleLabel(record))}">`
+            : `<div class="map-fallback-card">
+                <h1>Map preview unavailable</h1>
+                <p>${Catalog.escapeHtml(message)}</p>
+                ${errorMessage ? `<p class="muted">${Catalog.escapeHtml(errorMessage)}</p>` : ""}
+                <p><a class="primary-button" href="${datasetHref}">Open dataset details</a></p>
+              </div>`}
+        </div>
+        <div class="map-status-card">
+          <h2>${Catalog.escapeHtml(preview.label)}</h2>
+          <p>${Catalog.escapeHtml(message)}</p>
+          ${previewBlockersTemplate(record, preview)}
+          ${state.previewKind === "unavailable" ? '<p class="muted">The preview index is not reachable from this checkout, so the map cannot load a basemap overlay.</p>' : ""}
+        </div>
+      </div>
+    `;
+  }
+
+  function referenceLayer() {
+    return (
+      state.referenceLayers.find(
+        (layer) => layer.role === "source_derived_basemap_reference"
+      ) || state.referenceLayers[0] || null
+    );
+  }
+
+  function formatBounds(bounds) {
+    if (!Array.isArray(bounds) || bounds.length !== 4) {
+      return "unknown";
+    }
+    return bounds.map((value) => Number(value).toFixed(4)).join(", ");
+  }
+
+  /* --------------------------------------------------------------- actions */
+
+  function getRecordSync(datasetId) {
+    if (!datasetId) {
       return null;
     }
-    return await response.json();
-  } catch (error) {
-    return null;
-  }
-}
-
-function adaptPreviewManifest(manifest, baseUrl, sourceKind) {
-  if (Array.isArray(manifest.artifacts)) {
-    return {
-      ...manifest,
-      source_kind: sourceKind,
-      base_url: baseUrl,
-      artifacts: manifest.artifacts.map((artifact) => adaptArtifact(artifact, baseUrl, sourceKind)),
-      reference_layers: (manifest.reference_layers || []).map((layer) => adaptArtifact(layer, baseUrl, sourceKind)),
-    };
-  }
-
-  return {
-    ...manifest,
-    source_kind: sourceKind,
-    base_url: baseUrl,
-    artifacts: (manifest.layers || []).map((artifact) => adaptArtifact(artifact, baseUrl, sourceKind)),
-    reference_layers: (manifest.reference_layers || []).map((layer) => adaptArtifact(layer, baseUrl, sourceKind)),
-  };
-}
-
-function adaptArtifact(artifact, baseUrl, sourceKind) {
-  return {
-    ...artifact,
-    artifact_source: sourceKind,
-    artifact_base_url: baseUrl,
-  };
-}
-
-function renderCatalogSummary(catalog) {
-  statusNode.textContent = `Catalog generated ${catalog.generated_at}`;
-  recordCountNode.textContent = catalog.record_count.toLocaleString();
-  dataLayerCountNode.textContent = (catalog.family_counts.data_layer || 0).toLocaleString();
-  virtualLayerCountNode.textContent = (
-    catalog.family_counts.virtual_layer || 0
-  ).toLocaleString();
-}
-
-function renderResults() {
-  if (!state.catalog) {
-    return;
-  }
-
-  const filtered = CatalogBrowser.filterRecords(state.catalog.records, state);
-  const sorted = CatalogBrowser.sortRecords(filtered, state.sort);
-  const visible = CatalogBrowser.limitRecords(sorted, state.pageSize);
-
-  resultCountNode.textContent = `${filtered.length.toLocaleString()} matching records`;
-  recordListNode.replaceChildren(...visible.map(renderRecord));
-  emptyStateNode.hidden = filtered.length !== 0;
-  if (filtered.length === 0) {
-    emptyStateNode.textContent = "No matching records.";
-  }
-}
-
-function syncRouteState() {
-  if (!state.catalog) {
-    return;
-  }
-  const datasetId = selectedMapDatasetId() || selectedDatasetId();
-  if (!datasetId) {
-    return;
-  }
-  const record = CatalogBrowser.findRecord(state.catalog.records, datasetId);
-  if (!record) {
-    return;
-  }
-  state.query = record.dataset_id;
-  searchInputNode.value = record.dataset_id;
-  state.family = "all";
-  state.sort = "title";
-  state.pageSize = "50";
-  sortSelectNode.value = state.sort;
-  pageSizeSelectNode.value = state.pageSize;
-}
-
-function renderRecord(record) {
-  const row = document.createElement("tr");
-
-  const titleCell = document.createElement("td");
-  const title = document.createElement("a");
-  title.href = `#${encodeURIComponent(record.dataset_id)}`;
-  title.className = "record-title";
-  title.textContent = record.title;
-  const path = document.createElement("span");
-  path.className = "record-path";
-  path.textContent = record.source_zip_path;
-  titleCell.append(title, path);
-
-  const familyCell = document.createElement("td");
-  familyCell.textContent = familyLabel(record.source_family);
-
-  const idCell = document.createElement("td");
-  idCell.className = "dataset-id";
-  idCell.textContent = record.dataset_id;
-
-  const previewCell = document.createElement("td");
-  previewCell.textContent = CatalogBrowser.previewLabel(record);
-
-  const sizeCell = document.createElement("td");
-  sizeCell.textContent = CatalogBrowser.formatBytes(record.manifest_size_bytes);
-
-  row.append(titleCell, familyCell, idCell, previewCell, sizeCell);
-  return row;
-}
-
-function renderSelectedRecord() {
-  if (!state.catalog) {
-    return;
-  }
-
-  const datasetId = selectedDatasetId();
-  if (!datasetId) {
-    detailStatusNode.textContent = "No record selected";
-    recordDetailNode.className = "record-detail";
-    recordDetailNode.innerHTML = `
-      <p class="empty-detail">Select a catalog record to inspect provenance and usage commands.</p>
-    `;
-    return;
-  }
-
-  const record = CatalogBrowser.findRecord(state.catalog.records, datasetId);
-  if (!record) {
-    detailStatusNode.textContent = "Record not found";
-    recordDetailNode.className = "record-detail";
-    recordDetailNode.innerHTML = `
-      <p class="empty-detail">No recovered catalog record matches <code></code>.</p>
-    `;
-    recordDetailNode.querySelector("code").textContent = datasetId;
-    return;
-  }
-
-  detailStatusNode.textContent = record.dataset_id;
-  recordDetailNode.className = "record-detail has-record";
-  recordDetailNode.replaceChildren(renderDetail(record));
-}
-
-function selectedDatasetId() {
-  if (!window.location.hash || window.location.hash === "#") {
-    return "";
-  }
-  if (window.location.hash.startsWith("#map=")) {
-    return decodeURIComponent(window.location.hash.slice("#map=".length));
-  }
-  return decodeURIComponent(window.location.hash.slice(1));
-}
-
-function selectedMapDatasetId() {
-  if (!window.location.hash.startsWith("#map=")) {
-    return "";
-  }
-  return decodeURIComponent(window.location.hash.slice("#map=".length));
-}
-
-function renderRoute() {
-  syncRouteState();
-  renderResults();
-  renderSelectedRecord();
-  void renderMapPreview();
-}
-
-function renderDetail(record) {
-  const wrapper = document.createElement("div");
-  wrapper.className = "detail-layout";
-
-  const summary = document.createElement("section");
-  summary.className = "detail-panel detail-summary";
-  summary.setAttribute("aria-labelledby", "selected-record-title");
-
-  const heading = document.createElement("div");
-  const eyebrow = document.createElement("p");
-  eyebrow.className = "eyebrow";
-  eyebrow.textContent = familyLabel(record.source_family);
-  const title = document.createElement("h3");
-  title.id = "selected-record-title";
-  title.textContent = record.title;
-  heading.append(eyebrow, title);
-
-  summary.append(
-    heading,
-    definitionList([
-      ["Dataset ID", record.dataset_id],
-      ["Source ZIP", record.source_zip_path],
-      ["Verification", record.verification_status],
-      ["Preview", CatalogBrowser.previewLabel(record)],
-      ["Map route", mapRouteLink(record)],
-      ["Manifest size", CatalogBrowser.formatBytes(record.manifest_size_bytes)],
-    ])
-  );
-
-  const metadata = detailPanel(
-    "Metadata",
-    definitionList(metadataRows(record.metadata), "metadata-list")
-  );
-
-  const provenance = detailPanel(
-    "Provenance",
-    definitionList(provenanceRows(record.provenance), "metadata-list")
-  );
-
-  const notes = detailPanel("Known Gaps And Uncertainty", noteList(record));
-  const commands = detailPanel("API And CLI Commands", commandSnippets(record));
-
-  wrapper.append(summary, metadata, provenance, notes, commands);
-  return wrapper;
-}
-
-function mapRouteLink(record) {
-  const wrapper = document.createElement("span");
-  const link = document.createElement("a");
-  link.href = `#map=${encodeURIComponent(record.dataset_id)}`;
-  link.textContent = "Open map preview";
-  wrapper.append(link);
-
-  const status = document.createElement("span");
-  status.className = "inline-status";
-  status.textContent = ` ${previewStatusLabel(record)}`;
-  wrapper.append(status);
-  return wrapper;
-}
-
-async function renderMapPreview() {
-  if (!state.catalog) {
-    return;
-  }
-
-  const renderToken = state.previewRenderToken + 1;
-  state.previewRenderToken = renderToken;
-  const datasetId = selectedMapDatasetId();
-  if (!datasetId) {
-    mapStatusNode.textContent = "No layer selected";
-    mapPreviewNode.className = "map-preview";
-    mapPreviewNode.innerHTML = `
-      <p class="empty-detail">Open a map preview from a dataset detail route.</p>
-    `;
-    return;
-  }
-
-  const record = CatalogBrowser.findRecord(state.catalog.records, datasetId);
-  if (!record) {
-    mapStatusNode.textContent = "Record not found";
-    mapPreviewNode.className = "map-preview";
-    mapPreviewNode.innerHTML = `
-      <p class="empty-detail">No recovered catalog record matches <code></code>.</p>
-    `;
-    mapPreviewNode.querySelector("code").textContent = datasetId;
-    return;
-  }
-
-  const artifact = findPreviewArtifact(record.dataset_id);
-  if (!artifact) {
-    mapStatusNode.textContent = "Preview unavailable";
-    mapPreviewNode.className = "map-preview";
-    mapPreviewNode.replaceChildren(renderUnavailableMap(record));
-    return;
-  }
-  if (!isAvailablePreviewArtifact(artifact)) {
-    mapStatusNode.textContent = "Preview unavailable";
-    mapPreviewNode.className = "map-preview";
-    mapPreviewNode.replaceChildren(renderUnavailableMap(record, artifact));
-    return;
-  }
-
-  mapStatusNode.textContent = record.dataset_id;
-  mapPreviewNode.className = "map-preview has-record";
-  mapPreviewNode.replaceChildren(renderMapScaffold(record, artifact, {status: "loading"}));
-
-  if (artifact.artifact_kind === "raster_png") {
-    try {
-      const detailedArtifact = await loadPreviewManifestDetails(artifact);
-      if (state.previewRenderToken !== renderToken) {
-        return;
-      }
-      mapPreviewNode.replaceChildren(renderMapScaffold(record, detailedArtifact, {raster: true}));
-    } catch (error) {
-      if (state.previewRenderToken !== renderToken) {
-        return;
-      }
-      mapStatusNode.textContent = "Preview manifest missing";
-      mapPreviewNode.replaceChildren(renderMapScaffold(record, artifact, {error}));
+    if (state.details?.has(datasetId)) {
+      return state.details.get(datasetId);
     }
-    return;
+    return state.records.find((record) => record.dataset_id === datasetId) || null;
   }
 
-  try {
-    const geojson = await loadPreviewArtifact(artifact);
-    if (state.previewRenderToken !== renderToken) {
+  function selectRecord(datasetId) {
+    state.selectedId = datasetId;
+    renderInspector();
+    document.body.classList.add("inspector-open");
+    updateTabs();
+  }
+
+  function closeInspector() {
+    state.selectedId = null;
+    document.body.classList.remove("inspector-open");
+    els.inspector.hidden = true;
+    els.inspector.innerHTML = "";
+    document.querySelectorAll(".result-row.is-selected").forEach((row) => {
+      row.classList.remove("is-selected");
+    });
+    updateTabs();
+  }
+
+  function openMapFor(datasetId) {
+    if (!datasetId) {
+      showToast("Select a layer first.");
       return;
     }
-    mapPreviewNode.replaceChildren(renderMapScaffold(record, artifact, {geojson}));
-  } catch (error) {
-    if (state.previewRenderToken !== renderToken) {
+    navigate({ ...Catalog.defaultState(), view: "dataset", datasetId, map: true });
+  }
+
+  function handleContentClick(event) {
+    const target = event.target;
+    const copy = target.closest("[data-copy]");
+    if (copy) {
+      copyText(copy.dataset.copy);
       return;
     }
-    mapStatusNode.textContent = "Preview artifact missing";
-    mapPreviewNode.replaceChildren(renderMapScaffold(record, artifact, {error}));
-  }
-}
-
-function findPreviewArtifact(datasetId) {
-  const artifacts = state.previewManifest?.artifacts || [];
-  return artifacts.find((artifact) => artifact.dataset_id === datasetId) || null;
-}
-
-function isAvailablePreviewArtifact(artifact) {
-  return Boolean(
-    artifact?.artifact_path &&
-      artifact?.manifest_path &&
-      ["already_present", "source_derived_preview"].includes(artifact.artifact_status)
-  );
-}
-
-async function loadPreviewManifestDetails(artifact) {
-  if (hasDetailedRasterMetadata(artifact)) {
-    return artifact;
-  }
-
-  const path = artifactUrl(artifact, artifact.manifest_path);
-  if (state.previewManifestCache.has(path)) {
-    return state.previewManifestCache.get(path);
-  }
-
-  const response = await fetch(path);
-  if (!response.ok) {
-    throw new Error(`Preview manifest request failed with ${response.status}`);
-  }
-  const manifest = adaptArtifact(await response.json(), artifact.artifact_base_url, artifact.artifact_source);
-  state.previewManifestCache.set(path, manifest);
-  return manifest;
-}
-
-function hasDetailedRasterMetadata(artifact) {
-  return Boolean(
-    artifact &&
-      artifact.crs &&
-      artifact.raster_width &&
-      artifact.preview_width &&
-      Array.isArray(artifact.value_classes)
-  );
-}
-
-async function loadPreviewArtifact(artifact) {
-  const path = artifactUrl(artifact, artifact.artifact_path);
-  if (state.previewArtifactCache.has(path)) {
-    return state.previewArtifactCache.get(path);
-  }
-
-  const response = await fetch(path);
-  if (!response.ok) {
-    throw new Error(`Preview artifact request failed with ${response.status}`);
-  }
-  const geojson = await response.json();
-  validateGeoJson(geojson, path);
-  state.previewArtifactCache.set(path, geojson);
-  return geojson;
-}
-
-function validateGeoJson(geojson, path) {
-  if (
-    !geojson ||
-    geojson.type !== "FeatureCollection" ||
-    !Array.isArray(geojson.features)
-  ) {
-    throw new Error(`Preview artifact is not a GeoJSON FeatureCollection: ${path}`);
-  }
-}
-
-function renderMapScaffold(record, artifact, options = {}) {
-  const wrapper = document.createElement("div");
-  wrapper.className = "map-layout";
-  const referenceLayer = findReferenceLayer();
-
-  const viewport = document.createElement("section");
-  viewport.className = "map-viewport";
-  viewport.setAttribute("aria-label", `Map preview for ${record.title}`);
-  const grid = document.createElement("div");
-  grid.className = "map-grid";
-  const label = document.createElement("div");
-  label.className = "map-placeholder-label";
-  if (options.raster) {
-    viewport.append(grid, renderRasterLayer(artifact), renderReferenceBasemap(referenceLayer), label);
-    label.textContent = "Rendered source preview";
-  } else if (options.geojson) {
-    viewport.append(
-      grid,
-      renderGeoJsonLayer(options.geojson, artifact),
-      renderReferenceBasemap(referenceLayer),
-      label
-    );
-    label.textContent = "Rendered preview artifact";
-  } else if (options.error) {
-    viewport.append(grid, renderMapError(options.error), renderReferenceBasemap(referenceLayer), label);
-    label.textContent = "Preview artifact missing";
-  } else {
-    viewport.append(grid, renderReferenceBasemap(referenceLayer), label);
-    label.textContent = "Loading preview artifact";
+    const download = target.closest("[data-download-json]");
+    if (download) {
+      downloadRecord(download.dataset.downloadJson);
+      return;
+    }
+    const retry = target.closest("[data-retry]");
+    if (retry) {
+      renderLoading();
+      loadCatalog();
+      return;
+    }
+    const page = target.closest("[data-page]");
+    if (page && !page.disabled) {
+      const next = Number.parseInt(page.dataset.page, 10);
+      if (Number.isFinite(next)) {
+        state.browseScroll = 0;
+        navigate({ ...state.route, page: next });
+      }
+      return;
+    }
+    const sort = target.closest("[data-sort]");
+    if (sort) {
+      const column = sort.dataset.sort;
+      let nextSort = column;
+      if (column === "size") {
+        nextSort = state.route.sort === "size_desc" ? "size_asc" : "size_desc";
+      }
+      navigate({ ...state.route, sort: nextSort, page: 1 }, { replace: true });
+      return;
+    }
+    const clearFacet = target.closest("[data-clear-facet]");
+    if (clearFacet) {
+      clearFacetValue(clearFacet.dataset.clearFacet);
+      return;
+    }
+    const clearAll = target.closest("[data-clear-all]");
+    if (clearAll) {
+      clearAllFilters();
+      return;
+    }
+    const openFilters = target.closest("[data-open-filters]");
+    if (openFilters) {
+      document.body.classList.add("filters-open");
+      return;
+    }
+    const close = target.closest("[data-close-inspector]");
+    if (close) {
+      closeInspector();
+      return;
+    }
+    const row = target.closest("[data-dataset-id]");
+    if (row && !target.closest("a,button,input,select,label")) {
+      const datasetId = row.dataset.datasetId;
+      if (window.matchMedia(NarrowInspectorQuery).matches) {
+        navigate({
+          ...Catalog.defaultState(),
+          view: "dataset",
+          datasetId,
+        });
+      } else {
+        selectRecord(datasetId);
+      }
+    }
   }
 
-  const panel = document.createElement("aside");
-  panel.id = "map-layer-panel";
-  panel.className = "map-layer-panel";
-  panel.append(
-    mapPanelHeading(record, options.raster || options.geojson ? "Rendered" : "Available"),
-    mapLayerControls(record),
-    definitionList(mapArtifactRows(record, artifact, {...options, referenceLayer}))
-  );
-
-  if (artifact.fixture_warning) {
-    const warning = document.createElement("p");
-    warning.className = "map-warning";
-    warning.textContent = artifact.fixture_warning;
-    panel.append(warning);
-  }
-
-  wrapper.append(viewport, panel);
-  return wrapper;
-}
-
-function mapArtifactRows(record, artifact, options) {
-  const rows = [
-    ["Dataset ID", record.dataset_id],
-    ["Title", record.title],
-    ["Source ZIP", record.source_zip_path],
-    ["Artifact", artifact.artifact_path],
-    ["Artifact source", artifactSourceLabel(artifact)],
-    ["Artifact status", artifact.artifact_status],
-    ["Artifact kind", artifact.artifact_kind],
-    ["CRS", artifact.crs],
-  ];
-
-  if (artifact.artifact_kind === "raster_png") {
-    rows.push(
-      ["WGS84 bounds", formatBounds(artifact.wgs84_bounds)],
-      ["Native bounds", formatBounds(artifact.native_bounds)],
-      ["Raster size", `${artifact.raster_width} x ${artifact.raster_height}`],
-      ["Preview size", `${artifact.preview_width} x ${artifact.preview_height}`],
-      ["Internal raster", artifact.internal_raster_path],
-      ["Legend source", artifact.internal_wms_path],
-      ["Legend classes", legendList(artifact.value_classes || [])],
-      ["Basemap", basemapDescription(options.referenceLayer)]
-    );
-  } else {
-    rows.push(
-      ["Bounds", renderBounds(artifact, options.geojson)],
-      ["Feature count", featureCount(options.geojson)]
-    );
-  }
-
-  rows.push(
-    ["Source content", artifact.source_content_status],
-    ["Preview eligibility", artifact.preview_eligibility_status],
-    ["Preview blockers", artifact.preview_eligibility_blockers?.join(", ") || "none"],
-    ["Generated by", artifact.provenance?.generated_by],
-    ["Catalog detail", detailRouteLink(record)]
-  );
-  return rows;
-}
-
-function basemapDescription(referenceLayer) {
-  if (!referenceLayer) {
-    return "unavailable";
-  }
-  return `${referenceLayer.title} (${referenceLayer.source_zip_path})`;
-}
-
-function findReferenceLayer() {
-  const layers = [
-    ...(state.previewManifest?.reference_layers || []),
-    ...(state.localPreviewManifest?.reference_layers || []),
-  ];
-  return (
-    layers.find((layer) => layer.role === "source_derived_basemap_reference") ||
-    null
-  );
-}
-
-function renderReferenceBasemap(referenceLayer) {
-  if (!referenceLayer) {
-    const missing = document.createElement("div");
-    missing.className = "map-reference-basemap map-reference-missing";
-    missing.textContent = "Basemap reference unavailable";
-    return missing;
-  }
-
-  const image = document.createElement("img");
-  image.className = "map-reference-basemap";
-  image.src = artifactUrl(referenceLayer, referenceLayer.artifact_path);
-  image.alt = `${referenceLayer.title} source-derived basemap reference`;
-  image.dataset.basemap = "source-derived-reference";
-  image.dataset.layerDatasetId = referenceLayer.dataset_id;
-  image.dataset.sourceZipPath = referenceLayer.source_zip_path;
-  image.dataset.wgs84Bounds = formatBounds(referenceLayer.wgs84_bounds);
-  image.addEventListener("error", () => {
-    image.className = "map-reference-basemap map-reference-missing";
-    image.removeAttribute("src");
-    image.alt = "Basemap reference unavailable";
-  });
-  return image;
-}
-
-function renderRasterLayer(artifact) {
-  const image = document.createElement("img");
-  image.className = "map-render-layer map-raster-layer";
-  image.src = artifactUrl(artifact, artifact.artifact_path);
-  image.alt = `${artifact.title} source-derived raster preview`;
-  image.dataset.layerDatasetId = artifact.dataset_id;
-  image.dataset.wgs84Bounds = formatBounds(artifact.wgs84_bounds);
-  image.addEventListener("error", () => {
-    mapStatusNode.textContent = "Preview artifact missing";
-  });
-  applyLayerOptionsToNode(image, layerOptions(artifact.dataset_id));
-  return image;
-}
-
-function renderGeoJsonLayer(geojson, artifact) {
-  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svg.className = "map-render-layer map-geojson-layer";
-  svg.setAttribute("viewBox", "0 0 100 100");
-  svg.setAttribute("preserveAspectRatio", "none");
-  svg.setAttribute("aria-label", `${artifact.dataset_id} preview geometry`);
-  svg.dataset.layerDatasetId = artifact.dataset_id;
-  applyLayerOptionsToNode(svg, layerOptions(artifact.dataset_id));
-
-  const bounds = validBounds(artifact.bounds) || geoJsonBounds(geojson);
-  for (const feature of geojson.features) {
-    for (const line of lineStrings(feature.geometry)) {
-      const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-      polyline.className = "map-feature-line";
-      polyline.setAttribute(
-        "points",
-        line.map((coordinate) => projectCoordinate(coordinate, bounds)).join(" ")
+  function handleContentChange(event) {
+    const sort = event.target.closest("[data-sort-select]");
+    if (sort) {
+      const key = sort.dataset.focusKey;
+      navigate({ ...state.route, sort: sort.value, page: 1 }, { replace: true });
+      requestAnimationFrame(() => {
+        document.querySelector(`[data-focus-key="${key}"]`)?.focus();
+      });
+      return;
+    }
+    const pageSize = event.target.closest("[data-page-size]");
+    if (pageSize) {
+      const key = pageSize.dataset.focusKey;
+      state.browseScroll = 0;
+      navigate(
+        { ...state.route, pageSize: pageSize.value, page: 1 },
+        { replace: true }
       );
-      svg.append(polyline);
+      requestAnimationFrame(() => {
+        document.querySelector(`[data-focus-key="${key}"]`)?.focus();
+      });
     }
   }
-  return svg;
-}
 
-function mapLayerControls(record) {
-  const controls = document.createElement("section");
-  controls.className = "map-layer-controls";
-  controls.setAttribute("aria-label", "Map layer controls");
-
-  const options = layerOptions(record.dataset_id);
-
-  const heading = document.createElement("h4");
-  heading.textContent = "Layer controls";
-
-  const visibleLabel = document.createElement("label");
-  visibleLabel.className = "map-checkbox-control";
-  const visibleInput = document.createElement("input");
-  visibleInput.id = "map-layer-visible";
-  visibleInput.type = "checkbox";
-  visibleInput.checked = options.visible;
-  visibleInput.dataset.mapControl = "visibility";
-  visibleInput.dataset.datasetId = record.dataset_id;
-  const visibleText = document.createElement("span");
-  visibleText.textContent = "Layer visible";
-  visibleLabel.append(visibleInput, visibleText);
-
-  const opacityLabel = document.createElement("label");
-  opacityLabel.className = "map-range-control";
-  opacityLabel.setAttribute("for", "map-layer-opacity");
-  opacityLabel.textContent = "Opacity";
-  const opacityInput = document.createElement("input");
-  opacityInput.id = "map-layer-opacity";
-  opacityInput.type = "range";
-  opacityInput.min = "0";
-  opacityInput.max = "1";
-  opacityInput.step = "0.05";
-  opacityInput.value = String(options.opacity);
-  opacityInput.dataset.mapControl = "opacity";
-  opacityInput.dataset.datasetId = record.dataset_id;
-  const opacityValue = document.createElement("output");
-  opacityValue.id = "map-layer-opacity-value";
-  opacityValue.setAttribute("for", "map-layer-opacity");
-  opacityValue.textContent = opacityLabelText(options.opacity);
-
-  controls.append(heading, visibleLabel, opacityLabel, opacityInput, opacityValue);
-  return controls;
-}
-
-function layerOptions(datasetId) {
-  if (!state.mapLayerOptions.has(datasetId)) {
-    state.mapLayerOptions.set(datasetId, {...DEFAULT_LAYER_OPTIONS});
-  }
-  return state.mapLayerOptions.get(datasetId);
-}
-
-function applyLayerControl(input) {
-  const datasetId = input.dataset.datasetId;
-  if (!datasetId) {
-    return;
-  }
-  const options = layerOptions(datasetId);
-  if (input.dataset.mapControl === "visibility") {
-    options.visible = input.checked;
-  }
-  if (input.dataset.mapControl === "opacity") {
-    options.opacity = boundedOpacity(input.value);
-    input.value = String(options.opacity);
-    const output = mapPreviewNode.querySelector("#map-layer-opacity-value");
-    if (output) {
-      output.textContent = opacityLabelText(options.opacity);
-    }
-  }
-  const layer = mapPreviewNode.querySelector(".map-render-layer");
-  if (layer?.dataset.layerDatasetId === datasetId) {
-    applyLayerOptionsToNode(layer, options);
-  }
-}
-
-function applyLayerOptionsToNode(node, options) {
-  const opacity = options.visible ? String(options.opacity) : "0";
-  node.setAttribute("opacity", opacity);
-  node.setAttribute("data-visible", String(options.visible));
-  node.setAttribute("data-opacity", String(options.opacity));
-  if (node.style) {
-    node.style.opacity = opacity;
-  }
-}
-
-function boundedOpacity(value) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) {
-    return DEFAULT_LAYER_OPTIONS.opacity;
-  }
-  return Math.min(1, Math.max(0, Math.round(parsed * 100) / 100));
-}
-
-function opacityLabelText(opacity) {
-  return `${Math.round(opacity * 100)}%`;
-}
-
-function legendList(classes) {
-  const list = document.createElement("ul");
-  list.className = "map-legend-list";
-  for (const item of classes) {
-    const row = document.createElement("li");
-    const swatch = document.createElement("span");
-    swatch.className = "map-legend-swatch";
-    swatch.style.backgroundColor = `rgb(${item.rgb.join(", ")})`;
-    const label = document.createElement("span");
-    label.textContent = `${item.value}: ${item.label}`;
-    row.append(swatch, label);
-    list.append(row);
-  }
-  return list;
-}
-
-function formatBounds(bounds) {
-  if (!Array.isArray(bounds)) {
-    return "unknown";
-  }
-  return bounds.map((value) => Number(value).toFixed(4)).join(", ");
-}
-
-function renderMapError(error) {
-  const message = document.createElement("div");
-  message.className = "map-error";
-  const heading = document.createElement("strong");
-  heading.textContent = "Preview artifact could not be loaded.";
-  const detail = document.createElement("span");
-  detail.textContent = ` ${error.message}`;
-  message.append(heading, detail);
-  return message;
-}
-
-function lineStrings(geometry) {
-  if (!geometry) {
-    return [];
-  }
-  if (geometry.type === "LineString") {
-    return [geometry.coordinates];
-  }
-  if (geometry.type === "MultiLineString") {
-    return geometry.coordinates;
-  }
-  if (geometry.type === "Polygon") {
-    return geometry.coordinates;
-  }
-  if (geometry.type === "MultiPolygon") {
-    return geometry.coordinates.flat();
-  }
-  return [];
-}
-
-function projectCoordinate(coordinate, bounds) {
-  const [minLon, minLat, maxLon, maxLat] = bounds;
-  const [lon, lat] = coordinate;
-  const width = maxLon - minLon || 1;
-  const height = maxLat - minLat || 1;
-  const padding = 8;
-  const x = padding + ((lon - minLon) / width) * (100 - padding * 2);
-  const y = 100 - padding - ((lat - minLat) / height) * (100 - padding * 2);
-  return `${x.toFixed(2)},${y.toFixed(2)}`;
-}
-
-function renderBounds(artifact, geojson) {
-  const bounds = validBounds(artifact.bounds) || geoJsonBounds(geojson);
-  return bounds.map((value) => Number(value).toFixed(4)).join(", ");
-}
-
-function validBounds(bounds) {
-  if (
-    Array.isArray(bounds) &&
-    bounds.length === 4 &&
-    bounds.every((value) => Number.isFinite(Number(value)))
-  ) {
-    return bounds.map(Number);
-  }
-  return null;
-}
-
-function geoJsonBounds(geojson) {
-  const coordinates = [];
-  for (const feature of geojson?.features || []) {
-    collectCoordinates(feature.geometry?.coordinates, coordinates);
-  }
-  if (coordinates.length === 0) {
-    return [0, 0, 1, 1];
-  }
-  const lons = coordinates.map((coordinate) => Number(coordinate[0]));
-  const lats = coordinates.map((coordinate) => Number(coordinate[1]));
-  return [Math.min(...lons), Math.min(...lats), Math.max(...lons), Math.max(...lats)];
-}
-
-function collectCoordinates(value, output) {
-  if (!Array.isArray(value)) {
-    return;
-  }
-  if (
-    value.length >= 2 &&
-    Number.isFinite(Number(value[0])) &&
-    Number.isFinite(Number(value[1]))
-  ) {
-    output.push(value);
-    return;
-  }
-  for (const item of value) {
-    collectCoordinates(item, output);
-  }
-}
-
-function featureCount(geojson) {
-  if (!geojson) {
-    return "not loaded";
-  }
-  return geojson.features.length.toLocaleString();
-}
-
-function renderUnavailableMap(record, artifact) {
-  const panel = document.createElement("div");
-  panel.className = "map-unavailable";
-  panel.append(
-    mapPanelHeading(record, "Unavailable"),
-    definitionList([
-      ["Dataset ID", record.dataset_id],
-      ["Source ZIP", record.source_zip_path],
-      ["Artifact source", artifact ? artifactSourceLabel(artifact) : previewManifestStatusLabel()],
-      ["Artifact status", artifact?.artifact_status || "missing"],
-      ["Eligibility", record.preview?.eligibility_status || "unknown"],
-      ["Reason", unavailableReason(record, artifact)],
-      ["Blockers", previewBlockers(record, artifact).join(", ") || "none"],
-      ["Catalog detail", detailRouteLink(record)],
-    ])
-  );
-
-  if (state.previewManifestStatus === "unavailable") {
-    const missing = document.createElement("p");
-    missing.className = "map-warning";
-    missing.textContent = "Preview manifest unavailable. Generate it with python scripts/generate_map_preview_artifacts.py.";
-    panel.append(missing);
-  }
-  return panel;
-}
-
-function artifactUrl(artifact, relativePath) {
-  const baseUrl = artifact?.artifact_base_url || state.previewManifest?.base_url || LOCAL_PREVIEW_ROOT;
-  return `${baseUrl}/${relativePath}`;
-}
-
-function artifactSourceLabel(artifact) {
-  if (artifact?.artifact_source === "published") {
-    return "DataLad published preview index";
-  }
-  if (artifact?.artifact_source === "local") {
-    return "local generated preview artifacts";
-  }
-  return previewManifestStatusLabel();
-}
-
-function previewManifestStatusLabel() {
-  if (state.previewManifestStatus === "published") {
-    return "DataLad published preview index";
-  }
-  if (state.previewManifestStatus === "local") {
-    return "local generated preview artifacts";
-  }
-  return "preview index unavailable";
-}
-
-function mapPanelHeading(record, status) {
-  const heading = document.createElement("div");
-  heading.className = "map-panel-heading";
-  const title = document.createElement("h3");
-  title.textContent = record.title;
-  const badge = document.createElement("span");
-  badge.className = "map-status-badge";
-  badge.textContent = status;
-  heading.append(title, badge);
-  return heading;
-}
-
-function detailRouteLink(record) {
-  const link = document.createElement("a");
-  link.href = `#${encodeURIComponent(record.dataset_id)}`;
-  link.textContent = "Open catalog detail";
-  return link;
-}
-
-function unavailableReason(record, artifact = null) {
-  if (artifact?.artifact_status === "not_previewable") {
-    return "The published preview batch inspected this layer but did not find visible preview pixels.";
-  }
-  if (artifact?.artifact_status) {
-    return `Published preview artifact status is ${artifact.artifact_status}.`;
-  }
-  return (
-    record.preview?.eligibility_reason ||
-    "No generated preview artifact is available for this record."
-  );
-}
-
-function previewBlockers(record, artifact = null) {
-  if (Array.isArray(artifact?.preview_eligibility_blockers)) {
-    return artifact.preview_eligibility_blockers;
-  }
-  return record.preview?.eligibility_blockers || [];
-}
-
-function previewStatusLabel(record) {
-  if (findPreviewArtifact(record.dataset_id)) {
-    return "(preview artifact available)";
-  }
-  return `(${record.preview?.eligibility_status || "preview unavailable"})`;
-}
-
-function detailPanel(title, contentNode) {
-  const section = document.createElement("section");
-  section.className = "detail-panel";
-  const heading = document.createElement("h3");
-  heading.textContent = title;
-  section.append(heading, contentNode);
-  return section;
-}
-
-function definitionList(rows, className = "") {
-  const list = document.createElement("dl");
-  list.className = `detail-list ${className}`.trim();
-
-  for (const [term, value] of rows) {
-    const dt = document.createElement("dt");
-    dt.textContent = term;
-    const dd = document.createElement("dd");
-    renderValue(dd, value);
-    list.append(dt, dd);
-  }
-
-  if (rows.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "empty-detail";
-    empty.textContent = "No recovered values.";
-    return empty;
-  }
-
-  return list;
-}
-
-function renderValue(node, value) {
-  if (Array.isArray(value)) {
-    if (value.length === 0) {
-      node.textContent = "none";
+  function handleFacetChange(event) {
+    const input = event.target.closest("input[data-facet]");
+    if (!input) {
       return;
     }
-    const list = document.createElement("ul");
-    list.className = "inline-list";
-    for (const item of value) {
-      const listItem = document.createElement("li");
-      renderValue(listItem, item);
-      list.append(listItem);
-    }
-    node.append(list);
-    return;
+    const facet = input.dataset.facet;
+    const route = { ...state.route, [facet]: input.value, page: 1 };
+    state.browseScroll = 0;
+    document.body.classList.remove("filters-open");
+    navigate(route, { replace: true });
   }
 
-  if (value && typeof value === "object") {
-    if (value.nodeType || value.tagName) {
-      node.append(value);
+  function clearFacetValue(facet) {
+    if (facet === "query") {
+      els.searchInput.value = "";
+      navigate({ ...state.route, query: "", page: 1 }, { replace: true });
       return;
     }
-    node.append(definitionList(Object.entries(value), "nested-list"));
-    return;
+    navigate({ ...state.route, [facet]: "all", page: 1 }, { replace: true });
   }
 
-  const text = String(value ?? "");
-  if (isLikelyLongQuery(text)) {
-    const details = document.createElement("details");
-    const summary = document.createElement("summary");
-    summary.textContent = "Show preserved query text";
-    const code = document.createElement("pre");
-    code.textContent = text;
-    details.append(summary, code);
-    node.append(details);
-    return;
+  function clearAllFilters() {
+    els.searchInput.value = "";
+    navigate(
+      {
+        ...Catalog.defaultState(),
+        pageSize: state.route.pageSize,
+      },
+      { replace: true }
+    );
   }
 
-  node.textContent = text || "unknown";
-}
-
-function metadataRows(metadata) {
-  return Object.entries(metadata || {}).filter(([, value]) => hasRecoveredValue(value));
-}
-
-function provenanceRows(provenance) {
-  return Object.entries(provenance || {}).filter(([, value]) => hasRecoveredValue(value));
-}
-
-function hasRecoveredValue(value) {
-  if (Array.isArray(value)) {
-    return value.length > 0;
-  }
-  if (value && typeof value === "object") {
-    return Object.keys(value).length > 0;
-  }
-  return value !== null && value !== undefined && String(value).trim() !== "";
-}
-
-function isLikelyLongQuery(value) {
-  const lower = value.toLowerCase();
-  return value.length > 240 && (
-    lower.includes("select ") ||
-    lower.includes(" from ") ||
-    lower.includes(" where ")
-  );
-}
-
-function noteList(record) {
-  const notes = [
-    ...(record.known_gaps || []).map((text) => ["Known gap", text]),
-    ...(record.uncertainty_notes || []).map((text) => ["Uncertainty", text]),
-  ];
-
-  if (notes.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "empty-detail";
-    empty.textContent = "No known gaps or uncertainty notes are recorded.";
-    return empty;
+  function handleSearchInput() {
+    const query = els.searchInput.value;
+    let route = state.route;
+    if (route.view !== "catalog") {
+      route = { ...Catalog.defaultState(), pageSize: route.pageSize };
+    }
+    route = { ...route, query, page: 1 };
+    state.route = route;
+    state.browseScroll = 0;
+    if (state.searchRaf) {
+      cancelAnimationFrame(state.searchRaf);
+    }
+    state.searchRaf = requestAnimationFrame(() => renderBrowse());
+    clearTimeout(state.searchTimer);
+    state.searchTimer = window.setTimeout(() => {
+      navigate(state.route, { replace: true });
+    }, 180);
   }
 
-  const list = document.createElement("ul");
-  list.className = "note-list";
-  for (const [label, text] of notes) {
-    const item = document.createElement("li");
-    const strong = document.createElement("strong");
-    strong.textContent = `${label}: `;
-    item.append(strong, text);
-    list.append(item);
-  }
-  return list;
-}
+  function handleGlobalKeydown(event) {
+    const target = event.target;
+    const typing =
+      target instanceof HTMLElement &&
+      (target.matches("input, textarea, select") || target.isContentEditable);
 
-function commandSnippets(record) {
-  const commands = document.createElement("div");
-  commands.className = "command-list";
-  const datasetId = record.dataset_id;
-
-  commands.append(
-    commandSnippet(
-      "Python lookup",
-      `from fresh_hectaresbc import HectaresBC\n\nrecord = HectaresBC().get("${datasetId}")\nprint(record.title_candidate)`
-    ),
-    commandSnippet("CLI metadata", `fresh-hectaresbc catalog show ${datasetId}`),
-    commandSnippet("Dry-run fetch", `fresh-hectaresbc fetch ${datasetId} --dry-run`)
-  );
-  return commands;
-}
-
-function commandSnippet(label, command) {
-  const snippet = document.createElement("div");
-  snippet.className = "command-snippet";
-
-  const heading = document.createElement("div");
-  heading.className = "command-heading";
-  const title = document.createElement("h4");
-  title.textContent = label;
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "copy-button";
-  button.textContent = "Copy";
-  button.dataset.copy = command;
-  heading.append(title, button);
-
-  const pre = document.createElement("pre");
-  pre.textContent = command;
-  snippet.append(heading, pre);
-  return snippet;
-}
-
-function familyLabel(family) {
-  if (family === "data_layer") {
-    return "Data layer";
-  }
-  if (family === "virtual_layer") {
-    return "Virtual layer";
-  }
-  return family;
-}
-
-controlsNode.addEventListener("input", () => {
-  const form = new FormData(controlsNode);
-  state.query = searchInputNode.value;
-  state.family = form.get("family") || "all";
-  state.sort = sortSelectNode.value;
-  state.pageSize = pageSizeSelectNode.value;
-  renderResults();
-});
-
-window.addEventListener("hashchange", renderRoute);
-
-recordDetailNode.addEventListener("click", async (event) => {
-  const button = event.target.closest("[data-copy]");
-  if (!button) {
-    return;
+    if (event.key === "Escape") {
+      document.body.classList.remove("filters-open", "inspector-open");
+      if (els.helpDialog.open) {
+        els.helpDialog.close();
+      }
+      return;
+    }
+    if (typing) {
+      return;
+    }
+    if (event.key === "/") {
+      event.preventDefault();
+      els.searchInput.focus();
+      els.searchInput.select();
+      return;
+    }
+    if (event.key === "?") {
+      event.preventDefault();
+      openHelp();
+      return;
+    }
+    if (event.key === "f") {
+      event.preventDefault();
+      document.body.classList.toggle("filters-open");
+      return;
+    }
+    if (event.key === "m") {
+      const id = state.route.datasetId || state.selectedId;
+      if (id) {
+        event.preventDefault();
+        openMapFor(id);
+      }
+      return;
+    }
+    if (event.key === "j" || event.key === "k") {
+      const links = [...document.querySelectorAll("[data-result-link]")];
+      if (!links.length) {
+        return;
+      }
+      event.preventDefault();
+      const index = links.indexOf(document.activeElement);
+      const next = event.key === "j" ? index + 1 : index - 1;
+      const clamped = Math.min(Math.max(next, 0), links.length - 1);
+      links[clamped].focus();
+    }
   }
 
-  const originalText = button.textContent;
-  try {
-    await navigator.clipboard.writeText(button.dataset.copy);
-    button.textContent = "Copied";
-  } catch (error) {
-    button.textContent = "Unavailable";
-  }
-  window.setTimeout(() => {
-    button.textContent = originalText;
-  }, 1600);
-});
+  /* ------------------------------------------------------------------ copy */
 
-mapPreviewNode.addEventListener("input", (event) => {
-  const input = event.target.closest("[data-map-control]");
-  if (input) {
-    applyLayerControl(input);
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("Copied to clipboard.");
+    } catch (error) {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.append(textarea);
+      textarea.select();
+      try {
+        document.execCommand("copy");
+        showToast("Copied to clipboard.");
+      } catch (fallbackError) {
+        showToast("Copy failed. Select the text and copy it manually.");
+      } finally {
+        textarea.remove();
+      }
+    }
   }
-});
 
-mapPreviewNode.addEventListener("change", (event) => {
-  const input = event.target.closest("[data-map-control]");
-  if (input) {
-    applyLayerControl(input);
+  async function downloadRecord(datasetId) {
+    await loadDetails();
+    const record = getRecordSync(datasetId);
+    if (!record) {
+      showToast("Dataset metadata is not loaded.");
+      return;
+    }
+    const blob = new Blob([JSON.stringify(record, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${datasetId}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   }
-});
 
-loadCatalog();
+  let toastTimer = null;
+  function showToast(message) {
+    els.toast.textContent = message;
+    els.toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => {
+      els.toast.hidden = true;
+    }, 2200);
+  }
+
+  /* ------------------------------------------------------------------ header */
+
+  function updateHeader(matching = state.records.length) {
+    if (!state.ready) {
+      els.status.textContent = "Loading catalog…";
+      return;
+    }
+    const updated = state.meta?.generated_at
+      ? `updated ${Catalog.formatDate(state.meta.generated_at)}`
+      : "recovered catalog";
+    const noun = state.route.view === "catalog" ? "matching" : "records";
+    els.status.textContent = `${Catalog.formatNumber(matching)} ${noun} · ${updated}`;
+
+    if (state.previewMeta) {
+      els.previewStatus.hidden = false;
+      els.previewStatus.classList.remove("warn");
+      const count = state.previewMeta.available;
+      els.previewStatus.textContent = `${Catalog.formatNumber(count)} ${count === 1 ? "preview" : "previews"}`;
+      els.previewStatus.title =
+        state.previewMeta.kind === "published"
+          ? "Published DataLad preview index"
+          : "Local preview artifacts";
+    } else if (state.previewKind === "loading") {
+      els.previewStatus.hidden = false;
+      els.previewStatus.classList.remove("warn");
+      els.previewStatus.textContent = "Loading previews…";
+    } else {
+      els.previewStatus.hidden = false;
+      els.previewStatus.classList.add("warn");
+      els.previewStatus.textContent = "Preview index unavailable";
+      els.previewStatus.title =
+        "Browse and metadata still work; preview images require the published DataLad preview index.";
+    }
+  }
+
+  function updateTabs() {
+    const datasetId = state.route.datasetId || state.selectedId;
+    els.tabBrowse.href = state.lastBrowseHash || "#/catalog";
+    els.tabBrowse.setAttribute(
+      "aria-selected",
+      state.route.view === "catalog" ? "true" : "false"
+    );
+    if (datasetId) {
+      els.tabMap.href = `#/dataset/${encodeURIComponent(datasetId)}/map`;
+      els.tabMap.removeAttribute("aria-disabled");
+      els.tabMap.title = "Open the map workspace for the selected layer";
+    } else {
+      els.tabMap.href = "#/catalog";
+      els.tabMap.setAttribute("aria-disabled", "true");
+      els.tabMap.title = "Select a layer to open its map";
+    }
+    els.tabMap.setAttribute(
+      "aria-selected",
+      state.route.view === "dataset" && state.route.map ? "true" : "false"
+    );
+  }
+
+  /* ---------------------------------------------------------------- events */
+
+  function bindEvents() {
+    els.searchForm.addEventListener("submit", (event) => event.preventDefault());
+    els.searchInput.addEventListener("input", handleSearchInput);
+    els.searchInput.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        els.searchInput.value = "";
+        navigate({ ...state.route, query: "", page: 1 }, { replace: true });
+      }
+    });
+
+    els.facets.addEventListener("change", handleFacetChange);
+    els.clearFilters.addEventListener("click", clearAllFilters);
+    els.content.addEventListener("click", handleContentClick);
+    els.content.addEventListener("change", handleContentChange);
+    els.inspector.addEventListener("click", handleContentClick);
+    els.sheetBackdrop.addEventListener("click", () => {
+      document.body.classList.remove("filters-open");
+    });
+
+    els.helpButton.addEventListener("click", openHelp);
+    els.helpClose.addEventListener("click", () => els.helpDialog.close());
+    els.helpDialog.addEventListener("click", (event) => {
+      if (event.target === els.helpDialog) {
+        els.helpDialog.close();
+      }
+    });
+
+    document.addEventListener("keydown", handleGlobalKeydown);
+    window.addEventListener("hashchange", scheduleSync);
+    window.addEventListener("popstate", scheduleSync);
+  }
+
+  let syncQueued = false;
+  function scheduleSync() {
+    if (syncQueued) {
+      return;
+    }
+    syncQueued = true;
+    queueMicrotask(() => {
+      syncQueued = false;
+      syncFromLocation();
+    });
+  }
+
+  function syncHeaderHeight() {
+    const header = document.querySelector(".app-header");
+    if (header) {
+      document.documentElement.style.setProperty(
+        "--header-h",
+        `${header.offsetHeight}px`
+      );
+    }
+  }
+
+  function openHelp() {
+    if (els.helpDialog.open) {
+      return;
+    }
+    if (typeof els.helpDialog.showModal === "function") {
+      els.helpDialog.showModal();
+    } else {
+      els.helpDialog.setAttribute("open", "");
+    }
+  }
+
+  /* --------------------------------------------------------------- templates */
+
+  function renderLoading() {
+    els.content.innerHTML = `
+      <div class="browse-view">
+        <div class="result-toolbar">
+          <p class="result-count">Loading catalog…</p>
+        </div>
+        <div class="results">
+          <div class="empty-state"><p><span class="spinner"></span>Loading 2,183 recovered records…</p></div>
+        </div>
+      </div>
+    `;
+  }
+
+  function loadingTemplate(message) {
+    return `<div class="dataset-view"><p class="muted"><span class="spinner"></span>${Catalog.escapeHtml(message)}</p></div>`;
+  }
+
+  function renderLoadError(error) {
+    document.title = "Catalog unavailable · HectaresBC";
+    if (els.liveStatus) {
+      els.liveStatus.textContent = "Catalog data unavailable.";
+    }
+    els.content.innerHTML = `
+      <div class="dataset-view">
+        <div class="error-state">
+          <h3>Catalog data unavailable</h3>
+          <p>${Catalog.escapeHtml(error?.message || "The generated catalog could not be loaded.")}</p>
+          <p>Generate the catalog with <code>python3 scripts/generate_web_catalog.py</code>, then serve the <code>web/</code> directory.</p>
+          <button class="primary-button" type="button" data-retry>Retry</button>
+        </div>
+      </div>
+    `;
+    updateHeader(0);
+  }
+
+  function notFoundTemplate(datasetId) {
+    return `
+      <div class="dataset-view">
+        <div class="error-state">
+          <h3>Dataset not found</h3>
+          <p>No recovered catalog record matches <code>${Catalog.escapeHtml(datasetId || "unknown")}</code>.</p>
+          <p><a class="primary-button" href="${state.lastBrowseHash || "#/catalog"}">Back to catalog</a></p>
+        </div>
+      </div>
+    `;
+  }
+
+  function artifactUrl(artifact, relativePath) {
+    if (!relativePath) {
+      return null;
+    }
+    if (/^https?:/i.test(relativePath)) {
+      return relativePath;
+    }
+    const base = String(artifact?._base || "").replace(/\/$/, "");
+    const path = String(relativePath).replace(/^\//, "");
+    return base ? `${base}/${path}` : path;
+  }
+})();
