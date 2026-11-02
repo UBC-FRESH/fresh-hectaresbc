@@ -1229,6 +1229,7 @@
       ? artifactUrl(reference, reference.artifact_path)
       : null;
     els.content.innerHTML = mapTemplate(record, preview, artifact, bounds);
+    bindMapLayerSearch();
     updateHeader();
     updateTabs();
     if (els.liveStatus) {
@@ -1311,6 +1312,12 @@
             </select>
           </label>
           <button id="map-fit-layer" class="secondary-button" type="button">Fit layer</button>
+          <h2>Change layer</h2>
+          <label class="layer-control map-layer-search-label">
+            <input id="map-layer-search" type="search" placeholder="Find a previewable layer…" autocomplete="off">
+          </label>
+          <p id="map-layer-hint" class="map-layer-hint">${Catalog.formatNumber(state.previewMeta?.available || 0)} previewable layers</p>
+          <div id="map-layer-results" class="map-layer-results" hidden></div>
           <h2>Legend</h2>
           ${legend}
           <p class="muted" style="font-size:0.68rem">Preview overlays are static source-derived images placed on a map using their recovered WGS84 bounds.</p>
@@ -1327,6 +1334,66 @@
         <div id="map-loading" class="map-loading"><span><span class="spinner"></span>Loading map…</span></div>
       </div>
     `;
+  }
+
+  function bindMapLayerSearch() {
+    const input = document.querySelector("#map-layer-search");
+    const results = document.querySelector("#map-layer-results");
+    const hint = document.querySelector("#map-layer-hint");
+    if (!input || !results || !state.previewIndex) {
+      return;
+    }
+    const layers = [...state.previewIndex.values()]
+      .filter((artifact) =>
+        ["source_derived_preview", "already_present"].includes(
+          artifact.artifact_status || artifact.status
+        )
+      )
+      .map((artifact) => ({
+        dataset_id: artifact.dataset_id,
+        title: artifact.title || artifact.dataset_id,
+        family: artifact.source_family || "",
+        text: Catalog.normalizeText(
+          `${artifact.title || ""} ${artifact.dataset_id || ""}`
+        ),
+      }))
+      .sort((left, right) =>
+        left.title.localeCompare(right.title, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        })
+      );
+
+    const renderMatches = (query) => {
+      const tokens = Catalog.normalizeText(query).split(" ").filter(Boolean);
+      if (tokens.length === 0) {
+        results.hidden = true;
+        results.innerHTML = "";
+        if (hint) {
+          hint.textContent = `${Catalog.formatNumber(layers.length)} previewable layers`;
+        }
+        return;
+      }
+      const matches = layers
+        .filter((layer) => tokens.every((token) => layer.text.includes(token)))
+        .slice(0, 8);
+      if (hint) {
+        hint.textContent = `${Catalog.formatNumber(matches.length)} match${matches.length === 1 ? "" : "es"}`;
+      }
+      results.hidden = matches.length === 0;
+      results.innerHTML = matches
+        .map(
+          (layer) =>
+            `<a class="map-layer-result" href="#/dataset/${encodeURIComponent(layer.dataset_id)}/map">` +
+            `<span>${Catalog.escapeHtml(layer.title)}</span>` +
+            `<small>${Catalog.escapeHtml(layer.family.replace("_", " "))}</small>` +
+            `</a>`
+        )
+        .join("");
+    };
+
+    input.addEventListener("input", () => renderMatches(input.value));
+    renderMatches("");
   }
 
   function mapLegendTemplate(artifact) {

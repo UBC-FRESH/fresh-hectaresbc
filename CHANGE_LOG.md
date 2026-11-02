@@ -12,7 +12,7 @@
 - Replaced the hand-written fake-DOM smoke harness with `scripts/smoke_test_web_ui_browser.py`, which checks desktop/tablet/mobile overflow, search-to-inspector navigation, dataset metadata, map loading/fallback, legacy routes, and keyboard focus when Playwright is available.
 - Updated the static asset checks, catalog logic checks, generator tests, server tests, README, web README, and Sphinx browser guide for the new routes, artifacts, and verification commands.
 - Pushed `feature/p19-web-ui-upgrade` and opened draft PR #140 for review.
-- Fixed map discovery after review: initialized the data submodule, fetched the 2,163 published preview PNG payloads from Arbutus (about 37 MB), made `#/map` open a useful default preview layer, enabled the Map tab directly from Browse, added "Preview layers" links, and added `scripts/fetch_web_previews.py` plus a visible missing-preview-image banner for cold checkouts.
+- Fixed map discovery after review: initialized the data submodule, fetched the 2,163 published preview PNG payloads from Arbutus (about 37 MB), made `#/map` open a useful default preview layer, enabled the Map tab directly from Browse, added "Preview layers" links and a searchable change-layer control, and added `scripts/fetch_web_previews.py` plus a visible missing-preview-image banner for cold checkouts.
 
 ## 2026-06-20
 

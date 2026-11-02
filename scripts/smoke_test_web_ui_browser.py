@@ -107,6 +107,9 @@ def main() -> int:
                 assert "BCTS Operating Areas" in page.locator(
                     ".map-title-card h1"
                 ).inner_text()
+                page.fill("#map-layer-search", "bull trout")
+                page.wait_for_selector(".map-layer-result")
+                assert page.locator(".map-layer-result").count() >= 1
                 page.get_by_role("link", name="Preview layers", exact=True).click()
                 page.wait_for_function(
                     "() => location.hash.includes('preview=available')",

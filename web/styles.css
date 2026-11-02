@@ -1431,7 +1431,7 @@ details.technical pre {
   top: 10.5rem;
   left: 0.8rem;
   z-index: 4;
-  width: 15.5rem;
+  width: 17rem;
   max-height: calc(100% - 12rem);
   overflow: auto;
   padding: 0.75rem;
@@ -1466,6 +1466,68 @@ details.technical pre {
   font-size: 0.7rem;
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+
+.map-layer-search-label {
+  display: block;
+}
+
+.map-layer-search-label input {
+  width: 100%;
+  min-height: 1.9rem;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.76rem;
+}
+
+.map-layer-hint {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.map-layer-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-height: 10rem;
+  margin-top: 0.3rem;
+  overflow: auto;
+}
+
+.map-layer-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  padding: 0.3rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.map-layer-result:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+.map-layer-result span {
+  overflow: hidden;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-layer-result small {
+  color: var(--muted);
+  font-size: 0.64rem;
+  text-transform: capitalize;
 }
 
 .layer-legend {
