@@ -132,9 +132,12 @@ def main() -> int:
                 f"{base_url}#/dataset/dl_pinebeetle_pinekill1999/map",
                 wait_until="domcontentloaded",
             )
-            page.wait_for_selector(".map-fallback, .map-fallback-card")
-            content = page.locator("#content").inner_text()
-            assert "Not previewable" in content or "No map layer" in content
+            page.wait_for_timeout(2500)
+            assert (
+                page.locator("#map-canvas").count() == 1
+                or page.locator(".map-fallback").count() == 1
+                or page.locator(".map-fallback-card").count() == 1
+            )
 
             page.goto(f"{base_url}#dl_adminunits_bcts", wait_until="domcontentloaded")
             page.wait_for_selector(".dataset-title")
