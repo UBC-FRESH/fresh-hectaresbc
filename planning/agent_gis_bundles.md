@@ -128,7 +128,10 @@ installed OpenCode CLI with the service user's permissions.
 - Service binds loopback by default; remote binds require `--allow-remote`.
 - Authentication is delegated to the Cloudflare Access/Zero Trust proxy.
 - No credentials are delivered to the browser; the agent uses the CLI's own
-  provider authentication. Do not print credentials in replies.
+  provider authentication. Do not print credentials in replies. The agent
+  environment strips common AWS/Globus credential variables, but it still has
+  the service user's shell permissions; keep the service behind an
+  authenticating proxy.
 - Bundle outputs live under `var/bundles/` (ignored) and are served by ID.
 - Bundle IDs are validated; download paths cannot escape the bundle root.
 - Limits are enforced before clipping; AOI area and layer count are bounded.

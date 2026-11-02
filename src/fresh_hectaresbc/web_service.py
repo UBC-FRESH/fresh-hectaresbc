@@ -163,7 +163,17 @@ def _agent_environment(config: ServiceConfig) -> dict[str, str]:
         else ""
     )
     environment["FRESH_HECTARESBC_PUBLIC_URL"] = config.public_url or ""
-    for name in ("OPENCODE_SESSION_ID", "OPENCODE_TERMINAL"):
+    for name in (
+        "OPENCODE_SESSION_ID",
+        "OPENCODE_TERMINAL",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_SESSION_TOKEN",
+        "AWS_DEFAULT_REGION",
+        "S3_ENDPOINT_URL",
+        "GLOBUS_ACCESS_TOKEN",
+        "GLOBUS_REFRESH_TOKEN",
+    ):
         environment.pop(name, None)
     return environment
 
