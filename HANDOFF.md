@@ -1,10 +1,10 @@
 # Agent Handoff
 
 Date: 2026-11-02
-Branch: `feature/p20-aoi-clip-ui`
-Pull request: https://github.com/UBC-FRESH/fresh-hectaresbc/pull/142
+Branch: `main`
+Latest merged PR: #142 (browser Clip AOI drawer and drawn-geometry bundles)
 Demo host: `https://fresh-hectaresbc.01101.dev`
-Latest merged foundation: #140 (P19/P20 browser UI and agent GIS assistant)
+Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
 ## What Is Implemented
 

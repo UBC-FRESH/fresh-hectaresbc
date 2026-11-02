@@ -322,8 +322,9 @@ hosted workers, a database, or a frontend build pipeline.
 
 ## Phase 20: Agent GIS Assistant And AOI Bundles
 
-Status: implementation in progress on `main`; foundation merged via PR #140.
-Planning: `planning/agent_gis_bundles.md`.
+Status: implementation in progress on `main`; foundation merged via PR #140 and
+the Clip AOI drawer merged via PR #142. Planning:
+`planning/agent_gis_bundles.md`.
 
 Phase 20 adds an optional FastAPI service and browser assistant that can explain
 the UI, search the recovered raster catalog, resolve FEMIC/BC Data Catalogue
