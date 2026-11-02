@@ -89,6 +89,21 @@ Local origin check:
 python scripts/check_demo_service.py --base-url http://127.0.0.1:8030
 ```
 
+For the protected public host, pass a Cloudflare Access service token or an
+authenticated cookie:
+
+```bash
+CF_ACCESS_CLIENT_ID=... \
+CF_ACCESS_CLIENT_SECRET=... \
+python scripts/check_demo_service.py \
+  --base-url https://fresh-hectaresbc.01101.dev
+```
+
+Without credentials the checker reports that Access is enforcing the login flow
+and exits successfully; it does not pretend the app passed. A service token can
+be created under Cloudflare Zero Trust → Access → Service Auth if automated
+checks are wanted.
+
 ## Tile Cache
 
 Tiles are written under `var/tile-cache/`. The service prunes least-recently-used

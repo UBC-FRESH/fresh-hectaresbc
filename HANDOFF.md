@@ -140,6 +140,12 @@ python scripts/check_demo_service.py --base-url http://127.0.0.1:8030
 python scripts/check_demo_service.py --base-url https://fresh-hectaresbc.01101.dev
 ```
 
+The public host is protected by Cloudflare Access. Unauthenticated requests
+redirect to the Globus login and the checker reports that state. For automated
+public checks, supply a Cloudflare Access service token via
+`CF_ACCESS_CLIENT_ID` / `CF_ACCESS_CLIENT_SECRET`, or an authenticated cookie
+via `--cookie`.
+
 Demo data materialized in the clone:
 
 - generated catalog artifacts

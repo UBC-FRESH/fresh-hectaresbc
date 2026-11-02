@@ -15,16 +15,27 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from typing import Any
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
+
+HEADERS: dict[str, str] = {"User-Agent": "fresh-hectaresbc-demo-check"}
+
+
+class _NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: ANN001
+        return None
+
+
+_OPENER = build_opener(_NoRedirect)
 
 
 def _get(url: str, timeout: float) -> tuple[int, bytes, dict[str, str]]:
-    request = Request(url, headers={"User-Agent": "fresh-hectaresbc-demo-check"})
+    request = Request(url, headers=HEADERS)
     try:
-        with urlopen(request, timeout=timeout) as response:
+        with _OPENER.open(request, timeout=timeout) as response:
             return response.status, response.read(), dict(response.headers)
     except HTTPError as exc:
         return exc.code, exc.read(), dict(exc.headers)
@@ -42,15 +53,50 @@ def main() -> int:
     parser.add_argument("--base-url", default="http://127.0.0.1:8030")
     parser.add_argument("--timeout", type=float, default=30.0)
     parser.add_argument("--skip-tiles", action="store_true")
+    parser.add_argument(
+        "--cf-access-client-id",
+        default=os.environ.get("CF_ACCESS_CLIENT_ID"),
+        help="Cloudflare Access service-token client ID for protected hosts.",
+    )
+    parser.add_argument(
+        "--cf-access-client-secret",
+        default=os.environ.get("CF_ACCESS_CLIENT_SECRET"),
+        help="Cloudflare Access service-token client secret.",
+    )
+    parser.add_argument(
+        "--cookie",
+        default=os.environ.get("FRESH_HECTARESBC_CHECK_COOKIE"),
+        help="Optional authenticated Cookie header for a protected host.",
+    )
     args = parser.parse_args()
     base = args.base_url.rstrip("/")
+    if args.cf_access_client_id and args.cf_access_client_secret:
+        HEADERS["CF-Access-Client-Id"] = args.cf_access_client_id
+        HEADERS["CF-Access-Client-Secret"] = args.cf_access_client_secret
+    if args.cookie:
+        HEADERS["Cookie"] = args.cookie
     checks: list[tuple[str, bool, str]] = []
 
     def check(name: str, condition: bool, detail: str = "") -> None:
         checks.append((name, condition, detail))
 
     try:
-        health = _json(f"{base}/api/health", args.timeout)
+        status, body, headers = _get(f"{base}/api/health", args.timeout)
+        location = headers.get("location") or headers.get("Location") or ""
+        access_redirect = "cloudflareaccess.com" in location or any(
+            "cloudflareaccess.com" in str(value) for value in headers.values()
+        )
+        if status in {302, 401, 403} and access_redirect:
+            print(
+                "ACCESS  Cloudflare Access is enforcing the login flow.\n"
+                "        Unauthenticated checks cannot inspect the app.\n"
+                "        Pass CF_ACCESS_CLIENT_ID / CF_ACCESS_CLIENT_SECRET or --cookie "
+                "to check the protected origin."
+            )
+            return 0
+        if status != 200:
+            raise RuntimeError(f"HTTP {status}: {base}/api/health")
+        health = json.loads(body)
         check("health", health.get("status") == "ok", json.dumps(health)[:300])
         check("catalog index", bool(health.get("catalog_index")), "")
         check("preview index", bool(health.get("preview_index")), "")
