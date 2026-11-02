@@ -29,6 +29,10 @@ Latest code commit at handoff: `a0f1abd`
   from the recovered source archive and can reindex partial runs.
 - `scripts/fetch_web_previews.py` fetches the published preview PNG payloads
   from the Arbutus DataLad remote.
+- Preview PNGs are rendered in native CRS (usually EPSG:3005 / BC Albers).
+  `scripts/reproject_map_previews.py` writes ignored EPSG:3857 map overlays
+  under `web/data/map_previews_3857/`; the map route uses those so overlays
+  align with the Web-Mercator basemap. Native previews remain thumbnails.
 
 ### Agent Service And GIS Bundles (P20)
 
@@ -124,6 +128,7 @@ Install / develop:
 cd /srv/shared-data/gep/ws4/fresh-hectaresbc
 source .venv/bin/activate
 python scripts/generate_web_catalog.py
+python scripts/reproject_map_previews.py --workers 8
 python scripts/smoke_test_web_static_app.py
 node scripts/smoke_test_web_catalog_ui.js web/data/catalog.json
 python scripts/smoke_test_web_ui_browser.py

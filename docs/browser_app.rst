@@ -61,6 +61,17 @@ back to the published previews for layers without an override. Use
 ``--dataset-id`` for selected layers or ``--reindex-only`` after an interrupted
 run.
 
+Preview PNGs are in the source raster CRS (usually EPSG:3005 / BC Albers).
+MapLibre image overlays need Web Mercator, so reproject the map images:
+
+.. code-block:: bash
+
+   python scripts/reproject_map_previews.py --workers 8
+
+This writes ignored ``web/data/map_previews_3857/`` overlays with EPSG:3857
+bounds. The map route uses the reprojected images; native previews remain the
+list thumbnails.
+
 The older local BCTS preview generator remains available as a development
 fallback and for the current NRS administrative basemap/reference artifact:
 

@@ -123,7 +123,17 @@ python scripts/generate_highres_web_previews.py \
 The app prefers `data/map_previews_highres/v1/index.json` when it exists and
 falls back to the published 256 px previews for layers without an override.
 Use `--dataset-id` for selected layers or `--reindex-only` after an interrupted
-run. A dataset with a usable
+run.
+
+Native previews are in the source CRS (typically EPSG:3005). Reproject the map
+overlays to Web Mercator so they align with the OpenStreetMap basemap:
+
+```bash
+python scripts/reproject_map_previews.py --workers 8
+```
+
+The output is ignored `web/data/map_previews_3857/`; the map route uses it,
+while native previews remain the list thumbnails. A dataset with a usable
 `wgs84_bounds` and `preview.png` opens in MapLibre with an OpenStreetMap basemap
 and an "Offline" basemap option. Preview images without bounds fall back to a
 static lightbox; `not_previewable` records show an explanatory status panel.

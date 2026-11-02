@@ -21,6 +21,7 @@
 - Added the browser "Ask" assistant panel with UI help, current catalog/map context, tool action chips, markdown links, and bundle download links; it stays hidden unless the service reports an enabled assistant.
 - Added `planning/agent_gis_bundles.md`, web service/agent tests with a synthetic archive, and README/Sphinx documentation for the service, limits, and protected demo deployment.
 - Created a separate demo clone at `fresh-hectaresbc-demo`, materialized its catalog, 2,163 preview PNGs, and local high-resolution overrides, and started the service on local port 8030 for the `fresh-hectaresbc.01101.dev` cloudflared/Cloudflare Access route.
+- Fixed map overlay alignment: preview PNGs are rendered in native CRS (usually EPSG:3005), so added `scripts/reproject_map_previews.py` to write ignored EPSG:3857 map overlays and bounds under `web/data/map_previews_3857/`; the map route now uses the reprojected image, while native previews remain thumbnails. Bumped browser asset versions so cached pre-fix JS/CSS is not reused.
 
 ## 2026-06-20
 

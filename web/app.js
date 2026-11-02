@@ -210,10 +210,11 @@
   }
 
   async function loadPreviewIndex() {
-    const [published, local, highres] = await Promise.all([
+    const [published, local, highres, mercator] = await Promise.all([
       fetchJson(`${PublishedPreviewRoot}/index.json`),
       fetchJson(`${LocalPreviewRoot}/manifest.json`),
       fetchJson("data/map_previews_highres/v1/index.json"),
+      fetchJson("data/map_previews_3857/index.json"),
     ]);
     const manifest = published || local || highres;
     if (!manifest) {
@@ -264,6 +265,31 @@
       highresCount += 1;
     }
 
+    // Map overlays are reprojected to EPSG:3857 so they align with the
+    // OpenStreetMap/Web-Mercator basemap. Native previews remain the
+    // thumbnails; only the map route swaps to the reprojected image.
+    let mercatorCount = 0;
+    for (const layer of mercator?.layers || []) {
+      if (!layer.map_path || !layer.map_bounds_wgs84) {
+        continue;
+      }
+      const current = state.previewIndex.get(layer.dataset_id);
+      if (!current) {
+        continue;
+      }
+      current._map_path = layer.map_path;
+      current._map_base = "data/map_previews_3857";
+      current._map_bounds_wgs84 = layer.map_bounds_wgs84;
+      current._map_crs = layer.map_crs || "EPSG:3857";
+      current._map_width = layer.map_width;
+      current._map_height = layer.map_height;
+      current._map_source = layer.source || "mercator";
+      if (Array.isArray(layer.value_classes) && layer.value_classes.length) {
+        current.value_classes = layer.value_classes;
+      }
+      mercatorCount += 1;
+    }
+
     state.referenceLayers = references.map((layer) => ({
       ...layer,
       _base: base,
@@ -280,6 +306,7 @@
       total: state.previewIndex.size,
       available,
       highresCount,
+      mercatorCount,
       document: manifest,
     };
     updateHeader();
@@ -1257,10 +1284,14 @@
       return;
     }
     const preview = Catalog.previewStatus(record, state.previewIndex);
-    const bounds = window.HectaresBCMap?.validBounds(artifact?.wgs84_bounds);
-    const previewUrl = artifact?.artifact_path
-      ? artifactUrl(artifact, artifact.artifact_path)
-      : null;
+    const bounds =
+      window.HectaresBCMap?.validBounds(artifact?._map_bounds_wgs84) ||
+      window.HectaresBCMap?.validBounds(artifact?.wgs84_bounds);
+    const previewUrl = artifact?._map_path
+      ? artifactUrl({ _base: artifact._map_base }, artifact._map_path)
+      : artifact?.artifact_path
+        ? artifactUrl(artifact, artifact.artifact_path)
+        : null;
     const canMap = preview.status === "available" && previewUrl && bounds;
 
     if (!canMap) {
@@ -1381,7 +1412,7 @@
           <p>${Catalog.escapeHtml(previewExplanation(record, preview))}</p>
           <dl class="kv-list" style="margin-top:0.5rem">
             <dt>Bounds</dt><dd class="mono">${Catalog.escapeHtml(formatBounds(bounds))}</dd>
-            <dt>CRS</dt><dd>${Catalog.escapeHtml(artifact?.crs || "unknown")}</dd>
+            <dt>Map CRS</dt><dd>${Catalog.escapeHtml(artifact?._map_crs || artifact?.crs || "unknown")}</dd>
             <dt>Artifact</dt><dd>${Catalog.escapeHtml(artifact?.artifact_status || "unknown")}</dd>
           </dl>
         </div>

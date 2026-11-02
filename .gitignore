@@ -13,4 +13,5 @@ web/data/catalog.details.json
 web/data/catalog.meta.json
 web/data/map_previews/
 web/data/map_previews_highres/
+web/data/map_previews_3857/
 var/
