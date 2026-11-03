@@ -4,7 +4,7 @@ Date: 2026-11-03
 Status: P19/P20 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
 Latest feature merge: `6f43df9`
-Latest merged PR: #163 (AOI area preflight); tile stats: #161
+Latest merged PR: #165 (Sphinx refresh); AOI preflight: #163
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
@@ -304,7 +304,8 @@ resolution tests. Use the web/agent test command above for this feature set.
 - P19 and P20 are complete; no active implementation branch remains.
 - No open GitHub issues or pull requests at closeout.
 - Final protected public verification and browser smoke checks passed.
-- Sphinx sources refreshed for tiles, COGs, stats, Clip AOI preflight, jobs, and retention; GitHub Pages redeploys from `main`.
+- Sphinx sources refreshed for tiles, COGs, stats, Clip AOI preflight, jobs, and retention.
+- GitHub Pages deploy succeeded; https://ubc-fresh.github.io/fresh-hectaresbc/ matches main `bcf6c06`.
 - Remaining items below are optional follow-ups, not blockers.
 
 ## Optional Follow-Ups
