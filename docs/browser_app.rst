@@ -190,17 +190,24 @@ mode, date, and map attribution.
 Flicker Series
 --------------
 
-The `#/series?layers=<ids>&speed=<ms>` route cycles through two to six previewable
+The `#/series?layers=<ids>&speed=<ms>` route cycles through two to 30 previewable
 layers in the supplied order. The tray's **Flicker series** action builds this
-route from tray order; reorder the tray to define a year or thematic sequence.
-Each layer gets its own MapLibre map with a shared WGS84 extent and synchronized
-pan/zoom. Only the active frame is visible and interactive.
+route from tray order. A single MapLibre map registers one raster source/layer
+per frame and switches the visible layer, so pan/zoom, basemap position, and
+browser resources stay stable across long sequences.
 
 Controls include play/pause, previous/next frame, and fast/normal/slow speeds
 (500/1000/2000 ms). Stepping pauses playback. Reduced-motion preferences start
 the series paused. **Download PNG** exports the active frame with its label,
 dataset ID, frame number, date, and map attribution. A missing-series state is
 shown when fewer than two layers can be loaded.
+
+The **Edit frames** disclosure adds, removes, reorders, and jumps between frames.
+Every edit rewrites the `#/series` URL and restarts playback from frame one.
+Series editing never changes the tray. The **Year sequences** panel detects
+previewable dataset-ID families with at least three four-digit year suffixes,
+sorts them by year, and opens the whole family with one click. Detection is a
+heuristic based on dataset IDs, not metadata date fields.
 
 Saved Searches And Favorites
 ----------------------------

@@ -181,6 +181,12 @@ const malformedSeriesSpeed = browser.parseRoute(
   "#/series?layers=dl_adminunits_bcts&speed=bogus"
 );
 assert.strictEqual(malformedSeriesSpeed.seriesSpeed, 1000);
+const longSeries = browser.parseRoute(
+  "#/series?layers=" +
+    Array.from({ length: 17 }, (_, index) => `layer_${index}`).join(",")
+);
+assert.strictEqual(longSeries.seriesLayers.length, 17);
+assert.strictEqual(browser.parseRoute(browser.buildRoute(longSeries)).seriesLayers.length, 17);
 
 const legacyDetail = browser.parseRoute("#dl_adminunits_bcts");
 assert.strictEqual(legacyDetail.view, "dataset");

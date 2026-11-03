@@ -777,43 +777,137 @@
     };
   }
 
-  async function createSeries({ layers }) {
+  async function createSeries({ container, layers, fitBounds = null }) {
     destroy();
-    const maps = [];
-    try {
-      for (const layer of layers) {
-        maps.push(await createMap({ ...layer, controls: true }));
-      }
-    } catch (error) {
-      destroy();
-      throw error;
+    if (!container || !Array.isArray(layers) || !layers.length) {
+      throw new Error("The series needs at least one layer and a map container.");
     }
-    let syncing = false;
-    const sync = (source) => {
-      if (syncing) {
+    const maplibregl = await ensureMaplibre();
+    const firstBounds = validBounds(layers[0]?.bounds);
+    const parsedFit = validBounds(fitBounds) || firstBounds;
+    if (!parsedFit) {
+      throw new Error("The series layers do not have usable WGS84 bounds.");
+    }
+    const sources = {
+      osm: {
+        type: "raster",
+        tiles: OSM_TILES,
+        tileSize: 256,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors',
+      },
+    };
+    const styleLayers = [
+      {
+        id: "background",
+        type: "background",
+        paint: { "background-color": "#e8eef1" },
+      },
+      {
+        id: "osm",
+        type: "raster",
+        source: "osm",
+        paint: { "raster-opacity": 0.72 },
+      },
+    ];
+    layers.forEach((layer, index) => {
+      const bounds = validBounds(layer?.bounds);
+      if (!bounds) {
+        throw new Error("A series layer does not have usable WGS84 bounds.");
+      }
+      if (!layer.previewUrl && !layer.tileUrl) {
+        throw new Error("A series layer is missing its preview or tile URL.");
+      }
+      const sourceId = `series-${index}`;
+      if (layer.tileUrl) {
+        sources[sourceId] = {
+          type: "raster",
+          tiles: [layer.tileUrl],
+          tileSize: layer.tileSize || 256,
+          minzoom: layer.minzoom || 0,
+          maxzoom: layer.maxzoom || 14,
+          bounds,
+        };
+      } else {
+        sources[sourceId] = {
+          type: "image",
+          url: layer.previewUrl,
+          coordinates: imageCoordinates(bounds),
+        };
+      }
+      styleLayers.push({
+        id: `series-layer-${index}`,
+        type: "raster",
+        source: sourceId,
+        layout: { visibility: index === 0 ? "visible" : "none" },
+        paint: {
+          "raster-opacity": 0.88,
+          "raster-resampling":
+            layer.tileUrl || layer.categorical ? "nearest" : "linear",
+          "raster-fade-duration": 0,
+        },
+      });
+    });
+
+    const map = new maplibregl.Map({
+      container,
+      style: { version: 8, sources, layers: styleLayers },
+      bounds: [
+        [parsedFit[0], parsedFit[1]],
+        [parsedFit[2], parsedFit[3]],
+      ],
+      fitBoundsOptions: { padding: 48 },
+      minZoom: 1,
+      maxZoom: 15,
+      attributionControl: true,
+      preserveDrawingBuffer: true,
+    });
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
+    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
+    map.dragRotate.disable();
+    map.touchZoomRotate.disableRotation();
+
+    let activeIndex = 0;
+    let styleReady = false;
+    const applyActive = () => {
+      if (!styleReady) {
         return;
       }
-      syncing = true;
-      const center = source.getCenter();
-      const zoom = source.getZoom();
-      for (const target of maps) {
-        if (target === source) {
-          continue;
+      layers.forEach((_, index) => {
+        const layerId = `series-layer-${index}`;
+        if (map.getLayer(layerId)) {
+          map.setLayoutProperty(
+            layerId,
+            "visibility",
+            index === activeIndex ? "visible" : "none"
+          );
         }
-        target.jumpTo({ center, zoom, bearing: 0, pitch: 0 });
-      }
-      syncing = false;
+      });
     };
-    for (const map of maps) {
-      map.on("move", () => sync(map));
-    }
+    map.on("load", () => {
+      styleReady = true;
+      map.fitBounds(
+        [
+          [parsedFit[0], parsedFit[1]],
+          [parsedFit[2], parsedFit[3]],
+        ],
+        { padding: 48, duration: 0 }
+      );
+      applyActive();
+      map.__hbcReady = true;
+      requestAnimationFrame(() => map.resize());
+    });
+    activeMaps.add(map);
     return {
-      maps,
-      resize: () => {
-        for (const map of maps) {
-          map.resize();
-        }
+      map,
+      activate: (index) => {
+        activeIndex =
+          ((Number(index) || 0) % layers.length + layers.length) % layers.length;
+        applyActive();
+        return activeIndex;
       },
+      active: () => activeIndex,
+      resize: () => map.resize(),
     };
   }
 
