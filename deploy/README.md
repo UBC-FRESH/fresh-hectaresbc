@@ -124,4 +124,6 @@ tiles when the cache exceeds `FRESH_HECTARESBC_TILE_CACHE_MAX_BYTES` (default
 4 GiB). Budget disk for the tile cache separately from the preview data.
 Optional COG derivatives under `FRESH_HECTARESBC_TILE_COG_ROOT` take priority
 over `zip://` source rasters at high zoom; generate them with
-`scripts/build_tile_cog.py --dataset-id ...`.
+`scripts/build_tile_cog.py --dataset-id ...`. `GET /api/stats` reports
+process-lifetime tile requests, cache hit rate, source mix, latency, and top
+datasets.

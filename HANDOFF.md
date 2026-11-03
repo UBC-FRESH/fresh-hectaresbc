@@ -3,8 +3,8 @@
 Date: 2026-11-03
 Status: P19/P20 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
-Latest feature merge: `dfb191a`
-Latest merged PR: #159 (optional COG derivatives); Clip AOI coverage: #157
+Latest feature merge: `cf392ea`
+Latest merged PR: #161 (tile usage stats); COG derivatives: #159
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
@@ -273,7 +273,7 @@ python scripts/agent_tools.py list-bundles
 
 ## Verified At Handoff
 
-- Web/agent tests: 11 passed in `tests/test_agent_gis.py`, including a drawn
+- Web/agent tests: 12 passed in `tests/test_agent_gis.py`, including a drawn
   GeoJSON bundle, candidate-name extraction, job-history pruning, bundle-output
   retention, and the low-zoom overlay tile path.
 - Browser smoke: desktop/tablet/mobile, search, facets, inspector, dataset,
