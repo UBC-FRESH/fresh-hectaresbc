@@ -3,8 +3,8 @@
 Date: 2026-11-03
 Status: P19/P20/P21/P22/P23/P24/P25/P26/P27 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
-Latest feature merge: `3e6f488`
-Latest merged PR: #210 (compare map height fix); Phase 27: #208
+Latest feature merge: `17eb79a`
+Latest merged PR: #212 (compare wipe mode); compare fix: #210
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
@@ -98,7 +98,7 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 - The map Discover panel finds previewable layers intersecting the current view
   or AOI and adds results to the tray.
 - Browse saves named search views and favorite datasets in local browser storage.
-- `#/compare` provides synchronized side-by-side or draggable-wipe comparison for two map layers.
+- `#/compare` provides synchronized side-by-side or draggable-wipe comparison for two map layers (`mode=wipe`).
 
 ### Agent Service And GIS Bundles (P20)
 
