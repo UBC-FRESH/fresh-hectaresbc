@@ -2382,6 +2382,94 @@ kbd {
   color: var(--danger);
 }
 
+.clip-aoi-library {
+  margin-top: 0.6rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--line);
+}
+
+.clip-aoi-library-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.clip-aoi-library-head h3 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.clip-aoi-library-head .secondary-button {
+  min-height: 1.7rem;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.66rem;
+}
+
+.clip-aoi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-height: 12rem;
+  overflow: auto;
+  margin-top: 0.35rem;
+}
+
+.clip-aoi-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.2rem;
+}
+
+.clip-aoi-apply {
+  flex: 1;
+  min-width: 0;
+  padding: 0.3rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-soft);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.clip-aoi-apply b {
+  display: block;
+  overflow: hidden;
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clip-aoi-apply small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.clip-aoi-apply:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.clip-aoi-delete {
+  min-width: 1.8rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.clip-aoi-delete:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
 .clip-candidates {
   display: flex;
   flex-direction: column;

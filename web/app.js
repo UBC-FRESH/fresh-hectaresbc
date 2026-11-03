@@ -93,6 +93,9 @@
     workspaces: {
       items: [],
     },
+    aois: {
+      items: [],
+    },
     workspace: {
       applied: null,
       view: null,
@@ -183,6 +186,7 @@
     bindEvents();
     loadTray();
     loadWorkspaces();
+    loadAoiLibrary();
     const header = document.querySelector(".app-header");
     if (header && window.ResizeObserver) {
       new ResizeObserver(() => syncHeaderHeight()).observe(header);
@@ -3009,6 +3013,231 @@ python scripts/fetch_web_previews.py</pre>
       .join("")}</div>`;
   }
 
+  const AoiStorageKey = "fresh-hectaresbc.aois.v1";
+
+  function loadAoiLibrary() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(AoiStorageKey) || "[]");
+      state.aois.items = Array.isArray(stored)
+        ? stored.filter(
+            (item) =>
+              item &&
+              typeof item.id === "string" &&
+              typeof item.name === "string" &&
+              (typeof item.query === "string" || item.geometry)
+          )
+        : [];
+    } catch (error) {
+      state.aois.items = [];
+    }
+  }
+
+  function saveAoiLibrary() {
+    try {
+      localStorage.setItem(
+        AoiStorageKey,
+        JSON.stringify(state.aois.items.slice(0, 20))
+      );
+    } catch (error) {
+      // Non-fatal; keep the in-memory list.
+    }
+  }
+
+  function aoiDedupeKey(record) {
+    if (record.query) {
+      return `q:${record.query}|${record.name || ""}`;
+    }
+    if (record.geometry) {
+      return `g:${Math.round(Number(record.area_ha || 0))}|${geometryNumberCount(record.geometry.coordinates)}`;
+    }
+    return "";
+  }
+
+  function rememberAoi(record) {
+    if (!record || (!record.query && !record.geometry)) {
+      return;
+    }
+    const key = aoiDedupeKey(record);
+    if (!key) {
+      return;
+    }
+    const now = new Date().toISOString();
+    const existingIndex = state.aois.items.findIndex(
+      (item) => aoiDedupeKey(item) === key
+    );
+    const existing =
+      existingIndex >= 0 ? state.aois.items[existingIndex] : null;
+    const item = {
+      id: existing?.id || `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+      name: record.name || existing?.name || "AOI",
+      named: Boolean(record.named || existing?.named),
+      query: record.query || null,
+      geometry: record.geometry || null,
+      geometry_omitted: Boolean(record.geometry_omitted),
+      area_ha: Number.isFinite(Number(record.area_ha))
+        ? Number(record.area_ha)
+        : existing?.area_ha || null,
+      created_utc: existing?.created_utc || now,
+      updated_utc: now,
+    };
+    if (existingIndex >= 0) {
+      state.aois.items.splice(existingIndex, 1);
+    }
+    state.aois.items.unshift(item);
+    state.aois.items.sort((left, right) =>
+      String(right.updated_utc).localeCompare(String(left.updated_utc))
+    );
+    state.aois.items = state.aois.items.slice(0, 20);
+    saveAoiLibrary();
+    if (state.clip.open) {
+      renderClipPanel();
+    }
+  }
+
+  function currentAoiRecord() {
+    if (!state.clip.geometry) {
+      return null;
+    }
+    if (state.clip.aoi?.query) {
+      return {
+        name: state.clip.aoi.name || state.clip.name || "Boundary AOI",
+        query: state.clip.aoi.query,
+        geometry: null,
+        area_ha: Number(state.clip.areaHa || state.clip.aoi.area_ha || 0),
+        named: false,
+      };
+    }
+    const count = geometryNumberCount(state.clip.geometry.coordinates);
+    return {
+      name: state.clip.name || "Drawn AOI",
+      query: null,
+      geometry: count <= 2000 ? state.clip.geometry : null,
+      geometry_omitted: count > 2000,
+      area_ha: Number(state.clip.areaHa || 0),
+      named: false,
+    };
+  }
+
+  function saveCurrentAoi() {
+    const record = currentAoiRecord();
+    if (!record) {
+      showToast("Draw or resolve an AOI first.");
+      return;
+    }
+    if (record.geometry_omitted) {
+      showToast("This AOI geometry is too large to save locally.");
+      return;
+    }
+    const name = window.prompt("Name this AOI:", record.name || "AOI");
+    if (!name || !name.trim()) {
+      return;
+    }
+    rememberAoi({ ...record, name: name.trim().slice(0, 80), named: true });
+    showToast("AOI saved to library.");
+  }
+
+  async function applyAoiRecord(id) {
+    const item = state.aois.items.find((candidate) => candidate.id === id);
+    if (!item) {
+      return;
+    }
+    state.clip.areaToken += 1;
+    if (item.geometry) {
+      state.clip.aoi = null;
+      state.clip.geometry = item.geometry;
+      state.clip.name = item.name;
+      state.clip.areaHa = item.area_ha ?? null;
+      state.clip.areaWithinLimit =
+        state.clip.areaHa == null
+          ? null
+          : state.clip.areaHa <= state.clip.maxAreaHa;
+      state.clip.areaPending = state.clip.areaHa == null;
+      state.clip.error = state.clip.areaWithinLimit === false;
+      state.clip.message = state.clip.areaPending
+        ? "Saved AOI restored · checking area…"
+        : clipAoiSummary();
+      state.mapHandle?.__hbc?.setAoi(item.geometry, { fit: true });
+      renderClipPanel();
+      if (state.clip.areaHa == null) {
+        await inspectClipAoi(item.geometry);
+      }
+      return;
+    }
+    if (item.query && state.serviceAvailable) {
+      state.clip.busy = true;
+      state.clip.message = "Restoring saved AOI…";
+      state.clip.areaPending = true;
+      renderClipPanel();
+      try {
+        const response = await fetch("../api/aoi/resolve", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ query: item.query, name: item.name }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.status !== "ok" || !payload.geometry) {
+          throw new Error(payload.detail || "AOI could not be restored");
+        }
+        state.clip.aoi = payload;
+        state.clip.geometry = payload.geometry;
+        state.clip.name = payload.name || item.name;
+        state.clip.areaHa = Number(payload.area_ha || 0);
+        state.clip.areaWithinLimit = state.clip.areaHa <= state.clip.maxAreaHa;
+        state.clip.areaPending = false;
+        state.clip.error = state.clip.areaWithinLimit === false;
+        state.clip.message = clipAoiSummary();
+        state.mapHandle?.__hbc?.setAoi(payload.geometry, { fit: true });
+        rememberAoi({
+          ...item,
+          geometry: null,
+          area_ha: state.clip.areaHa,
+          named: item.named,
+        });
+      } catch (error) {
+        state.clip.areaPending = false;
+        state.clip.error = true;
+        state.clip.message = `Saved AOI could not be restored: ${error.message}`;
+      } finally {
+        state.clip.busy = false;
+        renderClipPanel();
+      }
+      return;
+    }
+    state.clip.error = true;
+    state.clip.message =
+      "This AOI needs the map service or a compact geometry to restore.";
+    renderClipPanel();
+  }
+
+  function deleteAoiRecord(id) {
+    state.aois.items = state.aois.items.filter((item) => item.id !== id);
+    saveAoiLibrary();
+    renderClipPanel();
+  }
+
+  function renderAoiLibraryTemplate() {
+    const items = state.aois.items.slice(0, 10);
+    return `<div class="clip-aoi-library">
+      <div class="clip-aoi-library-head">
+        <h3>AOI library</h3>
+        <button class="secondary-button" type="button" data-clip-save-aoi ${state.clip.geometry ? "" : "disabled"}>Save current</button>
+      </div>
+      ${items.length
+        ? `<div class="clip-aoi-list">${items
+            .map(
+              (item) => `<div class="clip-aoi-row">
+                <button class="clip-aoi-apply" type="button" data-clip-aoi-apply="${Catalog.escapeHtml(item.id)}">
+                  <b>${Catalog.escapeHtml(item.name)}</b>
+                  <small>${item.area_ha ? `${Catalog.formatNumber(item.area_ha)} ha · ` : ""}${item.named ? "saved" : "recent"}</small>
+                </button>
+                <button class="clip-aoi-delete" type="button" data-clip-aoi-delete="${Catalog.escapeHtml(item.id)}" aria-label="Delete ${Catalog.escapeHtml(item.name)}">×</button>
+              </div>`
+            )
+            .join("")}</div>`
+        : '<p class="clip-status">Resolved and drawn AOIs appear here automatically.</p>'}
+    </div>`;
+  }
+
   async function loadAssistantInfo() {
     const info = await fetchJson("../api/agent");
     if (!info || !info.enabled) {
@@ -3407,6 +3636,7 @@ python scripts/fetch_web_previews.py</pre>
         </div>
         <p class="clip-status${state.clip.error ? " error" : ""}">${Catalog.escapeHtml(statusText)}</p>
         ${clipAreaTemplate()}
+        ${renderAoiLibraryTemplate()}
         ${candidates.length ? `<div class="clip-candidates">${candidates
           .map(
             (candidate) =>
@@ -3535,6 +3765,12 @@ python scripts/fetch_web_previews.py</pre>
         state.clip.error = state.clip.areaWithinLimit === false;
         state.clip.message = clipAoiSummary();
         state.mapHandle?.__hbc?.setAoi(payload.geometry, { fit: true });
+        rememberAoi({
+          name: payload.name || state.clip.name,
+          query: payload.query || state.clip.query,
+          area_ha: state.clip.areaHa,
+          named: false,
+        });
       } else {
         state.clip.areaToken += 1;
         state.clip.aoi = null;
@@ -3586,6 +3822,12 @@ python scripts/fetch_web_previews.py</pre>
       state.clip.areaPending = false;
       state.clip.error = state.clip.areaWithinLimit === false;
       state.clip.message = clipAoiSummary();
+      rememberAoi({
+        name: state.clip.name || "Drawn AOI",
+        geometry,
+        area_ha: state.clip.areaHa,
+        named: false,
+      });
     } catch (error) {
       if (token !== state.clip.areaToken) {
         return;
@@ -3996,6 +4238,20 @@ python scripts/fetch_web_previews.py</pre>
     }
     if (target.closest("[data-clip-prepare]")) {
       void prepareClipBundle();
+      return;
+    }
+    if (target.closest("[data-clip-save-aoi]")) {
+      saveCurrentAoi();
+      return;
+    }
+    const applyAoi = target.closest("[data-clip-aoi-apply]");
+    if (applyAoi) {
+      void applyAoiRecord(applyAoi.dataset.clipAoiApply);
+      return;
+    }
+    const deleteAoi = target.closest("[data-clip-aoi-delete]");
+    if (deleteAoi) {
+      deleteAoiRecord(deleteAoi.dataset.clipAoiDelete);
       return;
     }
     const candidate = target.closest("[data-clip-candidate]");

@@ -379,9 +379,23 @@ into a shareable map URL and adds named workspaces in local browser storage.
 - [x] P22.3 Add saved and shareable workspace UI. Child issue: #176.
 - [x] P22.4 Verify and close Phase 22. Child issue: #177.
 
+## Phase 23: Reusable AOI Library
+
+Status: implementation in progress on `feature/p23-aoi-library`.
+Parent issue: #179. Planning: `planning/aoi_library_plan.md`.
+
+Phase 23 stores named and recent AOIs in local browser storage, restores boundary
+AOIs through FEMIC, restores compact drawn AOIs directly, and exposes apply/delete
+actions in the Clip drawer.
+
+- [x] P23.1 Plan AOI library storage and restore. Child issue: #180.
+- [x] P23.2 Add AOI persistence and Clip restore. Child issue: #181.
+- [x] P23.3 Add AOI library UI and browser coverage. Child issue: #182.
+- [ ] P23.4 Verify and close Phase 23. Child issue: #183.
+
 ## Current Next Steps
 
-1. Complete P22.1 planning contract and close child issue #174.
-2. Implement P22.2 workspace encoding and restore.
-3. Implement P22.3 save/share UI and local workspaces.
-4. Open the Phase 22 PR, verify, merge, and close parent #173.
+1. Complete P23.1 planning contract and close child issue #180.
+2. Implement P23.2 persistence and restore.
+3. Implement P23.3 UI and browser coverage.
+4. Open the Phase 23 PR, verify, merge, and close parent #179.
