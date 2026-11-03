@@ -601,6 +601,18 @@
     map.on("touchend", onTouchEnd);
   }
 
+  function validView(view) {
+    if (!view || !Array.isArray(view.center) || view.center.length < 2) {
+      return null;
+    }
+    const center = view.center.map(Number);
+    const zoom = Number(view.zoom);
+    if (!center.every(Number.isFinite) || !Number.isFinite(zoom)) {
+      return null;
+    }
+    return { center, zoom };
+  }
+
   async function create(options) {
     const {
       container,
@@ -617,6 +629,7 @@
       onError = null,
       categorical = false,
       extraLayers = [],
+      view = null,
     } = options;
 
     const parsed = validBounds(bounds);
@@ -661,13 +674,18 @@
 
     map.on("load", () => {
       map.__hbcReady = true;
-      map.fitBounds(
-        [
-          [parsed[0], parsed[1]],
-          [parsed[2], parsed[3]],
-        ],
-        { padding: 48, duration: 0 }
-      );
+      const initialView = validView(view);
+      if (initialView) {
+        map.jumpTo({ center: initialView.center, zoom: initialView.zoom });
+      } else {
+        map.fitBounds(
+          [
+            [parsed[0], parsed[1]],
+            [parsed[2], parsed[3]],
+          ],
+          { padding: 48, duration: 0 }
+        );
+      }
       requestAnimationFrame(() => map.resize());
       loading?.remove();
     });
@@ -687,6 +705,19 @@
       setIdentifyMode: (enabled, callback) =>
         setIdentifyMode(map, enabled, callback),
       clearIdentify: () => clearIdentify(map),
+      getView: () => {
+        const center = map.getCenter();
+        return { center: [center.lng, center.lat], zoom: map.getZoom() };
+      },
+      setView: (nextView) => {
+        const parsedView = validView(nextView);
+        if (parsedView) {
+          map.jumpTo({
+            center: parsedView.center,
+            zoom: parsedView.zoom,
+          });
+        }
+      },
     };
     activeMap = map;
     return map;

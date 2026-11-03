@@ -18,6 +18,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_tray_browser.py
    python scripts/smoke_test_bundles_browser.py
    python scripts/smoke_test_identify_browser.py
+   python scripts/smoke_test_workspace_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -162,6 +163,30 @@ downloads. It shows job status/progress, AOI names and areas, layer counts,
 failure counts, timestamps, download links, manifest links, cancellation, and
 failed-layer retry. It refreshes active jobs while the route is open and
 provides an explicit Refresh action.
+
+Saved And Shareable Workspaces
+------------------------------
+
+The tray drawer can save a named workspace in local browser storage and copy a
+shareable map link. A workspace encodes:
+
+- the primary map layer;
+- tray/context layers;
+- map center and zoom;
+- a compact drawn AOI, or a FEMIC boundary query/name;
+- selected Clip layers.
+
+The encoded state is carried in the map route `w` query parameter:
+
+.. code-block:: text
+
+   #/dataset/<primary>/map?w=<encoded>
+   #/map?w=<encoded>
+
+Boundary AOIs are re-resolved when the workspace opens. Drawn AOI geometry is
+included only when compact (2,000 coordinate numbers or fewer); otherwise it is
+omitted with a clear message. Saved workspaces are local to the browser; no
+account or server-side workspace storage is required.
 
 Click-To-Identify
 -----------------

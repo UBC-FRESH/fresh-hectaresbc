@@ -479,6 +479,7 @@
       page: 1,
       pageSize: 50,
       layers: [],
+      workspace: null,
     };
   }
 
@@ -542,6 +543,7 @@
       state.map = parts[2] === "map";
       if (state.map) {
         state.layers = parseLayerIds(params);
+        state.workspace = params.get("w") || null;
       }
       return state;
     }
@@ -551,6 +553,7 @@
       state.map = true;
       state.datasetId = params.get("id") || null;
       state.layers = parseLayerIds(params);
+      state.workspace = params.get("w") || null;
       return state;
     }
 
@@ -607,24 +610,29 @@
   }
 
   function buildRoute(state) {
-    const layerQuery = state.layers?.length
-      ? `layers=${encodeURIComponent(state.layers.join(","))}`
-      : "";
+    const mapParams = new URLSearchParams();
+    if (state.layers?.length) {
+      mapParams.set("layers", state.layers.join(","));
+    }
+    if (state.workspace) {
+      mapParams.set("w", state.workspace);
+    }
+    const mapQuery = mapParams.toString();
     if (state.view === "bundles") {
       return "#/bundles";
     }
     if (state.view === "dataset" && state.datasetId) {
       const suffix = state.map ? "/map" : "";
-      const query = state.map && layerQuery ? `?${layerQuery}` : "";
+      const query = state.map && mapQuery ? `?${mapQuery}` : "";
       return `#/dataset/${encodeURIComponent(state.datasetId)}${suffix}${query}`;
     }
 
     if (state.view === "map") {
       if (state.datasetId) {
-        const query = layerQuery ? `?${layerQuery}` : "";
+        const query = mapQuery ? `?${mapQuery}` : "";
         return `#/dataset/${encodeURIComponent(state.datasetId)}/map${query}`;
       }
-      return layerQuery ? `#/map?${layerQuery}` : "#/map";
+      return mapQuery ? `#/map?${mapQuery}` : "#/map";
     }
 
     const params = new URLSearchParams();

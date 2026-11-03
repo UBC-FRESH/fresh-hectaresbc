@@ -367,9 +367,22 @@ service boundary intact.
 - [x] P21.4 Add click-to-identify raster values. Child issue: #170.
 - [x] P21.5 Verify and close Phase 21. Child issue: #171.
 
+## Phase 22: Saved And Shareable Workspaces
+
+Status: implementation in progress on `feature/p22-workspaces`.
+Parent issue: #173. Planning: `planning/workspace_persistence_plan.md`.
+
+Phase 22 encodes tray layers, primary layer, map view, AOI, and Clip selections
+into a shareable map URL and adds named workspaces in local browser storage.
+
+- [x] P22.1 Plan workspace route and restore contract. Child issue: #174.
+- [x] P22.2 Add map view state and workspace restore. Child issue: #175.
+- [x] P22.3 Add saved and shareable workspace UI. Child issue: #176.
+- [ ] P22.4 Verify and close Phase 22. Child issue: #177.
+
 ## Current Next Steps
 
-1. Complete P21.1 planning contract and close child issue #167.
-2. Implement P21.2 layer tray and multi-layer map.
-3. Implement P21.3 history and P21.4 identify.
-4. Open the Phase 21 PR, verify, merge, and close parent #166.
+1. Complete P22.1 planning contract and close child issue #174.
+2. Implement P22.2 workspace encoding and restore.
+3. Implement P22.3 save/share UI and local workspaces.
+4. Open the Phase 22 PR, verify, merge, and close parent #173.

@@ -19,7 +19,9 @@ Current capabilities include:
 * an optional FastAPI service with on-demand 1-ha raster tiles, low-zoom overlay
   and optional COG fast paths, tile-cache and usage statistics, the OpenCode
   assistant, FEMIC boundary resolution, AOI area preflight, clipped raster
-  bundle jobs with progress/cancel/retry, and configurable output retention.
+  bundle jobs with progress/cancel/retry, and configurable output retention;
+* saved and shareable browser workspaces that restore tray layers, map view,
+  AOI, and Clip selections.
 
 Important current limits:
 
