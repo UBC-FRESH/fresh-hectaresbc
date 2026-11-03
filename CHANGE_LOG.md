@@ -219,3 +219,4 @@
 - Completed and merged Phase 25 via PR #196: map bounds APIs, preview-bound spatial discovery, view/AOI sources, filtering, bulk tray add, and browser coverage.
 - Activated Phase 26 saved Browse searches and favorites with parent issue #197, child issues #198-#201, and planning/saved_browse_plan.md.
 - Completed P26.2/P26.3 with local saved Browse searches, favorite dataset toggles on rows/cards/detail, a saved rail, delete/open actions, and mocked browser coverage.
+- Completed and merged Phase 26 via PR #202: local saved Browse searches, favorite dataset toggles, saved rail, and browser coverage.
