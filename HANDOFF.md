@@ -83,6 +83,8 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   - enabled only when `/api/health` reports a running service
 - Bundle jobs run one at a time in a single worker, persist under
   `var/bundles/jobs/`, and are marked `interrupted` after a service restart.
+  Terminal job records are pruned on startup and after each finished job
+  (100 records / 30 days by default; configurable).
   The synchronous `/api/bundles` endpoint remains for CLI/script clients.
 - FEMIC bridge: `src/fresh_hectaresbc/femic_bridge.py`
   - resolves BC Data Catalogue boundary packages
@@ -244,8 +246,8 @@ python scripts/agent_tools.py list-bundles
 
 ## Verified At Handoff
 
-- Web/agent tests: 7 passed in `tests/test_agent_gis.py`, including a drawn
-  GeoJSON bundle and candidate-name extraction.
+- Web/agent tests: 8 passed in `tests/test_agent_gis.py`, including a drawn
+  GeoJSON bundle, candidate-name extraction, and job-history pruning.
 - Browser smoke: desktop/tablet/mobile, search, facets, inspector, dataset,
   `#/map`, map fallback, legacy routes, keyboard.
 - Sphinx `-W`: passed (recheck after documentation edits).
@@ -267,12 +269,10 @@ resolution tests. Use the web/agent test command above for this feature set.
 ## Next Steps
 
 1. Keep the Cloudflare Access/Globus OAuth policy restricted to UBC CWL.
-2. Add job-history retention/pruning so `var/bundles/jobs/` does not grow
-   indefinitely.
-3. Optionally harden tile throughput with COG/TiTiler if tile latency becomes
+2. Optionally harden tile throughput with COG/TiTiler if tile latency becomes
    visible.
-4. If more layers should be sharp, continue generating 2048 px overrides with
+3. If more layers should be sharp, continue generating 2048 px overrides with
    `scripts/generate_highres_web_previews.py --family data_layer ...` and
    `--reindex-only` after interrupted runs.
-5. If the demo clone is recreated, re-materialize previews and high-res
+4. If the demo clone is recreated, re-materialize previews and high-res
    overrides; they are generated/ignored data, not tracked.

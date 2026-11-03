@@ -189,3 +189,4 @@
 - Added an in-process bundle job queue (`/api/bundle-jobs`, status polling, cancellation) with one worker, progress callbacks from the clipping loop, per-layer stage messages, persisted job JSON, and `interrupted` recovery after service restarts.
 - Updated the Clip AOI drawer to submit jobs, poll progress, show a striped progress bar and current-layer status, cancel between layers, and keep the synchronous `/api/bundles` endpoint for CLI/script clients.
 - Added expandable per-layer failure details and a retry action that re-queues only the failed layer IDs with the same AOI; bumped browser asset cache keys to `p27`.
+- Added terminal bundle job retention with default 100-record / 30-day pruning on startup and after each finished job, configurable through CLI/env settings; active jobs are preserved and health reports job counts.

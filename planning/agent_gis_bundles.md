@@ -154,9 +154,12 @@ request through the Cloudflare proxy.
 
 Jobs run one at a time in a single worker, are persisted under
 `var/bundles/jobs/`, and are marked `interrupted` if the service restarts while
-they are queued or running. Cancellation is best-effort: it is checked before
-AOI clipping, between layers, and before packaging; a layer already being
-clipped finishes before the job stops.
+they are queued or running. Terminal job records are pruned on startup and after
+each finished job: the newest 100 are kept by default, and records older than 30
+days are removed (`FRESH_HECTARESBC_JOB_HISTORY_LIMIT` and
+`FRESH_HECTARESBC_JOB_HISTORY_MAX_AGE_DAYS`). Cancellation is best-effort: it is
+checked before AOI clipping, between layers, and before packaging; a layer
+already being clipped finishes before the job stops.
 
 ## Assistant Tools
 
@@ -194,6 +197,8 @@ installed OpenCode CLI with the service user's permissions.
 - Bundle IDs are validated; download paths cannot escape the bundle root.
 - Bundle jobs are serialized through one worker and persisted under
   `var/bundles/jobs/`; cancellation is checked between clipping steps.
+- Terminal job records are pruned by count and age on startup and after each
+  finished job; active jobs are never pruned.
 - Browser-drawn AOI geometry is validated as a finite Polygon/MultiPolygon,
   bounded in coordinate count, and written under `var/bundles/aoi/`; no
   client-supplied filesystem paths are accepted.

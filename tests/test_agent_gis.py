@@ -1,6 +1,7 @@
 import json
 import time
 import zipfile
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -139,6 +140,63 @@ def test_candidate_options_extract_human_boundary_name() -> None:
             "name": "Revelstoke TSA",
         }
     ]
+
+
+def test_bundle_job_history_prunes_old_terminal_records(tmp_path: Path) -> None:
+    from fresh_hectaresbc.jobs import BundleJobManager
+
+    jobs_dir = tmp_path / "bundles" / "jobs"
+    jobs_dir.mkdir(parents=True)
+    now = datetime.now(UTC)
+    for index in range(4):
+        job_id = f"2026010{index}T000000Z-aaaaaaaa"
+        payload = {
+            "job_id": job_id,
+            "status": "complete",
+            "created_utc": (now - timedelta(days=index)).isoformat(),
+            "finished_utc": (now - timedelta(days=index)).isoformat(),
+            "result": None,
+            "error": None,
+        }
+        (jobs_dir / f"{job_id}.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+
+    manager = BundleJobManager(
+        output_root=tmp_path / "bundles",
+        job_history_limit=2,
+        job_history_max_age_days=3650,
+    )
+    try:
+        assert len(list(jobs_dir.glob("*.json"))) == 2
+        assert manager.stats()["total"] == 2
+    finally:
+        manager.close()
+
+    age_dir = tmp_path / "aged" / "jobs"
+    age_dir.mkdir(parents=True)
+    old_id = "20250101T000000Z-bbbbbbbb"
+    new_id = "20260101T000000Z-cccccccc"
+    for job_id, days in ((old_id, 100), (new_id, 0)):
+        payload = {
+            "job_id": job_id,
+            "status": "complete",
+            "created_utc": (now - timedelta(days=days)).isoformat(),
+            "finished_utc": (now - timedelta(days=days)).isoformat(),
+        }
+        (age_dir / f"{job_id}.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+    manager = BundleJobManager(
+        output_root=tmp_path / "aged",
+        job_history_limit=10,
+        job_history_max_age_days=30,
+    )
+    try:
+        assert not (age_dir / f"{old_id}.json").exists()
+        assert (age_dir / f"{new_id}.json").exists()
+    finally:
+        manager.close()
 
 
 def test_tiles_render_source_raster_without_preview(tmp_path: Path) -> None:
