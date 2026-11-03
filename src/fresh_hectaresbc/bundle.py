@@ -6,6 +6,7 @@ import json
 import shutil
 import uuid
 import zipfile
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,19 @@ DEFAULT_MAX_AREA_HA = 10_000_000.0
 
 class BundleError(RuntimeError):
     """Raised when an AOI bundle cannot be prepared safely."""
+
+
+class BundleCancelled(RuntimeError):
+    """Raised when a bundle job is cancelled between clipping steps."""
+
+
+ProgressCallback = Callable[[dict[str, Any]], None]
+CancelCheck = Callable[[], bool]
+
+
+def _progress(callback: ProgressCallback | None, payload: dict[str, Any]) -> None:
+    if callback is not None:
+        callback(payload)
 
 
 def _bundle_id() -> str:
@@ -92,6 +106,8 @@ def prepare_bundle(
     max_layers: int = DEFAULT_MAX_LAYERS,
     max_area_ha: float = DEFAULT_MAX_AREA_HA,
     public_url: str | None = None,
+    progress_callback: ProgressCallback | None = None,
+    cancel_check: CancelCheck | None = None,
 ) -> dict[str, Any]:
     """Resolve an AOI, clip selected rasters, and write a downloadable ZIP."""
 
@@ -102,6 +118,16 @@ def prepare_bundle(
         raise BundleError(
             f"Select at most {max_layers} layers per demo bundle; requested {len(unique_layers)}."
         )
+
+    _progress(
+        progress_callback,
+        {
+            "stage": "resolving_aoi",
+            "layer_total": len(unique_layers),
+            "completed": 0,
+            "failed": 0,
+        },
+    )
 
     hbc = HectaresBC()
     records = {}
@@ -167,7 +193,30 @@ def prepare_bundle(
 
     clipped: list[dict[str, Any]] = []
     failures: list[dict[str, str]] = []
-    for dataset_id in unique_layers:
+    _progress(
+        progress_callback,
+        {
+            "stage": "clipping",
+            "layer_total": len(unique_layers),
+            "layer_index": 0,
+            "completed": 0,
+            "failed": 0,
+        },
+    )
+    for index, dataset_id in enumerate(unique_layers, start=1):
+        if cancel_check is not None and cancel_check():
+            raise BundleCancelled("Bundle canceled.")
+        _progress(
+            progress_callback,
+            {
+                "stage": "clipping",
+                "layer_total": len(unique_layers),
+                "layer_index": index,
+                "current_layer": dataset_id,
+                "completed": len(clipped),
+                "failed": len(failures),
+            },
+        )
         try:
             result = clip_raster_to_aoi(
                 dataset_id,
@@ -180,6 +229,29 @@ def prepare_bundle(
             )
         except (ClipError, OSError, ValueError) as exc:
             failures.append({"dataset_id": dataset_id, "error": str(exc)})
+        _progress(
+            progress_callback,
+            {
+                "stage": "clipping",
+                "layer_total": len(unique_layers),
+                "layer_index": index,
+                "current_layer": dataset_id,
+                "completed": len(clipped),
+                "failed": len(failures),
+            },
+        )
+
+    if cancel_check is not None and cancel_check():
+        raise BundleCancelled("Bundle canceled.")
+    _progress(
+        progress_callback,
+        {
+            "stage": "packaging",
+            "layer_total": len(unique_layers),
+            "completed": len(clipped),
+            "failed": len(failures),
+        },
+    )
 
     manifest = {
         "schema_version": 1,

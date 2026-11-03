@@ -91,6 +91,10 @@
       selected: new Set(),
       search: "",
       busy: false,
+      jobId: null,
+      job: null,
+      progress: 0,
+      pollTimer: null,
       message: "",
       error: false,
       lastResult: null,
@@ -2219,6 +2223,7 @@ python scripts/fetch_web_previews.py</pre>
   }
 
   function resetClipState() {
+    stopClipPolling();
     state.clip.aoi = null;
     state.clip.geometry = null;
     state.clip.candidates = [];
@@ -2226,6 +2231,10 @@ python scripts/fetch_web_previews.py</pre>
     state.clip.lastResult = null;
     state.clip.message = "";
     state.clip.error = false;
+    state.clip.busy = false;
+    state.clip.jobId = null;
+    state.clip.job = null;
+    state.clip.progress = 0;
     state.mapHandle?.__hbc?.cancelRectangleDraw?.();
     state.mapHandle?.__hbc?.clearAoi?.();
   }
@@ -2360,7 +2369,7 @@ python scripts/fetch_web_previews.py</pre>
         <div class="clip-actions">
           <button class="primary-button" type="button" data-clip-resolve ${state.clip.busy ? "disabled" : ""}>Resolve boundary</button>
           <button class="secondary-button" type="button" data-clip-draw ${state.clip.busy ? "disabled" : ""}>Draw box</button>
-          <button class="secondary-button" type="button" data-clip-clear>Clear AOI</button>
+          <button class="secondary-button" type="button" data-clip-clear ${state.clip.busy ? "disabled" : ""}>Clear AOI</button>
         </div>
         <p class="clip-status${state.clip.error ? " error" : ""}">${Catalog.escapeHtml(state.clip.message || clipAoiSummary())}</p>
         ${candidates.length ? `<div class="clip-candidates">${candidates
@@ -2385,7 +2394,12 @@ python scripts/fetch_web_previews.py</pre>
       </section>
       <section class="clip-section">
         <h3>Bundle</h3>
-        <button class="primary-button" type="button" data-clip-prepare ${canPrepare ? "" : "disabled"}>${state.clip.busy ? "Preparing…" : "Prepare bundle"}</button>
+        <div class="clip-actions">
+          <button class="primary-button" type="button" data-clip-prepare ${canPrepare ? "" : "disabled"}>${state.clip.busy ? "Preparing…" : "Prepare bundle"}</button>
+          ${state.clip.jobId ? '<button class="secondary-button" type="button" data-clip-cancel>Cancel job</button>' : ""}
+        </div>
+        ${state.clip.jobId ? `<div class="clip-progress" role="progressbar" aria-label="Bundle progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(state.clip.progress || 0)}"><div class="clip-progress-bar" style="width:${Math.max(0, Math.min(100, Number(state.clip.progress || 0)))}%"></div></div>` : ""}
+        ${state.clip.jobId ? `<p class="clip-status${state.clip.error ? " error" : ""}">${Catalog.escapeHtml(state.clip.message || "Preparing bundle…")}</p>` : ""}
         ${clipResultTemplate()}
         <p class="clip-status">Bundles are limited to 6 layers and 10,000,000 ha. Clipping runs from the recovered source rasters.</p>
       </section>
@@ -2424,12 +2438,16 @@ python scripts/fetch_web_previews.py</pre>
       }
     }
     renderClipPanel();
+    if (state.clip.jobId && state.clip.busy) {
+      scheduleClipPoll(0);
+    }
     void loadRecentBundles();
   }
 
   function closeClipPanel() {
     state.clip.open = false;
     els.clipPanel.hidden = true;
+    stopClipPolling();
     state.mapHandle?.__hbc?.cancelRectangleDraw?.();
   }
 
@@ -2524,6 +2542,34 @@ python scripts/fetch_web_previews.py</pre>
     });
   }
 
+  const ClipTerminalJobStatuses = new Set([
+    "complete",
+    "partial",
+    "failed",
+    "canceled",
+    "needs_name",
+    "ambiguous",
+    "interrupted",
+  ]);
+
+  function stopClipPolling() {
+    if (state.clip.pollTimer) {
+      clearTimeout(state.clip.pollTimer);
+      state.clip.pollTimer = null;
+    }
+  }
+
+  function scheduleClipPoll(delay = 1200) {
+    stopClipPolling();
+    if (!state.clip.open) {
+      return;
+    }
+    state.clip.pollTimer = setTimeout(() => {
+      state.clip.pollTimer = null;
+      void pollClipJob();
+    }, delay);
+  }
+
   async function prepareClipBundle() {
     if (state.clip.busy) {
       return;
@@ -2541,13 +2587,17 @@ python scripts/fetch_web_previews.py</pre>
       renderClipPanel();
       return;
     }
+    stopClipPolling();
     state.clip.busy = true;
     state.clip.error = false;
     state.clip.lastResult = null;
-    state.clip.message = `Preparing ${layerIds.length} layer${layerIds.length === 1 ? "" : "s"}…`;
+    state.clip.jobId = null;
+    state.clip.job = null;
+    state.clip.progress = 0;
+    state.clip.message = `Queuing ${layerIds.length} layer${layerIds.length === 1 ? "" : "s"}…`;
     renderClipPanel();
     try {
-      const response = await fetch("../api/bundles", {
+      const response = await fetch("../api/bundle-jobs", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -2558,28 +2608,147 @@ python scripts/fetch_web_previews.py</pre>
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        throw new Error(payload.detail || `bundle failed (${response.status})`);
+        throw new Error(payload.detail || `bundle job failed (${response.status})`);
       }
-      if (payload.status === "needs_name" || payload.status === "ambiguous") {
-        state.clip.candidates =
-          payload.aoi?.candidate_options || payload.aoi?.candidates || [];
-        state.clip.message = "Choose a boundary feature.";
-      } else {
-        state.clip.lastResult = payload;
-        state.clip.message =
-          payload.status === "complete"
-            ? "Bundle ready."
-            : payload.status === "partial"
-              ? "Bundle ready with some layer failures."
-              : "Bundle failed; inspect the failures.";
-        state.clip.error = payload.status === "failed";
+      const job = payload.job || {
+        job_id: payload.job_id,
+        status: payload.status || "queued",
+        progress: 0,
+        message: "Bundle job queued.",
+      };
+      state.clip.jobId = payload.job_id || job.job_id;
+      state.clip.job = job;
+      state.clip.progress = Number(job.progress || 0);
+      state.clip.message = job.message || "Bundle job queued.";
+      if (ClipTerminalJobStatuses.has(job.status)) {
+        await finishClipJob(job);
+        return;
       }
+      renderClipPanel();
+      scheduleClipPoll(750);
+    } catch (error) {
+      state.clip.busy = false;
+      state.clip.jobId = null;
+      state.clip.progress = 0;
+      state.clip.error = true;
+      state.clip.message = `Could not start bundle job: ${error.message}`;
+      renderClipPanel();
+    }
+  }
+
+  async function pollClipJob() {
+    const jobId = state.clip.jobId;
+    if (!jobId) {
+      return;
+    }
+    try {
+      const response = await fetch(
+        `../api/bundle-jobs/${encodeURIComponent(jobId)}`
+      );
+      if (state.clip.jobId !== jobId) {
+        return;
+      }
+      const job = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(job.detail || `job status failed (${response.status})`);
+      }
+      state.clip.job = job;
+      state.clip.progress = Number(job.progress || 0);
+      state.clip.message = job.message || "Preparing bundle…";
+      state.clip.error = job.status === "failed";
+      if (ClipTerminalJobStatuses.has(job.status)) {
+        await finishClipJob(job);
+        return;
+      }
+      renderClipPanel();
+      scheduleClipPoll(1200);
+    } catch (error) {
+      if (state.clip.jobId !== jobId) {
+        return;
+      }
+      state.clip.busy = false;
+      state.clip.jobId = null;
+      state.clip.progress = 0;
+      state.clip.error = true;
+      state.clip.message = `Could not read bundle job: ${error.message}`;
+      renderClipPanel();
+    }
+  }
+
+  async function finishClipJob(job) {
+    state.clip.busy = false;
+    state.clip.jobId = null;
+    state.clip.job = job;
+    const result = job.result;
+    if (job.status === "canceled") {
+      state.clip.progress = 0;
+      state.clip.message = "Bundle job canceled.";
+      state.clip.error = false;
+    } else if (job.status === "interrupted") {
+      state.clip.progress = 0;
+      state.clip.message = job.message || "Bundle job was interrupted.";
+      state.clip.error = true;
+    } else if (
+      job.status === "needs_name" ||
+      job.status === "ambiguous" ||
+      result?.status === "needs_name" ||
+      result?.status === "ambiguous"
+    ) {
+      state.clip.progress = 0;
+      state.clip.candidates =
+        result?.aoi?.candidate_options || result?.aoi?.candidates || [];
+      state.clip.message = "Choose a boundary feature.";
+      state.clip.error = false;
+    } else if (result) {
+      state.clip.lastResult = result;
+      state.clip.progress = result.status === "failed" ? 0 : 100;
+      state.clip.message =
+        result.status === "complete"
+          ? "Bundle ready."
+          : result.status === "partial"
+            ? "Bundle ready with some layer failures."
+            : "Bundle failed; inspect the failures.";
+      state.clip.error = result.status === "failed";
+    } else {
+      state.clip.progress = 0;
+      state.clip.message = job.message || "Bundle job finished.";
+      state.clip.error = job.status === "failed";
+    }
+    if (job.status === "complete" || job.status === "partial") {
+      await loadRecentBundles();
+    }
+    renderClipPanel();
+  }
+
+  async function cancelClipJob() {
+    const jobId = state.clip.jobId;
+    if (!jobId) {
+      return;
+    }
+    state.clip.message = "Canceling bundle job…";
+    state.clip.error = false;
+    renderClipPanel();
+    try {
+      const response = await fetch(
+        `../api/bundle-jobs/${encodeURIComponent(jobId)}/cancel`,
+        { method: "POST" }
+      );
+      const job = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(job.detail || `cancel failed (${response.status})`);
+      }
+      state.clip.job = job;
+      state.clip.progress = Number(job.progress || 0);
+      state.clip.message = job.message || "Canceling bundle job…";
+      if (ClipTerminalJobStatuses.has(job.status)) {
+        await finishClipJob(job);
+        return;
+      }
+      renderClipPanel();
+      scheduleClipPoll(500);
     } catch (error) {
       state.clip.error = true;
-      state.clip.message = `Could not prepare bundle: ${error.message}`;
-    } finally {
-      state.clip.busy = false;
-      await loadRecentBundles();
+      state.clip.message = `Could not cancel bundle job: ${error.message}`;
       renderClipPanel();
     }
   }
@@ -2617,6 +2786,10 @@ python scripts/fetch_web_previews.py</pre>
       state.clip.error = false;
       state.mapHandle?.__hbc?.clearAoi?.();
       renderClipPanel();
+      return;
+    }
+    if (target.closest("[data-clip-cancel]")) {
+      void cancelClipJob();
       return;
     }
     if (target.closest("[data-clip-prepare]")) {

@@ -339,11 +339,13 @@ service.
 - [x] P20.5 Add the browser "Ask" assistant panel with UI help and tool-driven AOI/bundle workflows.
 - [x] P20.6 Add agent tools, tests, docs, and the separate demo deployment.
 - [x] P20.8 Add the browser Clip AOI drawer with boundary candidates, mouse/touch drawing, searchable layer selection, validated GeoJSON bundle requests, and recent bundle links.
+- [x] P20.9 Add queued bundle jobs with persisted progress, per-layer status, best-effort cancellation, and a browser progress bar.
 - [ ] P20.7 Verify and close the agent GIS assistant phase.
 
 ## Current Next Steps
 
-1. Verify the Clip AOI drawer and assistant through the protected public demo.
-2. Add a bundle job/polling API if six large layers approach proxy timeouts.
+1. Verify the Clip AOI drawer, job progress, cancellation, and assistant through
+   the protected public demo.
+2. Add per-layer failure details and retry for partial bundles.
 3. Close the Phase 19/20 GitHub issue tree or create a follow-up issue for the
-   Clip AOI drawer and remaining hardening.
+   remaining hardening.

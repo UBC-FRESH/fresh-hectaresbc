@@ -1859,6 +1859,42 @@ kbd {
   margin: 0.35rem 0;
 }
 
+.clip-progress {
+  height: 0.45rem;
+  margin: 0.45rem 0 0.25rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.clip-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--accent);
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.28) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0.28) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 0.6rem 0.6rem;
+  animation: clip-progress-stripes 0.8s linear infinite;
+  transition: width 0.35s ease;
+}
+
+@keyframes clip-progress-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0.6rem 0;
+  }
+}
+
 .clip-status {
   margin: 0.35rem 0 0;
   color: var(--muted);

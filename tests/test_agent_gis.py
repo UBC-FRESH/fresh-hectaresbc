@@ -1,13 +1,15 @@
 import json
+import time
 import zipfile
 from pathlib import Path
 
 import numpy as np
+import pytest
 import rasterio
 from rasterio.transform import from_origin
 from shapely.geometry import box, mapping
 
-from fresh_hectaresbc.bundle import prepare_bundle
+from fresh_hectaresbc.bundle import BundleCancelled, prepare_bundle
 from fresh_hectaresbc.clip import clip_raster_to_aoi
 from fresh_hectaresbc.femic_bridge import _matching_features
 from fresh_hectaresbc.web_service import ServiceConfig, create_app
@@ -232,6 +234,73 @@ def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
     assert bundle.status_code == 200, bundle.text
     assert bundle.json()["status"] == "complete"
     assert bundle.json()["layers"][0]["dataset_id"] == "dl_adminunits_bcts"
+
+    job_create = client.post(
+        "/api/bundle-jobs",
+        json={
+            "layer_ids": ["dl_adminunits_bcts"],
+            "aoi_geometry": mapping(drawn),
+            "aoi_name": "Synthetic AOI",
+        },
+    )
+    assert job_create.status_code == 202, job_create.text
+    job_id = job_create.json()["job_id"]
+    assert job_create.json()["status"] in {"queued", "running"}
+    job = None
+    for _ in range(300):
+        job_response = client.get(f"/api/bundle-jobs/{job_id}")
+        assert job_response.status_code == 200
+        job = job_response.json()
+        if job["status"] in {
+            "complete",
+            "partial",
+            "failed",
+            "canceled",
+            "needs_name",
+            "ambiguous",
+            "interrupted",
+        }:
+            break
+        time.sleep(0.1)
+    assert job is not None
+    assert job["status"] == "complete", job
+    assert job["progress"] == 100
+    assert job["result"]["layers"][0]["dataset_id"] == "dl_adminunits_bcts"
+    assert job["result"]["download_url"].endswith(f"/api/bundles/{job['result']['bundle_id']}/download")
+
+    bad_job = client.post(
+        "/api/bundle-jobs",
+        json={
+            "layer_ids": ["dl_adminunits_bcts"],
+            "aoi_geometry": {"type": "Point", "coordinates": [0, 0]},
+        },
+    )
+    assert bad_job.status_code == 422
+
+    drawn_path = tmp_path / "drawn.geojson"
+    drawn_path.write_text(
+        json.dumps(
+            {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {},
+                        "geometry": mapping(drawn),
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(BundleCancelled):
+        prepare_bundle(
+            layer_ids=["dl_adminunits_bcts"],
+            output_root=tmp_path / "canceled-bundles",
+            aoi_geojson=drawn_path,
+            archive_root=archive_root,
+            cancel_check=lambda: True,
+        )
 
     web = client.get("/web/")
     assert web.status_code == 200
