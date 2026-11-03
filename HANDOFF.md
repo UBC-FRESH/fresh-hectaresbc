@@ -2,8 +2,8 @@
 
 Date: 2026-11-02
 Branch: `main`
-Latest feature merge: `ca4a9c1`
-Latest merged PR: #153 (bundle-output retention); Clip AOI drawer: #142
+Latest feature merge: `12e33e4`
+Latest merged PR: #155 (source-handle cache); Clip AOI drawer: #142
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
@@ -67,7 +67,9 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   host, cold z6/z7/z8 were ~0.21/0.12/0.11 s.
 - High-zoom source handles are now reused (bounded cache with per-handle
   locking). After the initial metadata/source open, z9–11 tile reads dropped to
-  roughly 15–30 ms locally; the first z9 read after metadata was ~0.8 s.
+  roughly 15–30 ms locally; the first z9 read after metadata was ~0.8 s. Through
+  the protected public host, the first z9 tile was ~0.87 s and subsequent
+  z9/z10/z11 tiles were ~0.05–0.08 s.
 
 ### Agent Service And GIS Bundles (P20)
 
