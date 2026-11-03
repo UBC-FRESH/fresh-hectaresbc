@@ -4,7 +4,7 @@ Date: 2026-11-03
 Status: P19/P20 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
 Latest feature merge: `12e33e4`
-Latest merged PR: #155 (source-handle cache); Clip AOI drawer: #142
+Latest merged PR: #157 (Clip AOI browser coverage); feature merge: #155
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
