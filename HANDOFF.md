@@ -1,10 +1,10 @@
 # Agent Handoff
 
 Date: 2026-11-03
-Status: P19/P20/P21/P22 complete; no active implementation branch or open issues/PRs.
+Status: P19/P20/P21/P22/P23 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
-Latest feature merge: `255b8ed`
-Latest merged PR: #178 (Phase 22 workspaces); Phase 21: #172
+Latest feature merge: `322214c`
+Latest merged PR: #184 (Phase 23 AOI library); Phase 22: #178
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
@@ -312,13 +312,14 @@ resolution tests. Use the web/agent test command above for this feature set.
 
 ## Final Closeout
 
-- P19, P20, P21, and P22 are complete; no active implementation branch remains.
+- P19, P20, P21, P22, and P23 are complete; no active implementation branch remains.
 - No open GitHub issues or pull requests at closeout.
 - Final protected public verification and browser smoke checks passed.
 - Sphinx sources refreshed for tiles, COGs, stats, Clip AOI preflight, jobs, and retention.
 - GitHub Pages deploy succeeded; https://ubc-fresh.github.io/fresh-hectaresbc/ matches main.
 - Phase 21 added the layer tray, multi-layer map context, bundle/job history, and click-to-identify.
 - Phase 22 added encoded shareable workspaces and named local workspace saves.
+- Phase 23 added a reusable named/recent AOI library in the Clip drawer.
 - Remaining items below are optional follow-ups, not blockers.
 
 ## Optional Follow-Ups
