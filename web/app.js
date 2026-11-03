@@ -2072,6 +2072,7 @@
       return;
     }
     const options = compareLayerOptions();
+    const compareMode = state.route.compareMode === "wipe" ? "wipe" : "split";
     const fitBounds = unionBounds(leftLayer.bounds, rightLayer.bounds);
     els.content.innerHTML = `
       <div class="compare-shell">
@@ -2087,17 +2088,21 @@
             <a class="secondary-button" href="#/map">Back to map</a>
           </div>
         </header>
+        <div class="compare-mode-bar" role="group" aria-label="Comparison layout">
+          <button type="button" data-compare-mode="split" class="${compareMode === "split" ? "is-active" : ""}">Side-by-side</button>
+          <button type="button" data-compare-mode="wipe" class="${compareMode === "wipe" ? "is-active" : ""}">Wipe</button>
+        </div>
         <div class="compare-selects">
           ${compareSelectTemplate("left", leftLayer.dataset_id, options)}
           ${compareSelectTemplate("right", rightLayer.dataset_id, options)}
         </div>
-        <div class="compare-stage">
-          <section class="compare-pane">
+        <div class="compare-stage${compareMode === "wipe" ? " is-wipe" : ""}">
+          <section class="compare-pane is-left">
             <div id="compare-left" class="compare-map" aria-label="Left comparison map"></div>
             <div class="compare-label"><strong>${Catalog.escapeHtml(leftLayer.title)}</strong><span>${Catalog.escapeHtml(leftLayer.dataset_id)}</span></div>
           </section>
-          <div class="compare-divider" aria-hidden="true"></div>
-          <section class="compare-pane">
+          <div class="compare-divider" aria-hidden="true"><span class="compare-divider-knob">↔</span></div>
+          <section class="compare-pane is-right">
             <div id="compare-right" class="compare-map" aria-label="Right comparison map"></div>
             <div class="compare-label"><strong>${Catalog.escapeHtml(rightLayer.title)}</strong><span>${Catalog.escapeHtml(rightLayer.dataset_id)}</span></div>
           </section>
@@ -2105,6 +2110,9 @@
         <p class="clip-status">Both maps use the same WGS84 extent. Pan/zoom is synchronized; layer styling controls are intentionally omitted in compare mode.</p>
       </div>`;
     bindCompareControls();
+    if (compareMode === "wipe") {
+      bindCompareWipe();
+    }
     els.content.querySelector("h1")?.focus();
     try {
       state.mapHandle = await window.HectaresBCMap.createCompare({
@@ -2158,9 +2166,44 @@
           view: "compare",
           compareLeft: left?.value || null,
           compareRight: right?.value || null,
+          compareMode: state.route.compareMode || "split",
         });
       });
     });
+  }
+
+  function bindCompareWipe() {
+    const stage = document.querySelector(".compare-stage.is-wipe");
+    const leftPane = stage?.querySelector(".compare-pane.is-left");
+    const divider = stage?.querySelector(".compare-divider");
+    if (!stage || !leftPane || !divider) {
+      return;
+    }
+    let percent = 50;
+    const apply = (value) => {
+      percent = Math.min(98, Math.max(2, value));
+      leftPane.style.clipPath = `inset(0 ${100 - percent}% 0 0)`;
+      divider.style.left = `${percent}%`;
+    };
+    const move = (event) => {
+      const rect = stage.getBoundingClientRect();
+      if (rect.width > 0) {
+        apply(((event.clientX - rect.left) / rect.width) * 100);
+      }
+    };
+    const stop = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", stop);
+      divider.classList.remove("is-dragging");
+    };
+    divider.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      divider.classList.add("is-dragging");
+      move(event);
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", stop);
+    });
+    apply(50);
   }
 
   function openCompare() {
@@ -2660,6 +2703,18 @@ python scripts/fetch_web_previews.py</pre>
         view: "compare",
         compareLeft: right,
         compareRight: left,
+        compareMode: state.route.compareMode || "split",
+      });
+      return;
+    }
+    const compareMode = target.closest("[data-compare-mode]");
+    if (compareMode) {
+      navigate({
+        ...Catalog.defaultState(),
+        view: "compare",
+        compareLeft: state.route.compareLeft,
+        compareRight: state.route.compareRight,
+        compareMode: compareMode.dataset.compareMode,
       });
       return;
     }

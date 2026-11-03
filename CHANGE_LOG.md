@@ -224,3 +224,4 @@
 - Completed P27.2/P27.3 with multi-map lifecycle support, synchronized compare panes, compare route/selectors/swap, tray entry point, responsive layout, and browser coverage.
 - Completed and merged Phase 27 via PR #208: multi-map lifecycle, synchronized compare panes, compare route/selectors/swap, tray entry, responsive layout, and browser coverage.
 - Fixed compare map containers collapsing to zero height after MapLibre applied its own positioning rule; added explicit compare-map sizing and bumped browser assets to p39.
+- Added a Side-by-side / Wipe toggle to the compare workspace with a draggable vertical divider, clipped top map, `mode=wipe` route state, and browser coverage.

@@ -173,10 +173,12 @@ Compare Map Workspace
 ---------------------
 
 The `#/compare?left=<dataset_id>&right=<dataset_id>` route provides synchronized
-side-by-side MapLibre panes for two previewable layers. Panning or zooming either
-pane updates the other. The workspace includes left/right selectors, a swap
-action, shared extent fitting, dataset labels, and a responsive stacked layout at
-narrow widths. Compare mode intentionally omits AOI/identify/Clip controls.
+MapLibre panes for two previewable layers. Panning or zooming either pane updates
+the other. The workspace includes left/right selectors, a swap action, shared
+extent fitting, dataset labels, and a responsive stacked layout at narrow widths.
+A **Side-by-side / Wipe** toggle switches between split panes and an overlaid
+wipe comparison with a draggable vertical divider (``mode=wipe``). Compare mode
+intentionally omits AOI/identify/Clip controls.
 
 Saved Searches And Favorites
 ----------------------------

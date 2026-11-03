@@ -482,6 +482,7 @@
       workspace: null,
       compareLeft: null,
       compareRight: null,
+      compareMode: "split",
     };
   }
 
@@ -573,6 +574,7 @@
       state.view = "compare";
       state.compareLeft = params.get("left") || null;
       state.compareRight = params.get("right") || null;
+      state.compareMode = params.get("mode") === "wipe" ? "wipe" : "split";
       return state;
     }
 
@@ -642,6 +644,7 @@
       const params = new URLSearchParams();
       if (state.compareLeft) params.set("left", state.compareLeft);
       if (state.compareRight) params.set("right", state.compareRight);
+      if (state.compareMode === "wipe") params.set("mode", "wipe");
       const query = params.toString();
       return `#/compare${query ? `?${query}` : ""}`;
     }
