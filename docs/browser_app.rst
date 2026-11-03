@@ -22,6 +22,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_aoi_library_browser.py
    python scripts/smoke_test_admin_browser.py
    python scripts/smoke_test_discover_browser.py
+   python scripts/smoke_test_saved_browse_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -166,6 +167,15 @@ downloads. It shows job status/progress, AOI names and areas, layer counts,
 failure counts, timestamps, download links, manifest links, cancellation, and
 failed-layer retry. It refreshes active jobs while the route is open and
 provides an explicit Refresh action.
+
+Saved Searches And Favorites
+----------------------------
+
+The Browse saved rail stores named catalog views and favorite datasets in local
+browser storage. Saving a search captures the current catalog hash, including
+query, filters, sort, page, and page size. Favorites are toggled from result rows,
+result cards, and dataset actions; the rail provides open/remove actions. No
+server-side user state is created.
 
 Spatial Layer Discovery
 -----------------------

@@ -416,9 +416,22 @@ AOI, then lets users add results to the tray.
 - [x] P25.3 Add discovery UI and tray integration. Child issue: #194.
 - [x] P25.4 Verify and close Phase 25. Child issue: #195.
 
+## Phase 26: Saved Searches And Favorites
+
+Status: implementation in progress on `feature/p26-saved-browse`.
+Parent issue: #197. Planning: `planning/saved_browse_plan.md`.
+
+Phase 26 saves named Browse views and favorite datasets in local browser storage
+and exposes them in the Browse rail and result/detail controls.
+
+- [x] P26.1 Plan saved search and favorite contract. Child issue: #198.
+- [x] P26.2 Add saved search/favorite persistence. Child issue: #199.
+- [x] P26.3 Add saved rail UI and browser coverage. Child issue: #200.
+- [ ] P26.4 Verify and close Phase 26. Child issue: #201.
+
 ## Current Next Steps
 
-1. Complete P25.1 planning contract and close child issue #192.
-2. Implement P25.2 bounds/intersection helpers.
-3. Implement P25.3 discovery UI and browser coverage.
-4. Open the Phase 25 PR, verify, merge, and close parent #191.
+1. Complete P26.1 planning contract and close child issue #198.
+2. Implement P26.2 persistence and favorite controls.
+3. Implement P26.3 saved rail UI and browser coverage.
+4. Open the Phase 26 PR, verify, merge, and close parent #197.

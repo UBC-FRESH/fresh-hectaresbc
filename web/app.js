@@ -93,6 +93,10 @@
     workspaces: {
       items: [],
     },
+    saved: {
+      searches: [],
+      favorites: [],
+    },
     aois: {
       items: [],
     },
@@ -163,6 +167,7 @@
       filterRail: document.querySelector("#filter-rail"),
       facets: document.querySelector("#facets"),
       previewNote: document.querySelector("#preview-note"),
+      savedBrowse: document.querySelector("#saved-browse"),
       clearFilters: document.querySelector("#clear-filters"),
       content: document.querySelector("#content"),
       inspector: document.querySelector("#inspector"),
@@ -198,6 +203,7 @@
     loadTray();
     loadWorkspaces();
     loadAoiLibrary();
+    loadSavedBrowse();
     const header = document.querySelector(".app-header");
     if (header && window.ResizeObserver) {
       new ResizeObserver(() => syncHeaderHeight()).observe(header);
@@ -393,6 +399,7 @@
     };
     updateHeader();
     renderTray();
+    renderSavedBrowse();
     if (state.ready) {
       renderCurrent();
     }
@@ -503,6 +510,7 @@
     closeClipPanel();
     document.body.dataset.view = "catalog";
     document.body.classList.remove("filters-open", "inspector-open");
+    renderSavedBrowse();
     if (!state.ready) {
       renderLoading();
       return;
@@ -677,6 +685,7 @@
                 ${Catalog.highlightText(Catalog.titleLabel(record), route.query)}
               </a>
               <button class="tray-add" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}" aria-label="Add ${Catalog.escapeHtml(Catalog.titleLabel(record))} to tray">+</button>
+              <button class="favorite-toggle" type="button" data-favorite-toggle="${Catalog.escapeHtml(record.dataset_id)}" aria-pressed="${isFavorite(record.dataset_id) ? "true" : "false"}" aria-label="${isFavorite(record.dataset_id) ? "Remove" : "Add"} ${Catalog.escapeHtml(Catalog.titleLabel(record))} ${isFavorite(record.dataset_id) ? "from" : "to"} favorites">${isFavorite(record.dataset_id) ? "★" : "☆"}</button>
               <span class="result-subtitle">${Catalog.escapeHtml(record.dataset_id)}</span>
               <span class="result-badges">${badgesTemplate(record, preview)}</span>
             </div>
@@ -710,6 +719,7 @@
           </div>
         </a>
         <button class="tray-add result-card-tray" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}" aria-label="Add ${Catalog.escapeHtml(Catalog.titleLabel(record))} to tray">+</button>
+        <button class="favorite-toggle result-card-favorite" type="button" data-favorite-toggle="${Catalog.escapeHtml(record.dataset_id)}" aria-pressed="${isFavorite(record.dataset_id) ? "true" : "false"}" aria-label="${isFavorite(record.dataset_id) ? "Remove" : "Add"} ${Catalog.escapeHtml(Catalog.titleLabel(record))} ${isFavorite(record.dataset_id) ? "from" : "to"} favorites">${isFavorite(record.dataset_id) ? "★" : "☆"}</button>
       </div>
     `;
   }
@@ -1069,6 +1079,7 @@
           <div class="dataset-actions">
             <a class="primary-button" href="${mapHref}">Open map</a>
             <button class="secondary-button" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}">Add to tray</button>
+            <button class="secondary-button" type="button" data-favorite-toggle="${Catalog.escapeHtml(record.dataset_id)}" aria-pressed="${isFavorite(record.dataset_id) ? "true" : "false"}">${isFavorite(record.dataset_id) ? "★ Favorited" : "☆ Favorite"}</button>
             <button class="secondary-button" type="button" data-copy="fresh-hectaresbc catalog show ${Catalog.escapeHtml(record.dataset_id)}">Copy CLI</button>
             <button class="secondary-button" type="button" data-download-json="${Catalog.escapeHtml(record.dataset_id)}">Download JSON</button>
           </div>
@@ -2378,6 +2389,11 @@ python scripts/fetch_web_previews.py</pre>
 
   function handleContentClick(event) {
     const target = event.target;
+    const favoriteToggle = target.closest("[data-favorite-toggle]");
+    if (favoriteToggle) {
+      toggleFavorite(favoriteToggle.dataset.favoriteToggle);
+      return;
+    }
     if (target.closest("[data-discover-open]")) {
       openDiscover();
       return;
@@ -2773,6 +2789,194 @@ python scripts/fetch_web_previews.py</pre>
     });
     if (els.tabAdmin) {
       els.tabAdmin.hidden = !state.serviceAvailable;
+    }
+  }
+
+  /* ---------------------------------------------------------- saved browse */
+
+  const SavedSearchKey = "fresh-hectaresbc.saved-searches.v1";
+  const FavoritesKey = "fresh-hectaresbc.favorites.v1";
+
+  function loadSavedBrowse() {
+    try {
+      const searches = JSON.parse(localStorage.getItem(SavedSearchKey) || "[]");
+      state.saved.searches = Array.isArray(searches)
+        ? searches.filter(
+            (item) =>
+              item &&
+              typeof item.id === "string" &&
+              typeof item.name === "string" &&
+              typeof item.hash === "string"
+          )
+        : [];
+    } catch (error) {
+      state.saved.searches = [];
+    }
+    try {
+      const favorites = JSON.parse(localStorage.getItem(FavoritesKey) || "[]");
+      state.saved.favorites = Array.isArray(favorites)
+        ? favorites.filter(
+            (item) => item && typeof item.dataset_id === "string"
+          )
+        : [];
+    } catch (error) {
+      state.saved.favorites = [];
+    }
+  }
+
+  function saveSavedBrowse() {
+    try {
+      localStorage.setItem(
+        SavedSearchKey,
+        JSON.stringify(state.saved.searches.slice(0, 30))
+      );
+      localStorage.setItem(
+        FavoritesKey,
+        JSON.stringify(state.saved.favorites.slice(0, 100))
+      );
+    } catch (error) {
+      // Non-fatal.
+    }
+  }
+
+  function isFavorite(datasetId) {
+    return state.saved.favorites.some(
+      (item) => item.dataset_id === datasetId
+    );
+  }
+
+  function updateFavoriteButtons() {
+    document.querySelectorAll("[data-favorite-toggle]").forEach((button) => {
+      const active = isFavorite(button.dataset.favoriteToggle);
+      button.textContent = active ? "★" : "☆";
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+      button.setAttribute(
+        "aria-label",
+        `${active ? "Remove" : "Add"} ${button.dataset.favoriteToggle} ${active ? "from" : "to"} favorites`
+      );
+    });
+  }
+
+  function toggleFavorite(datasetId) {
+    if (!datasetId) {
+      return;
+    }
+    if (isFavorite(datasetId)) {
+      state.saved.favorites = state.saved.favorites.filter(
+        (item) => item.dataset_id !== datasetId
+      );
+      showToast("Removed from favorites.");
+    } else {
+      state.saved.favorites.unshift({
+        dataset_id: datasetId,
+        created_utc: new Date().toISOString(),
+      });
+      showToast("Added to favorites.");
+    }
+    saveSavedBrowse();
+    updateFavoriteButtons();
+    renderSavedBrowse();
+  }
+
+  function saveCurrentSearch() {
+    if (state.route.view !== "catalog") {
+      showToast("Open Browse before saving a search.");
+      return;
+    }
+    const name = window.prompt("Name this search:", "Saved search");
+    if (!name || !name.trim()) {
+      return;
+    }
+    state.saved.searches.unshift({
+      id: `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+      name: name.trim().slice(0, 80),
+      hash: Catalog.buildRoute(state.route),
+      created_utc: new Date().toISOString(),
+    });
+    saveSavedBrowse();
+    renderSavedBrowse();
+    showToast("Search saved.");
+  }
+
+  function openSavedSearch(hash) {
+    if (!hash) {
+      return;
+    }
+    navigate(Catalog.parseRoute(hash));
+  }
+
+  function deleteSavedSearch(id) {
+    state.saved.searches = state.saved.searches.filter(
+      (item) => item.id !== id
+    );
+    saveSavedBrowse();
+    renderSavedBrowse();
+  }
+
+  function renderSavedBrowse() {
+    if (!els?.savedBrowse) {
+      return;
+    }
+    const searches = state.saved.searches.slice(0, 8);
+    const favorites = state.saved.favorites.slice(0, 8);
+    const favoriteTitle = (datasetId) =>
+      state.previewIndex?.get(datasetId)?.title ||
+      getRecordSync(datasetId)?.title_candidate ||
+      datasetId;
+    els.savedBrowse.innerHTML = `
+      <div class="saved-head">
+        <h3>Saved</h3>
+        <button class="secondary-button saved-search-button" type="button" data-save-search>Save search</button>
+      </div>
+      ${searches.length
+        ? `<div class="saved-list">${searches
+            .map(
+              (item) => `<div class="saved-row">
+                <button type="button" data-saved-search-open="${Catalog.escapeHtml(item.hash)}">${Catalog.escapeHtml(item.name)}</button>
+                <button type="button" data-saved-search-delete="${Catalog.escapeHtml(item.id)}" aria-label="Delete ${Catalog.escapeHtml(item.name)}">×</button>
+              </div>`
+            )
+            .join("")}</div>`
+        : '<p class="saved-empty">No saved searches.</p>'}
+      <h3 class="saved-subhead">Favorites</h3>
+      ${favorites.length
+        ? `<div class="saved-list">${favorites
+            .map(
+              (item) => `<div class="saved-row">
+                <a href="#/dataset/${encodeURIComponent(item.dataset_id)}">${Catalog.escapeHtml(favoriteTitle(item.dataset_id))}</a>
+                <button type="button" data-favorite-remove="${Catalog.escapeHtml(item.dataset_id)}" aria-label="Remove ${Catalog.escapeHtml(item.dataset_id)} from favorites">×</button>
+              </div>`
+            )
+            .join("")}</div>`
+        : '<p class="saved-empty">No favorite datasets.</p>'}`;
+    updateFavoriteButtons();
+  }
+
+  function handleSavedBrowseClick(event) {
+    const target = event.target;
+    if (target.closest("[data-save-search]")) {
+      saveCurrentSearch();
+      return;
+    }
+    const openSearch = target.closest("[data-saved-search-open]");
+    if (openSearch) {
+      openSavedSearch(openSearch.dataset.savedSearchOpen);
+      return;
+    }
+    const deleteSearch = target.closest("[data-saved-search-delete]");
+    if (deleteSearch) {
+      deleteSavedSearch(deleteSearch.dataset.savedSearchDelete);
+      return;
+    }
+    const removeFavorite = target.closest("[data-favorite-remove]");
+    if (removeFavorite) {
+      state.saved.favorites = state.saved.favorites.filter(
+        (item) => item.dataset_id !== removeFavorite.dataset.favoriteRemove
+      );
+      saveSavedBrowse();
+      updateFavoriteButtons();
+      renderSavedBrowse();
     }
   }
 
@@ -4768,6 +4972,7 @@ python scripts/fetch_web_previews.py</pre>
     });
 
     els.facets.addEventListener("change", handleFacetChange);
+    els.savedBrowse?.addEventListener("click", handleSavedBrowseClick);
     els.clearFilters.addEventListener("click", clearAllFilters);
     els.content.addEventListener("click", handleContentClick);
     els.content.addEventListener("change", handleContentChange);
