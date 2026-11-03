@@ -454,7 +454,7 @@ Clip layers before a bundle job starts.
 
 ## Phase 29: Multi-Layer Flicker Series
 
-Status: implementation in progress on `feature/p29-series-flicker`. Parent issue: #223. Planning: `planning/series_flicker_plan.md`.
+Status: completed and merged to `main` via PR #228. Parent issue: #223. Planning: `planning/series_flicker_plan.md`.
 
 Phase 29 adds a dedicated Series route that cycles through two to six previewable
 layers in tray order with synchronized maps and active-frame export.
@@ -462,11 +462,8 @@ layers in tray order with synchronized maps and active-frame export.
 - [x] P29.1 Plan multi-layer series contract. Child issue: #224.
 - [x] P29.2 Add multi-map series engine and route state. Child issue: #225.
 - [x] P29.3 Add Series UI, tray entry point, and browser coverage. Child issue: #226.
-- [ ] P29.4 Verify and close Phase 29. Child issue: #227.
+- [x] P29.4 Verify and close Phase 29. Child issue: #227.
 
 ## Current Next Steps
 
-1. Complete P29.1 planning contract and close child issue #224.
-2. Implement P29.2 series engine and route state.
-3. Implement P29.3 Series UI and browser coverage.
-4. Open the Phase 29 PR, verify, merge, and close parent #223.
+No active implementation phase. Optional follow-ups remain in the roadmap.
