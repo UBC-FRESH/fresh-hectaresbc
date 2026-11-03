@@ -67,6 +67,9 @@ Service And GIS Helpers
 .. automodule:: fresh_hectaresbc.bundle_retention
    :members: prune_bundle_outputs
 
+.. automodule:: fresh_hectaresbc.preflight
+   :members: estimate_bundle
+
 .. automodule:: fresh_hectaresbc.femic_bridge
    :members: search_aoi_layers, resolve_aoi
 

@@ -493,6 +493,18 @@ def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
     assert outside.status_code == 200
     assert outside.json()["status"] == "outside"
 
+    estimate = client.post(
+        "/api/bundles/estimate",
+        json={
+            "layer_ids": ["dl_adminunits_bcts"],
+            "aoi_geometry": mapping(drawn),
+        },
+    )
+    assert estimate.status_code == 200, estimate.text
+    assert estimate.json()["total_pixels"] > 0
+    assert estimate.json()["layers"][0]["status"] == "ok"
+    assert "Advisory estimate" in estimate.json()["caveat"]
+
     bundle = client.post(
         "/api/bundles",
         json={

@@ -91,6 +91,34 @@ def main() -> int:
                 ),
             )
             return
+        if path == "/api/bundles/estimate" and request.method == "POST":
+            route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps(
+                    {
+                        "status": "ok",
+                        "aoi": {"area_ha": 1000, "bbox_wgs84": []},
+                        "layers": [
+                            {
+                                "dataset_id": "dl_adminunits_bcts",
+                                "title": "BCTS Operating Areas",
+                                "status": "ok",
+                                "width": 100,
+                                "height": 100,
+                                "pixels": 10000,
+                                "estimated_bytes": 20000,
+                                "estimated_seconds": 0.5,
+                            }
+                        ],
+                        "total_pixels": 10000,
+                        "total_estimated_bytes": 20000,
+                        "estimated_seconds": 0.5,
+                        "caveat": "Advisory estimate.",
+                    }
+                ),
+            )
+            return
         if path == "/api/aoi/inspect" and request.method == "POST":
             route.fulfill(
                 status=200,
@@ -250,6 +278,10 @@ def main() -> int:
                 timeout=10000,
             )
             assert page.locator("[data-clip-prepare]").is_enabled()
+            page.locator("[data-clip-estimate]").click()
+            page.wait_for_selector(".clip-preflight", timeout=10000)
+            assert "10,000 px" in page.locator(".clip-preflight").inner_text()
+            assert "Advisory estimate" in page.locator(".clip-preflight").inner_text()
 
             page.locator("[data-clip-prepare]").click()
             page.wait_for_selector("[data-clip-cancel]", timeout=10000)

@@ -449,8 +449,8 @@ Phase 28 adds advisory output-volume and rough-duration estimates for selected
 Clip layers before a bundle job starts.
 
 - [x] P28.1 Plan bundle preflight contract. Child issue: #218.
-- [ ] P28.2 Add bundle estimate API. Child issue: #219.
-- [ ] P28.3 Add Clip preflight UI and browser coverage. Child issue: #220.
+- [x] P28.2 Add bundle estimate API. Child issue: #219.
+- [x] P28.3 Add Clip preflight UI and browser coverage. Child issue: #220.
 - [ ] P28.4 Verify and close Phase 28. Child issue: #221.
 
 ## Current Next Steps
