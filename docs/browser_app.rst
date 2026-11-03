@@ -19,6 +19,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_bundles_browser.py
    python scripts/smoke_test_identify_browser.py
    python scripts/smoke_test_workspace_browser.py
+   python scripts/smoke_test_aoi_library_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -163,6 +164,15 @@ downloads. It shows job status/progress, AOI names and areas, layer counts,
 failure counts, timestamps, download links, manifest links, cancellation, and
 failed-layer retry. It refreshes active jobs while the route is open and
 provides an explicit Refresh action.
+
+Reusable AOI Library
+--------------------
+
+The Clip AOI drawer stores named AOIs and automatically remembers recent AOIs in
+local browser storage. Boundary AOIs store their layer query and feature name and
+are re-resolved when applied. Compact drawn AOIs store geometry directly; larger
+geometries are omitted with a clear message. Each library row supports Apply and
+Delete, and **Save current** adds the active AOI to the named library.
 
 Saved And Shareable Workspaces
 ------------------------------

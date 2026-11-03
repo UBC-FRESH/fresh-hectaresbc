@@ -91,6 +91,8 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   coordinates, and source kind at a clicked point; nodata/outside states are handled.
 - Workspaces encode primary/tray layers, map view, AOI, and Clip selections into
   a shareable map URL; named workspaces save in local browser storage.
+- The Clip drawer keeps a local AOI library with named and recent AOIs, including
+  boundary-query restore and compact drawn geometry.
 
 ### Agent Service And GIS Bundles (P20)
 

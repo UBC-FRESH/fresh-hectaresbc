@@ -21,7 +21,8 @@ Current capabilities include:
   assistant, FEMIC boundary resolution, AOI area preflight, clipped raster
   bundle jobs with progress/cancel/retry, and configurable output retention;
 * saved and shareable browser workspaces that restore tray layers, map view,
-  AOI, and Clip selections.
+  AOI, and Clip selections;
+* a local reusable AOI library for named and recent boundaries and drawn areas.
 
 Important current limits:
 

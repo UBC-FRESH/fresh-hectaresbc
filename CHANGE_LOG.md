@@ -209,3 +209,4 @@
 - Completed P22.2/P22.3 with encoded workspace routes, map view/primary/tray layer restore, compact or boundary AOI restore, Clip selection restore, named local workspaces, and share-link support; added workspace browser coverage.
 - Completed and merged Phase 22 via PR #178: encoded workspace routes, map view/primary/tray layer restore, boundary/compact drawn AOI restore, Clip selection restore, named local workspace saves, and share links.
 - Activated Phase 23 reusable AOI library with parent issue #179, child issues #180-#183, and planning/aoi_library_plan.md.
+- Completed P23.2/P23.3 with a local reusable AOI library, automatic recent AOIs, named saves, boundary-query and compact drawn restore, apply/delete actions, and browser coverage.
