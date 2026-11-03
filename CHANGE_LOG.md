@@ -217,3 +217,4 @@
 - Activated Phase 25 spatial layer discovery with parent issue #191, child issues #192-#195, and planning/spatial_discovery_plan.md.
 - Completed P25.2/P25.3 with map bounds APIs, preview-bound intersection discovery, view/AOI source modes, family/text filters, bulk tray add, and mocked browser coverage.
 - Completed and merged Phase 25 via PR #196: map bounds APIs, preview-bound spatial discovery, view/AOI sources, filtering, bulk tray add, and browser coverage.
+- Activated Phase 26 saved Browse searches and favorites with parent issue #197, child issues #198-#201, and planning/saved_browse_plan.md.
