@@ -362,7 +362,7 @@ layer tray, a small multi-layer map context stack, a bundle/job history route,
 and click-to-identify raster values. It stays static-first and keeps the optional
 service boundary intact.
 
-- [ ] P21.1 Plan workspace routes, tray state, and identify contract. Child issue: #167.
+- [x] P21.1 Plan workspace routes, tray state, and identify contract. Child issue: #167.
 - [ ] P21.2 Add layer tray and multi-layer map. Child issue: #168.
 - [ ] P21.3 Add bundle and job history route. Child issue: #169.
 - [ ] P21.4 Add click-to-identify raster values. Child issue: #170.
