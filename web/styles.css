@@ -1578,6 +1578,72 @@ details.technical pre {
   padding: 0.8rem;
 }
 
+.map-identify-card {
+  position: absolute;
+  top: 4.6rem;
+  left: 0.8rem;
+  z-index: 6;
+  width: min(20rem, calc(100% - 1.6rem));
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 6px 22px rgba(31, 41, 51, 0.14);
+  pointer-events: auto;
+  font-size: 0.74rem;
+}
+
+.map-identify-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.map-identify-head strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-identify-value {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+  font-size: 0.9rem;
+}
+
+.map-identify-swatch {
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 0.2rem;
+}
+
+.map-identify-label {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.map-identify-coords,
+.map-identify-status {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.66rem;
+}
+
+.map-actions button.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
 .map-status-card h2 {
   margin: 0 0 0.3rem;
   font-size: 0.86rem;

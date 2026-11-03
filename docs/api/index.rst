@@ -74,4 +74,4 @@ Service And GIS Helpers
    :members: BundleJobManager
 
 .. automodule:: fresh_hectaresbc.tiles
-   :members: layer_metadata, render_tile, prune_tile_cache, configure_tile_cog_root, tile_usage_stats
+   :members: layer_metadata, render_tile, identify_pixel, prune_tile_cache, configure_tile_cog_root, tile_usage_stats

@@ -365,7 +365,7 @@ service boundary intact.
 - [x] P21.1 Plan workspace routes, tray state, and identify contract. Child issue: #167.
 - [x] P21.2 Add layer tray and multi-layer map. Child issue: #168.
 - [x] P21.3 Add bundle and job history route. Child issue: #169.
-- [ ] P21.4 Add click-to-identify raster values. Child issue: #170.
+- [x] P21.4 Add click-to-identify raster values. Child issue: #170.
 - [ ] P21.5 Verify and close Phase 21. Child issue: #171.
 
 ## Current Next Steps

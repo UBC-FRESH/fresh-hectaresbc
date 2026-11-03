@@ -90,6 +90,12 @@
       timer: null,
       loading: false,
     },
+    identify: {
+      enabled: false,
+      busy: false,
+      datasetId: null,
+      result: null,
+    },
     clip: {
       open: false,
       datasetId: null,
@@ -464,6 +470,7 @@
 
   function renderBrowse() {
     stopHistoryPolling();
+    resetIdentifyState();
     window.HectaresBCMap?.destroy();
     closeClipPanel();
     document.body.dataset.view = "catalog";
@@ -966,6 +973,7 @@
   async function renderDataset() {
     const token = ++state.renderToken;
     stopHistoryPolling();
+    resetIdentifyState();
     window.HectaresBCMap?.destroy();
     closeClipPanel();
     document.body.dataset.view = "dataset";
@@ -1572,6 +1580,151 @@
     }
   }
 
+  /* -------------------------------------------------------------- identify */
+
+  function updateIdentifyButton() {
+    document.querySelectorAll("[data-identify-toggle]").forEach((button) => {
+      button.textContent = state.identify.enabled ? "Stop identify" : "Identify";
+      button.classList.toggle("is-active", state.identify.enabled);
+      button.setAttribute(
+        "aria-pressed",
+        state.identify.enabled ? "true" : "false"
+      );
+    });
+  }
+
+  function resetIdentifyState() {
+    state.identify.enabled = false;
+    state.identify.busy = false;
+    state.identify.result = null;
+    state.mapHandle?.__hbc?.setIdentifyMode?.(false, null);
+    const card = document.querySelector("#map-identify-card");
+    if (card) {
+      card.hidden = true;
+      card.innerHTML = "";
+    }
+    updateIdentifyButton();
+  }
+
+  function identifyColor(result) {
+    const color = result?.color;
+    if (!Array.isArray(color) || color.length < 3) {
+      return "";
+    }
+    const channels = color.slice(0, 4).map((value) => {
+      const number = Math.max(0, Math.min(255, Number(value)));
+      return Number.isFinite(number) ? Math.round(number) : 0;
+    });
+    const alpha = channels.length === 4 ? channels[3] / 255 : 1;
+    return `rgba(${channels[0]}, ${channels[1]}, ${channels[2]}, ${alpha})`;
+  }
+
+  function renderIdentifyCard() {
+    const card = document.querySelector("#map-identify-card");
+    if (!card) {
+      return;
+    }
+    if (!state.identify.enabled && !state.identify.busy && !state.identify.result) {
+      card.hidden = true;
+      card.innerHTML = "";
+      return;
+    }
+    card.hidden = false;
+    if (state.identify.busy) {
+      card.innerHTML = '<p class="map-identify-status">Reading raster value…</p>';
+      return;
+    }
+    const result = state.identify.result;
+    if (!result) {
+      card.innerHTML =
+        '<p class="map-identify-status">Click the map to read a raster value.</p>';
+      return;
+    }
+    const close = '<button class="icon-button" type="button" data-identify-close aria-label="Close identify result">×</button>';
+    if (result.status === "outside") {
+      card.innerHTML = `<div class="map-identify-head"><strong>Outside layer</strong>${close}</div><p class="map-identify-status">This point is outside the raster extent.</p><p class="map-identify-coords">${Number(result.lon).toFixed(5)}, ${Number(result.lat).toFixed(5)}</p>`;
+      return;
+    }
+    if (result.status === "nodata") {
+      card.innerHTML = `<div class="map-identify-head"><strong>${Catalog.escapeHtml(result.title || result.dataset_id)}</strong>${close}</div><p class="map-identify-status">No data at this cell.</p><p class="map-identify-coords">${Number(result.lon).toFixed(5)}, ${Number(result.lat).toFixed(5)}</p>`;
+      return;
+    }
+    if (result.status === "error") {
+      card.innerHTML = `<div class="map-identify-head"><strong>${Catalog.escapeHtml(result.title || "Identify failed")}</strong>${close}</div><p class="map-identify-status">${Catalog.escapeHtml(result.message || "Could not read this cell.")}</p>`;
+      return;
+    }
+    const color = identifyColor(result);
+    const label = result.label
+      ? `<span class="map-identify-label">${Catalog.escapeHtml(result.label)}</span>`
+      : "";
+    card.innerHTML = `<div class="map-identify-head"><strong>${Catalog.escapeHtml(result.title || result.dataset_id)}</strong>${close}</div>
+      <div class="map-identify-value">
+        ${color ? `<span class="map-identify-swatch" style="background:${color}"></span>` : ""}
+        <strong>${Catalog.escapeHtml(String(result.value))}</strong>${label}
+      </div>
+      <p class="map-identify-coords">${Number(result.lon).toFixed(5)}, ${Number(result.lat).toFixed(5)} · ${Catalog.escapeHtml(result.source_raster || "source")}</p>`;
+  }
+
+  async function identifyAt(lngLat) {
+    const datasetId = state.identify.datasetId;
+    if (!datasetId) {
+      return;
+    }
+    const token = (state.identify.token || 0) + 1;
+    state.identify.token = token;
+    state.identify.busy = true;
+    renderIdentifyCard();
+    try {
+      const response = await fetch(
+        `../api/tiles/${encodeURIComponent(datasetId)}/identify?lon=${encodeURIComponent(lngLat.lng)}&lat=${encodeURIComponent(lngLat.lat)}`
+      );
+      if (token !== state.identify.token) {
+        return;
+      }
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.detail || `identify failed (${response.status})`);
+      }
+      state.identify.result = payload;
+      state.identify.busy = false;
+      renderIdentifyCard();
+    } catch (error) {
+      if (token !== state.identify.token) {
+        return;
+      }
+      state.identify.busy = false;
+      state.identify.result = {
+        status: "error",
+        title: "Identify failed",
+        message: error.message,
+      };
+      showToast(`Could not identify: ${error.message}`);
+      renderIdentifyCard();
+    }
+  }
+
+  function toggleIdentify() {
+    if (!state.serviceAvailable) {
+      showToast("Identify requires the map service.");
+      return;
+    }
+    if (!state.mapHandle?.__hbc) {
+      showToast("Open a map first.");
+      return;
+    }
+    state.identify.enabled = !state.identify.enabled;
+    state.identify.result = null;
+    state.mapHandle.__hbc.setIdentifyMode(
+      state.identify.enabled,
+      ({ lng, lat }) => void identifyAt({ lng, lat })
+    );
+    updateIdentifyButton();
+    renderIdentifyCard();
+    if (state.identify.enabled) {
+      showToast("Click the map to identify a raster value.");
+    }
+  }
+
   async function renderMap() {
     const token = ++state.renderToken;
     stopHistoryPolling();
@@ -1593,6 +1746,8 @@
       }
       state.selectedId = datasetId;
     }
+    state.identify.datasetId = datasetId;
+    resetIdentifyState();
     if (state.clip.open && state.clip.datasetId && state.clip.datasetId !== datasetId) {
       resetClipState();
       state.clip.datasetId = datasetId;
@@ -1715,6 +1870,8 @@
       if (state.clip.geometry && !els.clipPanel.hidden) {
         state.mapHandle.__hbc?.setAoi(state.clip.geometry, { fit: false });
       }
+      state.identify.datasetId = datasetId;
+      updateIdentifyButton();
     } catch (error) {
       state.mapHandle = null;
       if (token !== state.renderToken) {
@@ -1762,6 +1919,7 @@
             <a class="secondary-button" href="${state.lastBrowseHash || "#/catalog"}">Browse</a>
             <a class="secondary-button" href="#/catalog?preview=available">Preview layers</a>
             <button class="secondary-button" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}">Add to tray</button>
+            <button class="secondary-button" type="button" data-identify-toggle ${state.serviceAvailable ? "" : "hidden"}>Identify</button>
             <button class="secondary-button" type="button" data-open-clip ${state.serviceAvailable ? "" : "hidden"}>Clip AOI</button>
             <button class="secondary-button" type="button" data-copy="${Catalog.escapeHtml(record.dataset_id)}">Copy ID</button>
           </div>
@@ -1801,6 +1959,7 @@
             <dt>Artifact</dt><dd>${Catalog.escapeHtml(artifact?.artifact_status || "unknown")}</dd>
           </dl>
         </div>
+        <div id="map-identify-card" class="map-identify-card" hidden></div>
         <div id="map-loading" class="map-loading"><span><span class="spinner"></span>Loading map…</span></div>
       </div>
     `;
@@ -2010,6 +2169,15 @@ python scripts/fetch_web_previews.py</pre>
 
   function handleContentClick(event) {
     const target = event.target;
+    if (target.closest("[data-identify-toggle]")) {
+      toggleIdentify();
+      return;
+    }
+    if (target.closest("[data-identify-close]")) {
+      state.identify.result = null;
+      renderIdentifyCard();
+      return;
+    }
     if (target.closest("[data-history-refresh]")) {
       void refreshBundleHistory();
       return;

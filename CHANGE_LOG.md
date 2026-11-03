@@ -202,3 +202,4 @@
 - Activated Phase 21 browser workspace enhancements with parent issue #166, child issues #167-#171, and planning/ui_workspace_enhancements_plan.md covering the layer tray, multi-layer map context, bundle/job history route, and click-to-identify.
 - Completed P21.2 with a persistent layer tray, add-to-tray actions across Browse/Dataset/Map, URL-encoded map context layers, and up to three raster overlays with visibility/opacity controls.
 - Completed P21.3 with a `#/bundles` history route, `GET /api/bundle-jobs`, failed-layer retry endpoint, active-job progress/cancel controls, completed bundle downloads/manifests, and mocked browser coverage.
+- Completed P21.4 with a source-raster identify API, map click-to-query mode, value/label/color result card, nodata/outside handling, and mocked browser coverage.

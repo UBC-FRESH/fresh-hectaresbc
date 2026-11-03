@@ -87,6 +87,8 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   layers render as context overlays with visibility/opacity controls.
 - `#/bundles` lists active/recent jobs and completed bundles with progress,
   cancellation, failed-layer retry, downloads, manifests, and refresh.
+- The map Identify control reads the primary raster value, legend label, color,
+  coordinates, and source kind at a clicked point; nodata/outside states are handled.
 
 ### Agent Service And GIS Bundles (P20)
 

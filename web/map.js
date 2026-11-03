@@ -372,6 +372,92 @@
     });
   }
 
+  function ensureIdentifyLayers(map) {
+    if (!map.getSource("hbc-identify")) {
+      map.addSource("hbc-identify", {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+    }
+    if (!map.getLayer("hbc-identify-point")) {
+      map.addLayer({
+        id: "hbc-identify-point",
+        type: "circle",
+        source: "hbc-identify",
+        paint: {
+          "circle-radius": 6,
+          "circle-color": "#b45309",
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 2,
+        },
+      });
+    }
+  }
+
+  function setIdentifyPoint(map, lngLat) {
+    ensureIdentifyLayers(map);
+    map.getSource("hbc-identify")?.setData({
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          properties: {},
+          geometry: {
+            type: "Point",
+            coordinates: [lngLat.lng, lngLat.lat],
+          },
+        },
+      ],
+    });
+  }
+
+  function clearIdentify(map) {
+    if (!map || !map.isStyleLoaded()) {
+      return;
+    }
+    map.getSource("hbc-identify")?.setData({
+      type: "FeatureCollection",
+      features: [],
+    });
+  }
+
+  function setIdentifyMode(map, enabled, callback) {
+    if (!map) {
+      return;
+    }
+    let styleLoaded = false;
+    try {
+      styleLoaded = map.isStyleLoaded();
+    } catch (error) {
+      return;
+    }
+    if (!styleLoaded) {
+      if (enabled) {
+        map.once("load", () => setIdentifyMode(map, true, callback));
+      }
+      return;
+    }
+    if (map.__hbcIdentify) {
+      map.off("click", map.__hbcIdentify.handler);
+      map.getCanvas().style.cursor = map.__hbcIdentify.previousCursor || "";
+      map.__hbcIdentify = null;
+    }
+    clearIdentify(map);
+    if (!enabled) {
+      return;
+    }
+    map.getCanvas().style.cursor = "crosshair";
+    const handler = (event) => {
+      setIdentifyPoint(map, event.lngLat);
+      callback(event.lngLat);
+    };
+    map.on("click", handler);
+    map.__hbcIdentify = {
+      handler,
+      previousCursor: "grab",
+    };
+  }
+
   function rectangleGeometry(start, end) {
     const west = Math.min(start.lng, end.lng);
     const east = Math.max(start.lng, end.lng);
@@ -598,6 +684,9 @@
       clearAoi: () => clearAoi(map),
       startRectangleDraw: (callback) => startRectangleDraw(map, callback),
       cancelRectangleDraw: () => map.__hbcCancelDraw?.(),
+      setIdentifyMode: (enabled, callback) =>
+        setIdentifyMode(map, enabled, callback),
+      clearIdentify: () => clearIdentify(map),
     };
     activeMap = map;
     return map;

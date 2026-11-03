@@ -17,6 +17,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_clip_aoi_browser.py
    python scripts/smoke_test_tray_browser.py
    python scripts/smoke_test_bundles_browser.py
+   python scripts/smoke_test_identify_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -162,6 +163,21 @@ failure counts, timestamps, download links, manifest links, cancellation, and
 failed-layer retry. It refreshes active jobs while the route is open and
 provides an explicit Refresh action.
 
+Click-To-Identify
+-----------------
+
+The map Identify control enters a click-to-query mode. Clicking the primary
+raster layer calls:
+
+.. code-block:: text
+
+   GET /api/tiles/{dataset_id}/identify?lon=...&lat=...
+
+The response includes the raster value, legend class/label and color when
+available, coordinates, source kind (``cog`` or ``zip``), and a status of
+``ok``, ``nodata``, or ``outside``. The map shows a result card and a point
+marker; the Identify control toggles the mode off.
+
 Optional Service, Assistant, And Clip AOI
 -----------------------------------------
 
@@ -207,6 +223,7 @@ Service endpoints:
    GET  /api/layers/{dataset_id}
    GET  /api/tiles/{dataset_id}/metadata
    GET  /api/tiles/{dataset_id}/{z}/{x}/{y}.png
+   GET  /api/tiles/{dataset_id}/identify?lon=&lat=
    POST /api/aoi/inspect
    POST /api/aoi/resolve
    GET  /api/aoi/search?q=

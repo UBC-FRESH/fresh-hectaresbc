@@ -274,6 +274,7 @@ def create_app(config: ServiceConfig) -> FastAPI:
     from fresh_hectaresbc.tiles import (
         clear_source_cache,
         configure_tile_cog_root,
+        identify_pixel,
         prune_tile_cache,
         tile_usage_stats,
     )
@@ -455,6 +456,29 @@ def create_app(config: ServiceConfig) -> FastAPI:
             )
         try:
             return layer_metadata(dataset_id, archive_root=config.archive_root)
+        except TileError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @app.get("/api/tiles/{dataset_id}/identify")
+    def tile_identify(
+        dataset_id: str,
+        lon: float = Query(ge=-180, le=180),
+        lat: float = Query(ge=-90, le=90),
+    ) -> dict[str, Any]:
+        from fresh_hectaresbc.tiles import TileError, identify_pixel
+
+        if not config.archive_root:
+            raise HTTPException(
+                status_code=503,
+                detail="raster identify needs --archive-root pointing at the recovered archive",
+            )
+        try:
+            return identify_pixel(
+                dataset_id,
+                lon,
+                lat,
+                archive_root=config.archive_root,
+            )
         except TileError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
