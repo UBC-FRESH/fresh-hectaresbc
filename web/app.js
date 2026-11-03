@@ -90,6 +90,15 @@
       timer: null,
       loading: false,
     },
+    workspaces: {
+      items: [],
+    },
+    workspace: {
+      applied: null,
+      view: null,
+      aoi: null,
+      aoiApplied: false,
+    },
     identify: {
       enabled: false,
       busy: false,
@@ -173,6 +182,7 @@
     };
     bindEvents();
     loadTray();
+    loadWorkspaces();
     const header = document.querySelector(".app-header");
     if (header && window.ResizeObserver) {
       new ResizeObserver(() => syncHeaderHeight()).observe(header);
@@ -1731,7 +1741,23 @@
     document.body.dataset.view = "map";
     document.body.classList.remove("filters-open", "inspector-open");
     els.content.innerHTML = loadingTemplate("Loading map preview…");
+    const workspaceRaw = state.route.workspace || null;
+    if (!workspaceRaw) {
+      state.workspace.applied = null;
+      state.workspace.view = null;
+      state.workspace.aoi = null;
+      state.workspace.aoiApplied = false;
+    } else if (state.workspace.applied !== workspaceRaw) {
+      const workspacePayload = decodeWorkspace(workspaceRaw);
+      if (workspacePayload) {
+        applyWorkspacePayload(workspacePayload, workspaceRaw);
+      }
+    }
     let datasetId = state.route.datasetId;
+    if (!datasetId && workspaceRaw) {
+      const workspacePayload = decodeWorkspace(workspaceRaw);
+      datasetId = workspacePayload?.primary || null;
+    }
     if (!datasetId) {
       datasetId = defaultPreviewDatasetId();
       if (!datasetId) {
@@ -1852,6 +1878,7 @@
         panel: document.querySelector("#map-layer-panel"),
         loading: document.querySelector("#map-loading"),
         extraLayers,
+        view: state.workspace.view,
         onError: () => {
           const card = document.querySelector(".map-status-card p");
           if (card) {
@@ -1867,11 +1894,12 @@
           }
         },
       });
-      if (state.clip.geometry && !els.clipPanel.hidden) {
+      if (state.clip.geometry) {
         state.mapHandle.__hbc?.setAoi(state.clip.geometry, { fit: false });
       }
       state.identify.datasetId = datasetId;
       updateIdentifyButton();
+      void restoreWorkspaceAoi();
     } catch (error) {
       state.mapHandle = null;
       if (token !== state.renderToken) {
@@ -2663,7 +2691,13 @@ python scripts/fetch_web_previews.py</pre>
           <p>No layers in the tray.</p>
           <p>Use the + buttons in Browse, Dataset, or Map to collect layers.</p>
           <a class="secondary-button" href="#/catalog?preview=available">Browse previewable layers</a>
-        </div>`;
+        </div>
+        <div class="tray-actions">
+          <button class="secondary-button" type="button" data-workspace-save>Save workspace</button>
+          <button class="secondary-button" type="button" data-workspace-share>Copy share link</button>
+        </div>
+        <h3 class="tray-saved-heading">Saved workspaces</h3>
+        ${renderWorkspaceList()}`;
       return;
     }
     els.trayBody.innerHTML = `
@@ -2689,8 +2723,12 @@ python scripts/fetch_web_previews.py</pre>
       <div class="tray-actions">
         <a class="primary-button" href="${trayMapHref()}" data-tray-open-map>Open map with tray</a>
         <button class="secondary-button" type="button" data-tray-clear>Clear tray</button>
+        <button class="secondary-button" type="button" data-workspace-save>Save workspace</button>
+        <button class="secondary-button" type="button" data-workspace-share>Copy share link</button>
       </div>
-      <p class="clip-status">The first tray layer becomes the primary map layer. Up to three additional tray layers render as context overlays.</p>`;
+      <p class="clip-status">The first tray layer becomes the primary map layer. Up to three additional tray layers render as context overlays.</p>
+      <h3 class="tray-saved-heading">Saved workspaces</h3>
+      ${renderWorkspaceList()}`;
   }
 
   function openTray() {
@@ -2718,6 +2756,257 @@ python scripts/fetch_web_previews.py</pre>
     } else {
       openTray();
     }
+  }
+
+  const WorkspaceStorageKey = "fresh-hectaresbc.workspaces.v1";
+
+  function loadWorkspaces() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(WorkspaceStorageKey) || "[]");
+      state.workspaces.items = Array.isArray(stored)
+        ? stored.filter(
+            (item) =>
+              item &&
+              typeof item.id === "string" &&
+              typeof item.name === "string" &&
+              item.state &&
+              typeof item.state === "object"
+          )
+        : [];
+    } catch (error) {
+      state.workspaces.items = [];
+    }
+  }
+
+  function saveWorkspaces() {
+    try {
+      localStorage.setItem(
+        WorkspaceStorageKey,
+        JSON.stringify(state.workspaces.items.slice(0, 50))
+      );
+    } catch (error) {
+      // Non-fatal; the in-memory list remains usable.
+    }
+  }
+
+  function geometryNumberCount(value) {
+    if (Array.isArray(value)) {
+      return value.reduce((total, item) => total + geometryNumberCount(item), 0);
+    }
+    return typeof value === "number" && Number.isFinite(value) ? 1 : 0;
+  }
+
+  function currentWorkspaceState() {
+    const primary = currentMapDatasetId() || state.tray.ids[0] || null;
+    const view = state.mapHandle?.__hbc?.getView?.() || state.workspace.view;
+    let aoi = null;
+    if (state.clip.aoi?.query) {
+      aoi = {
+        name: state.clip.aoi.name || state.clip.name || "Boundary AOI",
+        query: state.clip.aoi.query,
+        area_ha: Number(state.clip.areaHa || state.clip.aoi.area_ha || 0),
+      };
+    } else if (state.clip.geometry) {
+      const count = geometryNumberCount(state.clip.geometry.coordinates);
+      aoi = {
+        name: state.clip.name || "Drawn AOI",
+        geometry: count <= 2000 ? state.clip.geometry : null,
+        geometry_omitted: count > 2000,
+        area_ha: Number(state.clip.areaHa || 0),
+      };
+    }
+    return {
+      v: 1,
+      primary,
+      layers: [...new Set(state.tray.ids)].slice(0, 6),
+      view: view && Array.isArray(view.center) ? view : null,
+      aoi,
+      clip_selected: [...state.clip.selected].slice(0, state.clip.maxLayers),
+    };
+  }
+
+  function workspaceHref(payload) {
+    if (!payload?.primary) {
+      return "#/map";
+    }
+    return Catalog.buildRoute({
+      ...Catalog.defaultState(),
+      view: "dataset",
+      datasetId: payload.primary,
+      map: true,
+      workspace: JSON.stringify(payload),
+    });
+  }
+
+  function decodeWorkspace(raw) {
+    if (!raw) {
+      return null;
+    }
+    try {
+      const payload = JSON.parse(raw);
+      if (!payload || payload.v !== 1 || typeof payload.primary !== "string") {
+        return null;
+      }
+      if (payload.layers !== undefined && !Array.isArray(payload.layers)) {
+        return null;
+      }
+      return payload;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function applyWorkspacePayload(payload, raw) {
+    state.workspace.applied = raw;
+    state.workspace.view = payload.view || null;
+    state.workspace.aoi =
+      payload.aoi && typeof payload.aoi === "object" ? payload.aoi : null;
+    state.workspace.aoiApplied = false;
+    state.tray.ids = [
+      ...new Set(
+        (payload.layers || []).filter((value) => typeof value === "string")
+      ),
+    ].slice(0, 6);
+    saveTray();
+    state.clip.selected = new Set(
+      (payload.clip_selected || [])
+        .filter((value) => typeof value === "string")
+        .slice(0, state.clip.maxLayers)
+    );
+    if (payload.primary) {
+      state.selectedId = payload.primary;
+      state.clip.datasetId = payload.primary;
+    }
+    if (!state.workspace.aoi) {
+      state.clip.aoi = null;
+      state.clip.geometry = null;
+      state.clip.areaHa = null;
+      state.clip.areaWithinLimit = null;
+      state.clip.areaPending = false;
+    }
+    renderTray();
+  }
+
+  async function restoreWorkspaceAoi() {
+    const aoi = state.workspace.aoi;
+    if (!aoi || state.workspace.aoiApplied || !state.mapHandle?.__hbc) {
+      return;
+    }
+    state.workspace.aoiApplied = true;
+    if (aoi.geometry) {
+      state.clip.aoi = null;
+      state.clip.geometry = aoi.geometry;
+      state.clip.name = aoi.name || "Drawn AOI";
+      state.clip.areaHa = Number.isFinite(Number(aoi.area_ha))
+        ? Number(aoi.area_ha)
+        : null;
+      state.clip.areaWithinLimit =
+        state.clip.areaHa == null
+          ? null
+          : state.clip.areaHa <= state.clip.maxAreaHa;
+      state.clip.areaPending = false;
+      state.clip.error = state.clip.areaWithinLimit === false;
+      state.clip.message = aoi.geometry_omitted
+        ? "Workspace AOI geometry was too large to share."
+        : clipAoiSummary();
+      state.mapHandle.__hbc.setAoi(aoi.geometry, { fit: false });
+      renderClipPanel();
+      return;
+    }
+    if (aoi.query && state.serviceAvailable) {
+      state.clip.areaPending = true;
+      state.clip.message = "Restoring workspace AOI…";
+      renderClipPanel();
+      try {
+        const response = await fetch("../api/aoi/resolve", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ query: aoi.query, name: aoi.name || null }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload.status !== "ok" || !payload.geometry) {
+          throw new Error(payload.detail || "boundary could not be restored");
+        }
+        state.clip.aoi = payload;
+        state.clip.geometry = payload.geometry;
+        state.clip.name = payload.name || aoi.name || "AOI";
+        state.clip.areaHa = Number(payload.area_ha || 0);
+        state.clip.areaWithinLimit = state.clip.areaHa <= state.clip.maxAreaHa;
+        state.clip.areaPending = false;
+        state.clip.error = state.clip.areaWithinLimit === false;
+        state.clip.message = clipAoiSummary();
+        state.mapHandle?.__hbc?.setAoi(payload.geometry, { fit: false });
+      } catch (error) {
+        state.clip.areaPending = false;
+        state.clip.error = true;
+        state.clip.message = `Workspace AOI could not be restored: ${error.message}`;
+      }
+      renderClipPanel();
+      return;
+    }
+    state.clip.message =
+      "Workspace AOI needs the map service or a compact geometry to restore.";
+    renderClipPanel();
+  }
+
+  function saveCurrentWorkspace() {
+    const payload = currentWorkspaceState();
+    const name = window.prompt("Name this workspace:", "Workspace");
+    if (!name || !name.trim()) {
+      return;
+    }
+    state.workspaces.items.unshift({
+      id: `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+      name: name.trim().slice(0, 80),
+      created_utc: new Date().toISOString(),
+      state: payload,
+    });
+    saveWorkspaces();
+    renderTray();
+    showToast("Workspace saved.");
+  }
+
+  async function copyWorkspaceLink() {
+    const payload = currentWorkspaceState();
+    const href = new URL(workspaceHref(payload), window.location.href).href;
+    try {
+      await copyText(href);
+      showToast("Workspace link copied.");
+    } catch (error) {
+      showToast("Could not copy the workspace link.");
+    }
+  }
+
+  function openSavedWorkspace(id) {
+    const item = state.workspaces.items.find((candidate) => candidate.id === id);
+    if (!item) {
+      return;
+    }
+    closeTray();
+    navigate(Catalog.parseRoute(workspaceHref(item.state)));
+  }
+
+  function deleteSavedWorkspace(id) {
+    state.workspaces.items = state.workspaces.items.filter(
+      (item) => item.id !== id
+    );
+    saveWorkspaces();
+    renderTray();
+  }
+
+  function renderWorkspaceList() {
+    if (!state.workspaces.items.length) {
+      return '<p class="tray-empty">No saved workspaces yet.</p>';
+    }
+    return `<div class="workspace-list">${state.workspaces.items
+      .slice(0, 12)
+      .map(
+        (item) => `<div class="workspace-row">
+          <button type="button" class="link-button" data-workspace-open="${Catalog.escapeHtml(item.id)}">${Catalog.escapeHtml(item.name)}</button>
+          <button type="button" class="link-button" data-workspace-delete="${Catalog.escapeHtml(item.id)}" aria-label="Delete ${Catalog.escapeHtml(item.name)}">×</button>
+        </div>`
+      )
+      .join("")}</div>`;
   }
 
   async function loadAssistantInfo() {
@@ -3630,6 +3919,24 @@ python scripts/fetch_web_previews.py</pre>
     const target = event.target;
     if (target.closest("[data-tray-open-map]")) {
       closeTray();
+      return;
+    }
+    if (target.closest("[data-workspace-save]")) {
+      saveCurrentWorkspace();
+      return;
+    }
+    if (target.closest("[data-workspace-share]")) {
+      void copyWorkspaceLink();
+      return;
+    }
+    const openWorkspace = target.closest("[data-workspace-open]");
+    if (openWorkspace) {
+      openSavedWorkspace(openWorkspace.dataset.workspaceOpen);
+      return;
+    }
+    const deleteWorkspace = target.closest("[data-workspace-delete]");
+    if (deleteWorkspace) {
+      deleteSavedWorkspace(deleteWorkspace.dataset.workspaceDelete);
       return;
     }
     const remove = target.closest("[data-tray-remove]");

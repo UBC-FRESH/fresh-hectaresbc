@@ -89,6 +89,8 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   cancellation, failed-layer retry, downloads, manifests, and refresh.
 - The map Identify control reads the primary raster value, legend label, color,
   coordinates, and source kind at a clicked point; nodata/outside states are handled.
+- Workspaces encode primary/tray layers, map view, AOI, and Clip selections into
+  a shareable map URL; named workspaces save in local browser storage.
 
 ### Agent Service And GIS Bundles (P20)
 
