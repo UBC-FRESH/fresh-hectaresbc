@@ -3,8 +3,8 @@
 Date: 2026-11-03
 Status: P19/P20/P21/P22/P23/P24/P25/P26/P27 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
-Latest feature merge: `82ad861`
-Latest merged PR: #214 (compare flicker mode); wipe: #212
+Latest feature merge: `f48d904`
+Latest merged PR: #216 (compare PNG export); flicker: #214
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
