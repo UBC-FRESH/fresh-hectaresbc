@@ -97,6 +97,7 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   coverage, job counts, and copyable COG-build commands.
 - The map Discover panel finds previewable layers intersecting the current view
   or AOI and adds results to the tray.
+- Browse saves named search views and favorite datasets in local browser storage.
 
 ### Agent Service And GIS Bundles (P20)
 

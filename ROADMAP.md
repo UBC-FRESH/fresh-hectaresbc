@@ -425,8 +425,8 @@ Phase 26 saves named Browse views and favorite datasets in local browser storage
 and exposes them in the Browse rail and result/detail controls.
 
 - [x] P26.1 Plan saved search and favorite contract. Child issue: #198.
-- [ ] P26.2 Add saved search/favorite persistence. Child issue: #199.
-- [ ] P26.3 Add saved rail UI and browser coverage. Child issue: #200.
+- [x] P26.2 Add saved search/favorite persistence. Child issue: #199.
+- [x] P26.3 Add saved rail UI and browser coverage. Child issue: #200.
 - [ ] P26.4 Verify and close Phase 26. Child issue: #201.
 
 ## Current Next Steps

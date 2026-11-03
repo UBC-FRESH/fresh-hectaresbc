@@ -899,13 +899,98 @@ body[data-view="map"] .inspector {
 }
 
 .result-card-wrap .result-card {
-  padding-right: 2.3rem;
+  padding-right: 4rem;
 }
 
 .result-card-tray {
   position: absolute;
   top: 0.55rem;
   right: 0.55rem;
+}
+
+.result-card-favorite {
+  position: absolute;
+  top: 0.55rem;
+  right: 2.1rem;
+}
+
+.saved-browse {
+  margin-top: 0.9rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--line);
+}
+
+.saved-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+}
+
+.saved-head h3,
+.saved-subhead {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.saved-search-button {
+  min-height: 1.55rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.62rem;
+}
+
+.saved-subhead {
+  margin-top: 0.6rem;
+}
+
+.saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.3rem;
+}
+
+.saved-row {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.saved-row > button,
+.saved-row > a {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.2rem 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-soft);
+  color: var(--ink);
+  font-size: 0.66rem;
+  text-align: left;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-row > button:hover,
+.saved-row > a:hover {
+  border-color: var(--accent);
+}
+
+.saved-row > button:last-child {
+  flex: none;
+  width: 1.5rem;
+  text-align: center;
+}
+
+.saved-empty {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.64rem;
 }
 
 .result-card:hover {
@@ -2428,6 +2513,31 @@ kbd {
 .tray-add:hover {
   border-color: var(--accent);
   background: var(--accent-soft);
+}
+
+.favorite-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.45rem;
+  min-height: 1.45rem;
+  margin-left: 0.2rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.favorite-toggle:hover,
+.favorite-toggle.is-active {
+  border-color: #c58a16;
+  background: #fff8e7;
+  color: #a66a00;
 }
 
 .map-context-layers {
