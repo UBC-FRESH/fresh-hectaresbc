@@ -24,6 +24,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_discover_browser.py
    python scripts/smoke_test_saved_browse_browser.py
    python scripts/smoke_test_compare_browser.py
+   python scripts/smoke_test_series_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -44,6 +45,8 @@ Routes
    /web/#/dataset/dl_adminunits_bcts
    /web/#/dataset/dl_adminunits_bcts/map
    /web/#/map
+   /web/#/compare?left=<dataset_id>&right=<dataset_id>
+   /web/#/series?layers=<dataset_id_1>,<dataset_id_2>,<dataset_id_3>&speed=1000
    /web/#/bundles
 
 Legacy hashes redirect automatically:
@@ -183,6 +186,21 @@ and fast/normal/slow speed controls and respects reduced-motion preferences.
 Compare mode intentionally omits AOI/identify/Clip controls. **Download PNG**
 exports the current split, wipe, or active flicker frame with dataset labels,
 mode, date, and map attribution.
+
+Flicker Series
+--------------
+
+The `#/series?layers=<ids>&speed=<ms>` route cycles through two to six previewable
+layers in the supplied order. The tray's **Flicker series** action builds this
+route from tray order; reorder the tray to define a year or thematic sequence.
+Each layer gets its own MapLibre map with a shared WGS84 extent and synchronized
+pan/zoom. Only the active frame is visible and interactive.
+
+Controls include play/pause, previous/next frame, and fast/normal/slow speeds
+(500/1000/2000 ms). Stepping pauses playback. Reduced-motion preferences start
+the series paused. **Download PNG** exports the active frame with its label,
+dataset ID, frame number, date, and map attribution. A missing-series state is
+shown when fewer than two layers can be loaded.
 
 Saved Searches And Favorites
 ----------------------------

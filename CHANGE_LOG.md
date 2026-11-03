@@ -230,3 +230,5 @@
 - Activated Phase 28 bundle preflight estimates with parent issue #217, child issues #218-#221, and planning/bundle_preflight_plan.md.
 - Completed P28.2/P28.3 with a bundle estimate API, per-layer pixel/size/time estimates, Clip preflight card, invalidation on AOI/layer changes, and browser coverage.
 - Completed and merged Phase 28 via PR #222: bundle preflight API, pixel/size/time estimates, Clip preflight card, invalidation, and browser coverage.
+- Activated Phase 29 multi-layer flicker series with parent issue #223, child issues #224-#227, and planning/series_flicker_plan.md.
+- Completed P29.2/P29.3 with a synchronous multi-map series engine, `#/series` route state, full-width Series workspace, play/pause/step/speed controls, tray and compare entry points, active-frame PNG export, route/browser coverage, and docs.

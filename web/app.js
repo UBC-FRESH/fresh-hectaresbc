@@ -119,6 +119,13 @@
       speed: 1000,
       activeLeft: true,
     },
+    series: {
+      timer: null,
+      paused: false,
+      speed: 1000,
+      index: 0,
+      count: 0,
+    },
     preflight: {
       busy: false,
       result: null,
@@ -501,6 +508,8 @@
       void renderAdmin();
     } else if (route.view === "compare") {
       void renderCompare();
+    } else if (route.view === "series") {
+      void renderSeries();
     } else {
       void renderDataset();
     }
@@ -2038,6 +2047,7 @@
       state.compareResizeHandler = null;
     }
     clearCompareFlicker();
+    clearSeriesFlicker();
   }
 
   async function renderCompare() {
@@ -2108,6 +2118,7 @@
           <div class="compare-actions">
             <button class="secondary-button" type="button" data-compare-swap>Swap sides</button>
             <button class="secondary-button" type="button" data-compare-download>Download PNG</button>
+            ${state.tray.ids.length >= 3 ? `<a class="secondary-button" href="${traySeriesHref()}">Open series</a>` : ""}
             <a class="secondary-button" href="#/dataset/${encodeURIComponent(leftLayer.dataset_id)}/map">Open left map</a>
             <a class="secondary-button" href="#/map">Back to map</a>
           </div>
@@ -2190,6 +2201,341 @@
         leftLayer.previewUrl,
         error.message
       );
+    }
+  }
+
+  function seriesMissingTemplate() {
+    return `<div class="compare-shell series-shell">
+      <header class="history-head">
+        <div><span class="badge badge-accent">Series</span><h1>Layer flicker series</h1></div>
+        <a class="secondary-button" href="#/map">Back to map</a>
+      </header>
+      <div class="history-empty"><p>Two previewable layers are needed for a series.</p><a class="primary-button" href="#/catalog?preview=available">Browse previewable layers</a></div>
+    </div>`;
+  }
+
+  function clearSeriesFlicker() {
+    if (state.series.timer) {
+      clearInterval(state.series.timer);
+      state.series.timer = null;
+    }
+    state.series.paused = false;
+    state.series.index = 0;
+    state.series.count = 0;
+  }
+
+  function seriesCompareHref(layers) {
+    return Catalog.buildRoute({
+      ...Catalog.defaultState(),
+      view: "compare",
+      compareLeft: layers[0]?.dataset_id || null,
+      compareRight: layers[1]?.dataset_id || null,
+    });
+  }
+
+  async function renderSeries() {
+    const token = ++state.renderToken;
+    stopHistoryPolling();
+    clearCompareResize();
+    closeDiscover();
+    window.HectaresBCMap?.destroy();
+    closeClipPanel();
+    closeTray();
+    resetIdentifyState();
+    document.body.dataset.view = "series";
+    document.body.classList.remove("filters-open", "inspector-open");
+    els.content.innerHTML = loadingTemplate("Loading layer series…");
+    updateHeader();
+    updateTabs();
+    document.title = "Layer series · HectaresBC";
+    if (els.liveStatus) {
+      els.liveStatus.textContent = "Layer series.";
+    }
+    const requested = Array.isArray(state.route.seriesLayers)
+      ? state.route.seriesLayers
+      : [];
+    const fallback = state.tray.ids.slice(0, 6);
+    const ids = [...new Set((requested.length ? requested : fallback).filter(Boolean))]
+      .slice(0, 6);
+    if (ids.length < 2) {
+      els.content.innerHTML = seriesMissingTemplate();
+      els.content.querySelector("h1")?.focus();
+      return;
+    }
+    const loaded = (
+      await Promise.all(
+        ids.map((datasetId) =>
+          loadContextLayer(datasetId).catch(() => null)
+        )
+      )
+    ).filter(Boolean);
+    if (token !== state.renderToken) {
+      return;
+    }
+    if (loaded.length < 2) {
+      els.content.innerHTML = seriesMissingTemplate();
+      els.content.querySelector("h1")?.focus();
+      return;
+    }
+    const speed = [500, 1000, 2000].includes(Number(state.route.seriesSpeed))
+      ? Number(state.route.seriesSpeed)
+      : 1000;
+    state.series.speed = speed;
+    state.series.index = 0;
+    state.series.count = loaded.length;
+    const fitBounds = loaded.reduce(
+      (bounds, layer) => unionBounds(bounds, layer.bounds),
+      null
+    );
+    const mapHref = Catalog.buildRoute({
+      ...Catalog.defaultState(),
+      view: "dataset",
+      datasetId: loaded[0].dataset_id,
+      map: true,
+      layers: loaded.map((layer) => layer.dataset_id),
+    });
+    els.content.innerHTML = `
+      <div class="compare-shell series-shell">
+        <header class="compare-head">
+          <div>
+            <span class="dataset-eyebrow"><span class="badge badge-accent">Series</span></span>
+            <h1 tabindex="-1">Layer flicker series</h1>
+            <p>Cycles through ${loaded.length} layers in tray order. Pan or zoom the active frame to synchronize every map.</p>
+          </div>
+          <div class="compare-actions">
+            <button class="secondary-button" type="button" data-series-download>Download PNG</button>
+            <a class="secondary-button" href="${mapHref}">Open map with series</a>
+            <a class="secondary-button" href="${seriesCompareHref(loaded)}">Compare first two</a>
+            <a class="secondary-button" href="#/map">Back to map</a>
+          </div>
+        </header>
+        <div class="series-controls" role="group" aria-label="Series playback">
+          <button class="secondary-button" type="button" data-series-prev aria-label="Previous frame">← Previous</button>
+          <button class="secondary-button" type="button" data-series-toggle>Pause</button>
+          <button class="secondary-button" type="button" data-series-next aria-label="Next frame">Next →</button>
+          <label>Speed
+            <select data-series-speed>
+              <option value="500" ${speed === 500 ? "selected" : ""}>Fast</option>
+              <option value="1000" ${speed === 1000 ? "selected" : ""}>Normal</option>
+              <option value="2000" ${speed === 2000 ? "selected" : ""}>Slow</option>
+            </select>
+          </label>
+          <span class="series-frame-status" data-series-frame aria-live="polite"></span>
+        </div>
+        <div class="series-stage" role="group" aria-label="Layer flicker frames">
+          ${loaded
+            .map(
+              (layer, index) => `<section class="series-pane${index === 0 ? " is-active" : ""}" data-series-pane="${index}" aria-label="Frame ${index + 1}: ${Catalog.escapeHtml(layer.title)}" ${index === 0 ? "" : "inert"}>
+                <div id="series-map-${index}" class="series-map" aria-label="${Catalog.escapeHtml(layer.title)} map"></div>
+                <div class="series-label"><strong>${Catalog.escapeHtml(layer.title)}</strong><span>Frame ${index + 1} of ${loaded.length} · ${Catalog.escapeHtml(layer.dataset_id)}</span></div>
+              </section>`
+            )
+            .join("")}
+        </div>
+        <p class="clip-status">These maps use the same WGS84 extent and synchronized pan/zoom. Reorder the tray to change the sequence; layer styling controls are intentionally omitted in series mode.</p>
+      </div>`;
+    bindSeriesControls();
+    els.content.querySelector("h1")?.focus();
+    try {
+      state.mapHandle = await window.HectaresBCMap.createSeries({
+        layers: loaded.map((layer, index) => ({
+          container: document.querySelector(`#series-map-${index}`),
+          previewUrl: layer.tileUrl ? null : layer.previewUrl,
+          tileUrl: layer.tileUrl,
+          minzoom: layer.minzoom,
+          maxzoom: layer.maxzoom,
+          bounds: layer.bounds,
+          fitBounds,
+          categorical: layer.categorical,
+        })),
+      });
+      const handle = state.mapHandle;
+      const resize = () => handle?.resize?.();
+      if (state.compareResizeHandler) {
+        window.removeEventListener("resize", state.compareResizeHandler);
+      }
+      state.compareResizeHandler = resize;
+      window.addEventListener("resize", resize);
+      requestAnimationFrame(() => resize());
+    } catch (error) {
+      els.content.innerHTML = mapFallbackTemplate(
+        getRecordSync(loaded[0].dataset_id),
+        Catalog.previewStatus(
+          getRecordSync(loaded[0].dataset_id),
+          state.previewIndex
+        ),
+        null,
+        loaded[0].previewUrl,
+        error.message
+      );
+    }
+  }
+
+  function bindSeriesControls() {
+    const panes = [...document.querySelectorAll("[data-series-pane]")];
+    const toggle = document.querySelector("[data-series-toggle]");
+    const frameStatus = document.querySelector("[data-series-frame]");
+    const speedSelect = document.querySelector("[data-series-speed]");
+    const previous = document.querySelector("[data-series-prev]");
+    const next = document.querySelector("[data-series-next]");
+    if (!panes.length) {
+      return;
+    }
+    state.series.count = panes.length;
+    const apply = (index) => {
+      const active = ((index % panes.length) + panes.length) % panes.length;
+      state.series.index = active;
+      panes.forEach((pane, paneIndex) => {
+        const selected = paneIndex === active;
+        pane.classList.toggle("is-active", selected);
+        pane.style.opacity = selected ? "1" : "0";
+        pane.style.pointerEvents = selected ? "auto" : "none";
+        pane.setAttribute("aria-hidden", selected ? "false" : "true");
+        pane.inert = !selected;
+      });
+      if (frameStatus) {
+        const label = panes[active].querySelector(".series-label strong");
+        const id = panes[active].querySelector(".series-label span");
+        frameStatus.textContent = `Frame ${active + 1} of ${panes.length} · ${label?.textContent?.trim() || "Layer"}${id?.textContent?.includes(" · ") ? ` · ${id.textContent.split(" · ").pop()}` : ""}`;
+      }
+    };
+    const stop = () => {
+      if (state.series.timer) {
+        clearInterval(state.series.timer);
+        state.series.timer = null;
+      }
+    };
+    const start = () => {
+      stop();
+      if (state.series.paused) {
+        return;
+      }
+      state.series.timer = setInterval(() => {
+        apply(state.series.index + 1);
+      }, state.series.speed);
+    };
+    const setPaused = (paused) => {
+      state.series.paused = paused;
+      if (toggle) {
+        toggle.textContent = paused ? "Play" : "Pause";
+      }
+      if (paused) {
+        stop();
+      } else {
+        start();
+      }
+    };
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    apply(0);
+    state.series.paused = reducedMotion;
+    if (toggle) {
+      toggle.textContent = reducedMotion ? "Play" : "Pause";
+      toggle.addEventListener("click", () => setPaused(!state.series.paused));
+    }
+    previous?.addEventListener("click", () => {
+      setPaused(true);
+      apply(state.series.index - 1);
+    });
+    next?.addEventListener("click", () => {
+      setPaused(true);
+      apply(state.series.index + 1);
+    });
+    speedSelect?.addEventListener("change", () => {
+      state.series.speed = Number(speedSelect.value) || 1000;
+      state.route.seriesSpeed = state.series.speed;
+      const nextHash = Catalog.buildRoute(state.route);
+      if (nextHash !== window.location.hash) {
+        window.history.replaceState({}, "", nextHash);
+      }
+      if (!state.series.paused) {
+        start();
+      }
+    });
+    start();
+  }
+
+  async function downloadSeriesImage() {
+    const index = state.series.index;
+    const canvas = document.querySelector(
+      `#series-map-${index} .maplibregl-canvas`
+    );
+    const pane = document.querySelector(`[data-series-pane="${index}"]`);
+    if (!canvas || !pane) {
+      showToast("The active series frame is still loading.");
+      return;
+    }
+    const title =
+      pane.querySelector(".series-label strong")?.textContent?.trim() || "Layer";
+    const datasetId =
+      pane.querySelector(".series-label span")?.textContent?.trim() || "";
+    const footer = 26;
+    const target = document.createElement("canvas");
+    target.width = canvas.width;
+    target.height = canvas.height + footer;
+    const ctx = target.getContext("2d");
+    if (!ctx) {
+      showToast("PNG export is not supported in this browser.");
+      return;
+    }
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, target.width, target.height);
+    ctx.drawImage(canvas, 0, 0);
+    ctx.save();
+    ctx.font = "600 13px sans-serif";
+    let displayTitle = title;
+    while (
+      displayTitle.length > 4 &&
+      ctx.measureText(displayTitle).width > canvas.width - 32
+    ) {
+      displayTitle = displayTitle.slice(0, -2);
+    }
+    let displayId = datasetId;
+    ctx.font = "10px monospace";
+    while (
+      displayId.length > 8 &&
+      ctx.measureText(displayId).width > canvas.width - 32
+    ) {
+      displayId = displayId.slice(0, -2);
+    }
+    ctx.font = "600 13px sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.94)";
+    ctx.fillRect(8, 8, Math.min(canvas.width - 16, Math.max(180, ctx.measureText(displayTitle).width + 16)), 38);
+    ctx.fillStyle = "#1f2933";
+    ctx.fillText(displayTitle, 16, 24);
+    ctx.font = "10px monospace";
+    ctx.fillStyle = "#66727d";
+    ctx.fillText(displayId, 16, 38);
+    ctx.font = "10px sans-serif";
+    ctx.fillStyle = "#66727d";
+    ctx.fillText(
+      `HectaresBC · series · frame ${index + 1} of ${state.series.count} · ${new Date().toLocaleDateString()} · Map data © OpenStreetMap contributors`,
+      8,
+      target.height - 9
+    );
+    ctx.restore();
+    try {
+      const blob = await new Promise((resolve, reject) => {
+        target.toBlob(
+          (value) =>
+            value ? resolve(value) : reject(new Error("PNG encoding failed")),
+          "image/png"
+        );
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `hectaresbc-series-frame-${index + 1}-${new Date()
+        .toISOString()
+        .slice(0, 10)}.png`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      showToast("Series frame PNG downloaded.");
+    } catch (error) {
+      showToast(`Could not export series frame: ${error.message}`);
     }
   }
 
@@ -2470,6 +2816,7 @@
 
     const token = ++state.renderToken;
     stopHistoryPolling();
+    clearCompareResize();
     closeDiscover();
     document.body.dataset.view = "map";
     document.body.classList.remove("filters-open", "inspector-open");
@@ -2940,6 +3287,10 @@ python scripts/fetch_web_previews.py</pre>
       void downloadCompareImage();
       return;
     }
+    if (target.closest("[data-series-download]")) {
+      void downloadSeriesImage();
+      return;
+    }
     if (target.closest("[data-compare-swap]")) {
       const left = state.route.compareLeft;
       const right = state.route.compareRight;
@@ -3330,6 +3681,7 @@ python scripts/fetch_web_previews.py</pre>
       "aria-selected",
       state.route.view === "map" ||
         state.route.view === "compare" ||
+        state.route.view === "series" ||
         (state.route.view === "dataset" && state.route.map)
         ? "true"
         : "false"
@@ -3672,6 +4024,18 @@ python scripts/fetch_web_previews.py</pre>
     });
   }
 
+  function traySeriesHref() {
+    if (state.tray.ids.length < 2) {
+      return "#/series";
+    }
+    return Catalog.buildRoute({
+      ...Catalog.defaultState(),
+      view: "series",
+      seriesLayers: state.tray.ids.slice(0, 6),
+      seriesSpeed: state.series.speed || 1000,
+    });
+  }
+
   function renderTray() {
     if (!els?.trayBody) {
       return;
@@ -3715,6 +4079,7 @@ python scripts/fetch_web_previews.py</pre>
       <div class="tray-actions">
         <a class="primary-button" href="${trayMapHref()}" data-tray-open-map>Open map with tray</a>
         <a class="secondary-button" href="${trayCompareHref()}">Compare first two</a>
+        ${state.tray.ids.length >= 2 ? `<a class="secondary-button" href="${traySeriesHref()}">Flicker series</a>` : ""}
         <button class="secondary-button" type="button" data-tray-clear>Clear tray</button>
         <button class="secondary-button" type="button" data-workspace-save>Save workspace</button>
         <button class="secondary-button" type="button" data-workspace-share>Copy share link</button>
