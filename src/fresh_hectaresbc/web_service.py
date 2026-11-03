@@ -102,8 +102,8 @@ The UI has three surfaces:
   switcher, visibility, opacity, legend, OpenStreetMap/offline basemaps, and
   fit-to-layer. #/map opens BCTS Operating Areas by default. The "Clip AOI"
   button opens a drawer that resolves a boundary or draws a rectangle, lets the
-  user search and select up to six previewable layers, prepares a bundle, and
-  lists recent downloads.
+  user search and select up to six previewable layers, runs bundle preparation
+  as a job with progress/cancel, and lists recent downloads.
 
 Preview facts: the published DataLad index has 2,163 previews and 20
 not-previewable records. Published PNGs are 256 px; ignored 2048 px local
@@ -124,7 +124,8 @@ AOI/bundle rules:
 - If resolve-aoi returns status needs_name or ambiguous, show the candidate
   labels and ask the user to choose; do not guess.
 - Tell users they can also use the map's Clip AOI drawer to resolve a boundary
-  or draw a box, select layers, and download the bundle directly.
+  or draw a box, select layers, watch job progress, cancel a job, and download
+  the bundle directly.
 - Before preparing a bundle, use search-layers to find raster dataset IDs.
 - Bundles are limited to 6 layers and 10,000,000 ha in the demo. Only use
   dataset IDs returned by search-layers or present in the catalog.
@@ -254,13 +255,24 @@ def create_app(config: ServiceConfig) -> FastAPI:
     config.bundle_root.mkdir(parents=True, exist_ok=True)
     config.tile_cache_root = Path(config.tile_cache_root).expanduser().resolve()
     config.tile_cache_root.mkdir(parents=True, exist_ok=True)
+    from fresh_hectaresbc.jobs import BundleJobManager
     from fresh_hectaresbc.tiles import prune_tile_cache
 
     prune_tile_cache(
         config.tile_cache_root, max_bytes=config.tile_cache_max_bytes
     )
+    job_manager = BundleJobManager(
+        output_root=config.bundle_root,
+        archive_root=config.archive_root,
+        femic_src=config.femic_src,
+        max_layers=config.max_layers,
+        max_area_ha=config.max_area_ha,
+        public_url=config.public_url,
+    )
     app = FastAPI(title=config.title, version="0.0.0")
     app.state.config = config
+    app.state.bundle_jobs = job_manager
+    app.router.on_shutdown.append(job_manager.close)
     app.add_middleware(GZipMiddleware, minimum_size=1024)
 
     @app.middleware("http")
@@ -495,10 +507,17 @@ def create_app(config: ServiceConfig) -> FastAPI:
         except FemicBridgeError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
-    @app.post("/api/bundles")
-    def bundle_create(body: BundleRequest) -> dict[str, Any]:
-        from fresh_hectaresbc.bundle import BundleError, prepare_bundle
-
+    def bundle_request_aoi(body: BundleRequest) -> Path | None:
+        unique_layers = list(
+            dict.fromkeys(str(layer).strip() for layer in body.layer_ids if layer)
+        )
+        if not unique_layers:
+            raise HTTPException(status_code=422, detail="select at least one layer")
+        if len(unique_layers) > config.max_layers:
+            raise HTTPException(
+                status_code=422,
+                detail=f"select at most {config.max_layers} layers per bundle",
+            )
         if body.aoi_geometry is not None and body.aoi_query:
             raise HTTPException(
                 status_code=422,
@@ -509,12 +528,18 @@ def create_app(config: ServiceConfig) -> FastAPI:
                 status_code=422,
                 detail="provide aoi_geometry or aoi_query",
             )
-        aoi_path = None
-        if body.aoi_geometry is not None:
-            try:
-                aoi_path = _write_drawn_aoi(config, body.aoi_geometry)
-            except ValueError as exc:
-                raise HTTPException(status_code=422, detail=str(exc)) from exc
+        if body.aoi_geometry is None:
+            return None
+        try:
+            return _write_drawn_aoi(config, body.aoi_geometry)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post("/api/bundles")
+    def bundle_create(body: BundleRequest) -> dict[str, Any]:
+        from fresh_hectaresbc.bundle import BundleError, prepare_bundle
+
+        aoi_path = bundle_request_aoi(body)
         try:
             return prepare_bundle(
                 layer_ids=body.layer_ids,
@@ -530,6 +555,36 @@ def create_app(config: ServiceConfig) -> FastAPI:
             )
         except BundleError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    @app.post("/api/bundle-jobs", status_code=202)
+    def bundle_job_create(body: BundleRequest) -> dict[str, Any]:
+        aoi_path = bundle_request_aoi(body)
+        job = job_manager.submit(
+            layer_ids=body.layer_ids,
+            aoi_query=body.aoi_query,
+            aoi_name=body.aoi_name or ("Drawn AOI" if aoi_path else None),
+            aoi_geojson=aoi_path,
+        )
+        return {
+            "status": job["status"],
+            "job_id": job["job_id"],
+            "job": job,
+            "status_url": f"/api/bundle-jobs/{job['job_id']}",
+        }
+
+    @app.get("/api/bundle-jobs/{job_id}")
+    def bundle_job_status(job_id: str) -> dict[str, Any]:
+        job = job_manager.get(job_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail="bundle job not found")
+        return job
+
+    @app.post("/api/bundle-jobs/{job_id}/cancel")
+    def bundle_job_cancel(job_id: str) -> dict[str, Any]:
+        job = job_manager.cancel(job_id)
+        if job is None:
+            raise HTTPException(status_code=404, detail="bundle job not found")
+        return job
 
     @app.get("/api/bundles")
     def bundle_list(limit: int = Query(default=20, ge=1, le=100)) -> dict[str, Any]:

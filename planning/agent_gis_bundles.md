@@ -48,7 +48,10 @@ Endpoints:
 | GET | `/api/tiles/{dataset_id}/{z}/{x}/{y}.png` | On-demand Web-Mercator raster tile from the 1 ha source |
 | POST | `/api/aoi/resolve` | Resolve a named FEMIC/BCDC boundary to a GeoJSON AOI |
 | GET | `/api/aoi/search?q=` | Search boundary packages before resolution |
-| POST | `/api/bundles` | Clip selected rasters to an AOI and create a ZIP |
+| POST | `/api/bundles` | Clip selected rasters to an AOI and create a ZIP (synchronous) |
+| POST | `/api/bundle-jobs` | Queue a bundle job and return its job ID |
+| GET | `/api/bundle-jobs/{id}` | Job status, progress, stage, and result |
+| POST | `/api/bundle-jobs/{id}/cancel` | Request best-effort cancellation between layers |
 | GET | `/api/bundles` | Recent bundle summaries |
 | GET | `/api/bundles/{id}` | Bundle manifest |
 | GET | `/api/bundles/{id}/download` | Bundle ZIP |
@@ -136,13 +139,22 @@ The map workspace exposes a **Clip AOI** drawer (`.clip-panel` in
 - filter and multi-select up to six previewable layers (40 visible results at a
   time, search across all 2,183);
 - show the AOI outline on the map and submit its exact GeoJSON geometry;
+- run bundle preparation through `/api/bundle-jobs`, poll progress, show the
+  current layer and a progress bar, and request cancellation between layers;
 - show bundle status, layer count, ZIP size, download link, and recent bundles.
 
 The panel is only enabled when `/api/health` reports a running service. Map
 drawing waits for MapLibre style load, handles large TSA geometries without
 spread-operator stack overflows, and restores the AOI overlay after a map
-re-render. The synchronous bundle request is suitable for the demo limits; a
-future job/polling API can be added if six large layers approach proxy timeouts.
+re-render. The synchronous `/api/bundles` endpoint remains for CLI and script
+clients; the browser uses the job API so long clips are not held open by one
+request through the Cloudflare proxy.
+
+Jobs run one at a time in a single worker, are persisted under
+`var/bundles/jobs/`, and are marked `interrupted` if the service restarts while
+they are queued or running. Cancellation is best-effort: it is checked before
+AOI clipping, between layers, and before packaging; a layer already being
+clipped finishes before the job stops.
 
 ## Assistant Tools
 
@@ -178,6 +190,8 @@ installed OpenCode CLI with the service user's permissions.
   authenticating proxy.
 - Bundle outputs live under `var/bundles/` (ignored) and are served by ID.
 - Bundle IDs are validated; download paths cannot escape the bundle root.
+- Bundle jobs are serialized through one worker and persisted under
+  `var/bundles/jobs/`; cancellation is checked between clipping steps.
 - Browser-drawn AOI geometry is validated as a finite Polygon/MultiPolygon,
   bounded in coordinate count, and written under `var/bundles/aoi/`; no
   client-supplied filesystem paths are accepted.
