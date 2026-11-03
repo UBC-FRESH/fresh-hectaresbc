@@ -2,8 +2,8 @@
 
 Date: 2026-11-02
 Branch: `main`
-Latest code commit: `0c71a82`
-Latest merged PR: #143 (assistant guide); Clip AOI drawer: #142
+Latest code commit: `40c4eb1`
+Latest merged PR: #145 (queued bundle jobs); Clip AOI drawer: #142
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
