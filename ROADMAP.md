@@ -392,9 +392,22 @@ actions in the Clip drawer.
 - [x] P23.3 Add AOI library UI and browser coverage. Child issue: #182.
 - [x] P23.4 Verify and close Phase 23. Child issue: #183.
 
+## Phase 24: Protected Admin Statistics Dashboard
+
+Status: implementation in progress on `feature/p24-admin-dashboard`.
+Parent issue: #185. Planning: `planning/admin_dashboard_plan.md`.
+
+Phase 24 turns `/api/stats` into a protected admin view of cache health, latency,
+source mix, COG coverage, job status, and top datasets.
+
+- [ ] P24.1 Plan admin dashboard route and metrics contract. Child issue: #186.
+- [ ] P24.2 Add admin stats API details and route. Child issue: #187.
+- [ ] P24.3 Add admin dashboard UI and browser coverage. Child issue: #188.
+- [ ] P24.4 Verify and close Phase 24. Child issue: #189.
+
 ## Current Next Steps
 
-1. Complete P23.1 planning contract and close child issue #180.
-2. Implement P23.2 persistence and restore.
-3. Implement P23.3 UI and browser coverage.
-4. Open the Phase 23 PR, verify, merge, and close parent #179.
+1. Complete P24.1 planning contract and close child issue #186.
+2. Implement P24.2 route and stats API details.
+3. Implement P24.3 dashboard UI and browser coverage.
+4. Open the Phase 24 PR, verify, merge, and close parent #185.
