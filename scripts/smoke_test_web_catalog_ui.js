@@ -164,6 +164,24 @@ assert.strictEqual(mapRoute.map, true);
 assert.strictEqual(mapRoute.datasetId, null);
 assert.strictEqual(browser.buildRoute(mapRoute), "#/map");
 
+const seriesRoute = browser.parseRoute(
+  "#/series?layers=dl_adminunits_bcts,vl_virtualspecies_bulltroutsalvelinusconfluentus_1135&speed=500"
+);
+assert.strictEqual(seriesRoute.view, "series");
+assert.deepStrictEqual(seriesRoute.seriesLayers, [
+  "dl_adminunits_bcts",
+  "vl_virtualspecies_bulltroutsalvelinusconfluentus_1135",
+]);
+assert.strictEqual(seriesRoute.seriesSpeed, 500);
+assert.strictEqual(
+  browser.buildRoute(seriesRoute),
+  "#/series?layers=dl_adminunits_bcts%2Cvl_virtualspecies_bulltroutsalvelinusconfluentus_1135&speed=500"
+);
+const malformedSeriesSpeed = browser.parseRoute(
+  "#/series?layers=dl_adminunits_bcts&speed=bogus"
+);
+assert.strictEqual(malformedSeriesSpeed.seriesSpeed, 1000);
+
 const legacyDetail = browser.parseRoute("#dl_adminunits_bcts");
 assert.strictEqual(legacyDetail.view, "dataset");
 assert.strictEqual(legacyDetail.datasetId, "dl_adminunits_bcts");

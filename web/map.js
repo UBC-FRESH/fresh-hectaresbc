@@ -777,6 +777,46 @@
     };
   }
 
+  async function createSeries({ layers }) {
+    destroy();
+    const maps = [];
+    try {
+      for (const layer of layers) {
+        maps.push(await createMap({ ...layer, controls: true }));
+      }
+    } catch (error) {
+      destroy();
+      throw error;
+    }
+    let syncing = false;
+    const sync = (source) => {
+      if (syncing) {
+        return;
+      }
+      syncing = true;
+      const center = source.getCenter();
+      const zoom = source.getZoom();
+      for (const target of maps) {
+        if (target === source) {
+          continue;
+        }
+        target.jumpTo({ center, zoom, bearing: 0, pitch: 0 });
+      }
+      syncing = false;
+    };
+    for (const map of maps) {
+      map.on("move", () => sync(map));
+    }
+    return {
+      maps,
+      resize: () => {
+        for (const map of maps) {
+          map.resize();
+        }
+      },
+    };
+  }
+
   function destroy() {
     for (const map of activeMaps) {
       try {
@@ -791,6 +831,7 @@
   globalScope.HectaresBCMap = {
     create,
     createCompare,
+    createSeries,
     destroy,
     validBounds,
   };

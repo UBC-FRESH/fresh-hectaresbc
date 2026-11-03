@@ -483,6 +483,8 @@
       compareLeft: null,
       compareRight: null,
       compareMode: "split",
+      seriesLayers: [],
+      seriesSpeed: 1000,
     };
   }
 
@@ -570,6 +572,17 @@
       return state;
     }
 
+    if (path === "series") {
+      state.view = "series";
+      state.seriesLayers = parseLayerIds(params);
+      state.seriesSpeed = [500, 1000, 2000].includes(
+        Number(params.get("speed"))
+      )
+        ? Number(params.get("speed"))
+        : 1000;
+      return state;
+    }
+
     if (path === "compare") {
       state.view = "compare";
       state.compareLeft = params.get("left") || null;
@@ -641,6 +654,17 @@
     }
     if (state.view === "admin") {
       return "#/admin";
+    }
+    if (state.view === "series") {
+      const params = new URLSearchParams();
+      if (state.seriesLayers?.length) {
+        params.set("layers", state.seriesLayers.join(","));
+      }
+      if ([500, 1000, 2000].includes(Number(state.seriesSpeed))) {
+        params.set("speed", String(state.seriesSpeed));
+      }
+      const query = params.toString();
+      return `#/series${query ? `?${query}` : ""}`;
     }
     if (state.view === "compare") {
       const params = new URLSearchParams();

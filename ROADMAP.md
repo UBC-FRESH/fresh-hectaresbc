@@ -460,8 +460,8 @@ Phase 29 adds a dedicated Series route that cycles through two to six previewabl
 layers in tray order with synchronized maps and active-frame export.
 
 - [x] P29.1 Plan multi-layer series contract. Child issue: #224.
-- [ ] P29.2 Add multi-map series engine and route state. Child issue: #225.
-- [ ] P29.3 Add Series UI, tray entry point, and browser coverage. Child issue: #226.
+- [x] P29.2 Add multi-map series engine and route state. Child issue: #225.
+- [x] P29.3 Add Series UI, tray entry point, and browser coverage. Child issue: #226.
 - [ ] P29.4 Verify and close Phase 29. Child issue: #227.
 
 ## Current Next Steps

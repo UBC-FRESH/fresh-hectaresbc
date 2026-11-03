@@ -1,14 +1,18 @@
 # Browser Catalog App
 
 The browser app is a static, dependency-free application shell over the generated
-catalog. It has three surfaces:
+catalog. Its primary surfaces are:
 
 - **Browse** — search, facets, sortable results, pagination, and a contextual
   inspector.
 - **Dataset** — metadata, provenance, known gaps, preview status, and copyable
   Python/CLI commands.
-- **Map** — a MapLibre workspace with the published preview image as an overlay,
-  layer visibility/opacity, legend, and an offline basemap fallback.
+- **Map** — a MapLibre workspace with live 1-ha tiles or the published preview
+  overlay, layer visibility/opacity, legend, and an offline basemap fallback.
+- **Compare** — synchronized two-layer split, wipe, and flicker modes with PNG
+  export.
+- **Series** — a two-to-six layer flicker sequence with play/pause, stepping,
+  speed control, and active-frame PNG export.
 
 The app does not require a Node build step. `web/catalog.js`, `web/map.js`, and
 `web/app.js` are classic scripts; MapLibre is vendored under `web/vendor/` and
@@ -64,6 +68,8 @@ In a JupyterHub/code-server proxy, use the corresponding proxied `/web/` URL.
 #/map
 #/dataset/dl_adminunits_bcts
 #/dataset/dl_adminunits_bcts/map
+#/compare?left=<dataset_id>&right=<dataset_id>&mode=wipe
+#/series?layers=<dataset_id_1>,<dataset_id_2>,<dataset_id_3>&speed=1000
 ```
 
 `#/map` opens the map workspace with a useful default preview layer (BCTS
