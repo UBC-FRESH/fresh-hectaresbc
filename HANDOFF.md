@@ -1,10 +1,10 @@
 # Agent Handoff
 
 Date: 2026-11-03
-Status: P19/P20/P21/P22/P23/P24/P25/P26/P27 complete; no active implementation branch or open issues/PRs.
+Status: P19/P20/P21/P22/P23/P24/P25/P26/P27/P28 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
-Latest feature merge: `f48d904`
-Latest merged PR: #216 (compare PNG export); flicker: #214
+Latest feature merge: `5d99217`
+Latest merged PR: #222 (bundle preflight); compare export: #216
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
@@ -320,7 +320,7 @@ resolution tests. Use the web/agent test command above for this feature set.
 
 ## Final Closeout
 
-- P19, P20, P21, P22, P23, P24, P25, P26, and P27 are complete; no active implementation branch remains.
+- P19, P20, P21, P22, P23, P24, P25, P26, P27, and P28 are complete; no active implementation branch remains.
 - No open GitHub issues or pull requests at closeout.
 - Final protected public verification and browser smoke checks passed.
 - Sphinx sources refreshed for tiles, COGs, stats, Clip AOI preflight, jobs, and retention.
@@ -331,7 +331,8 @@ resolution tests. Use the web/agent test command above for this feature set.
 - Phase 24 added a protected admin statistics dashboard.
 - Phase 25 added bounds-based spatial discovery from the map view or AOI.
 - Phase 26 added saved Browse searches and favorite datasets.
-- Phase 27 added synchronized side-by-side compare map panes.
+- Phase 27 added synchronized side-by-side, wipe, and flicker compare modes.
+- Phase 28 added Clip bundle preflight estimates.
 - Remaining items below are optional follow-ups, not blockers.
 
 ## Optional Follow-Ups
