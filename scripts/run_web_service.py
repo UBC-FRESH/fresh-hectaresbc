@@ -65,6 +65,17 @@ def main() -> int:
         default=REPO_ROOT / "var" / "tile-cache",
     )
     parser.add_argument(
+        "--tile-cog-root",
+        type=Path,
+        default=Path(
+            os.environ.get(
+                "FRESH_HECTARESBC_TILE_COG_ROOT",
+                str(REPO_ROOT / "var" / "tile-cogs"),
+            )
+        ),
+        help="Directory containing optional per-dataset COG derivatives.",
+    )
+    parser.add_argument(
         "--tile-cache-max-bytes",
         type=int,
         default=4 * 1024**3,
@@ -129,6 +140,7 @@ def main() -> int:
         bundle_root=args.bundle_root,
         tile_cache_root=args.tile_cache_root,
         tile_cache_max_bytes=args.tile_cache_max_bytes,
+        tile_cog_root=args.tile_cog_root,
         max_layers=args.max_layers,
         max_area_ha=args.max_area_ha,
         job_history_limit=args.job_history_limit,

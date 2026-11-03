@@ -321,6 +321,7 @@ hosted workers, a database, or a frontend build pipeline.
 - [x] P19.11 Add demo service operations: detached `demo_ctl.sh`, systemd/env/cloudflared templates, public-origin health checker, and LRU tile-cache pruning.
 - [x] P19.12 Add a low-zoom tile fast path from the 2048 px EPSG:3857 overlays and cache catalog/manifest/source-path lookups; keep z9+ source-raster tiles.
 - [x] P19.13 Reuse bounded source dataset handles for z9+ tiles with per-handle read locking.
+- [x] P19.14 Add optional compressed COG derivatives with overviews and prefer them over zip:// sources at high zoom.
 - [x] P19.7 Verify, document, and close the browser UI upgrade phase.
 
 ## Phase 20: Agent GIS Assistant And AOI Bundles

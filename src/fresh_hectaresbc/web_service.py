@@ -85,6 +85,9 @@ class ServiceConfig:
         default_factory=lambda: REPO_ROOT / "var" / "tile-cache"
     )
     tile_cache_max_bytes: int = 4 * 1024**3
+    tile_cog_root: Path = field(
+        default_factory=lambda: REPO_ROOT / "var" / "tile-cogs"
+    )
     max_layers: int = 6
     max_area_ha: float = 10_000_000.0
     job_history_limit: int = 100
@@ -263,8 +266,15 @@ def create_app(config: ServiceConfig) -> FastAPI:
     config.tile_cache_root = Path(config.tile_cache_root).expanduser().resolve()
     config.tile_cache_root.mkdir(parents=True, exist_ok=True)
     from fresh_hectaresbc.jobs import BundleJobManager
-    from fresh_hectaresbc.tiles import clear_source_cache, prune_tile_cache
+    from fresh_hectaresbc.tiles import (
+        clear_source_cache,
+        configure_tile_cog_root,
+        prune_tile_cache,
+    )
 
+    config.tile_cog_root = Path(config.tile_cog_root).expanduser().resolve()
+    config.tile_cog_root.mkdir(parents=True, exist_ok=True)
+    configure_tile_cog_root(config.tile_cog_root)
     prune_tile_cache(
         config.tile_cache_root, max_bytes=config.tile_cache_max_bytes
     )
@@ -335,6 +345,8 @@ def create_app(config: ServiceConfig) -> FastAPI:
             "agent_available": shutil.which("opencode") is not None,
             "archive_root": str(config.archive_root) if config.archive_root else None,
             "bundle_root": str(config.bundle_root),
+            "tile_cog_root": str(config.tile_cog_root),
+            "tile_cogs": len(list(config.tile_cog_root.glob("*.tif"))),
             "bundle_jobs": job_manager.stats(),
         }
 

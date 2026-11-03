@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import time
 import zipfile
 from datetime import UTC, datetime, timedelta
@@ -301,12 +302,40 @@ def test_overlay_tile_renders_existing_3857_preview(
     assert tiles._overlay_tile("demo", 9, 0, 0) is None
 
 
+def test_cog_source_is_preferred_for_tiles(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fresh_hectaresbc import tiles
+
+    archive_root = _make_archive(tmp_path)
+    cog_root = tmp_path / "cogs"
+    cog_root.mkdir()
+    shutil.copy(tmp_path / "bcts.tiff", cog_root / "dl_adminunits_bcts.tif")
+    monkeypatch.setattr(tiles, "_COG_ROOT", cog_root)
+    monkeypatch.setattr(tiles, "_overlay_tile", lambda *args, **kwargs: None)
+
+    metadata = tiles.layer_metadata(
+        "dl_adminunits_bcts", archive_root=archive_root
+    )
+    assert metadata["source_raster"] == "cog"
+    png = tiles.render_tile(
+        "dl_adminunits_bcts",
+        0,
+        0,
+        0,
+        archive_root=archive_root,
+        cache_root=tmp_path / "tiles",
+    )
+    assert png.startswith(b"\x89PNG")
+
+
 def test_tiles_render_source_raster_without_preview(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     from fresh_hectaresbc import tiles
 
     monkeypatch.setattr(tiles, "_overlay_tile", lambda *args, **kwargs: None)
+    monkeypatch.setattr(tiles, "_COG_ROOT", tmp_path / "cogs")
     from fresh_hectaresbc.tiles import layer_metadata, render_tile
 
     archive_root = _make_archive(tmp_path)
@@ -353,6 +382,7 @@ def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
         workspace=Path(".").resolve(),
         bundle_root=tmp_path / "bundles",
         tile_cache_root=tmp_path / "tile-cache",
+        tile_cog_root=tmp_path / "tile-cogs",
         archive_root=archive_root,
     )
     client = TestClient(create_app(config))
