@@ -95,6 +95,8 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   boundary-query restore and compact drawn geometry.
 - `#/admin` shows protected service statistics, top datasets, source mix, COG
   coverage, job counts, and copyable COG-build commands.
+- The map Discover panel finds previewable layers intersecting the current view
+  or AOI and adds results to the tray.
 
 ### Agent Service And GIS Bundles (P20)
 

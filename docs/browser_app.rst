@@ -21,6 +21,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_workspace_browser.py
    python scripts/smoke_test_aoi_library_browser.py
    python scripts/smoke_test_admin_browser.py
+   python scripts/smoke_test_discover_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -165,6 +166,15 @@ downloads. It shows job status/progress, AOI names and areas, layer counts,
 failure counts, timestamps, download links, manifest links, cancellation, and
 failed-layer retry. It refreshes active jobs while the route is open and
 provides an explicit Refresh action.
+
+Spatial Layer Discovery
+-----------------------
+
+The map **Discover** panel finds previewable catalog layers whose bounds intersect
+the current map view or Clip AOI. It runs entirely against the loaded preview
+index, supports family and text filters, and can add individual or bulk results
+to the tray. Results are explicitly a bounds test, not an exact polygon/raster
+intersection.
 
 Reusable AOI Library
 --------------------

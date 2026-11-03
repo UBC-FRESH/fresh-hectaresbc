@@ -214,3 +214,5 @@
 - Activated Phase 24 protected admin statistics dashboard with parent issue #185, child issues #186-#189, and planning/admin_dashboard_plan.md.
 - Completed P24.2/P24.3 with COG dataset reporting in `/api/stats`, a protected `#/admin` dashboard, source/latency/cache/job metrics, top-dataset COG actions, and mocked browser coverage.
 - Completed and merged Phase 24 via PR #190: protected admin stats dashboard, COG dataset reporting, top-dataset/COG actions, job summary, and mocked browser coverage.
+- Activated Phase 25 spatial layer discovery with parent issue #191, child issues #192-#195, and planning/spatial_discovery_plan.md.
+- Completed P25.2/P25.3 with map bounds APIs, preview-bound intersection discovery, view/AOI source modes, family/text filters, bulk tray add, and mocked browser coverage.

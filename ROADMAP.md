@@ -404,9 +404,22 @@ source mix, COG coverage, job status, and top datasets.
 - [x] P24.3 Add admin dashboard UI and browser coverage. Child issue: #188.
 - [x] P24.4 Verify and close Phase 24. Child issue: #189.
 
+## Phase 25: Spatial Layer Discovery
+
+Status: implementation in progress on `feature/p25-spatial-discovery`.
+Parent issue: #191. Planning: `planning/spatial_discovery_plan.md`.
+
+Phase 25 finds previewable layers whose bounds intersect the current map view or
+AOI, then lets users add results to the tray.
+
+- [x] P25.1 Plan spatial discovery contract. Child issue: #192.
+- [x] P25.2 Add map bounds and preview intersection helpers. Child issue: #193.
+- [x] P25.3 Add discovery UI and tray integration. Child issue: #194.
+- [ ] P25.4 Verify and close Phase 25. Child issue: #195.
+
 ## Current Next Steps
 
-1. Complete P24.1 planning contract and close child issue #186.
-2. Implement P24.2 route and stats API details.
-3. Implement P24.3 dashboard UI and browser coverage.
-4. Open the Phase 24 PR, verify, merge, and close parent #185.
+1. Complete P25.1 planning contract and close child issue #192.
+2. Implement P25.2 bounds/intersection helpers.
+3. Implement P25.3 discovery UI and browser coverage.
+4. Open the Phase 25 PR, verify, merge, and close parent #191.
