@@ -21,6 +21,8 @@ import os
 import re
 import tempfile
 import threading
+import time
+from datetime import UTC, datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -76,6 +78,123 @@ PALETTE = (
 _STATS: dict[str, tuple[float, float]] = {}
 _STATS_LOCK = threading.Lock()
 _TILE_LOCK = threading.Lock()
+_USAGE_LOCK = threading.Lock()
+_USAGE_TOTALS: dict[str, Any] = {
+    "requests": 0,
+    "cache_hits": 0,
+    "cache_misses": 0,
+    "errors": 0,
+    "latency_ms_total": 0.0,
+    "latency_ms_max": 0.0,
+    "sources": {},
+}
+_USAGE_DATASETS: dict[str, dict[str, Any]] = {}
+
+
+def reset_tile_usage_stats() -> None:
+    with _USAGE_LOCK:
+        _USAGE_TOTALS.update(
+            {
+                "requests": 0,
+                "cache_hits": 0,
+                "cache_misses": 0,
+                "errors": 0,
+                "latency_ms_total": 0.0,
+                "latency_ms_max": 0.0,
+                "sources": {},
+            }
+        )
+        _USAGE_DATASETS.clear()
+
+
+def _record_tile_usage(
+    dataset_id: str,
+    *,
+    latency_ms: float,
+    source: str,
+    cache_hit: bool,
+    error: bool,
+) -> None:
+    with _USAGE_LOCK:
+        totals = _USAGE_TOTALS
+        totals["requests"] += 1
+        if cache_hit:
+            totals["cache_hits"] += 1
+        else:
+            totals["cache_misses"] += 1
+        if error:
+            totals["errors"] += 1
+        totals["latency_ms_total"] += latency_ms
+        totals["latency_ms_max"] = max(totals["latency_ms_max"], latency_ms)
+        source_counts = totals["sources"]
+        source_counts[source] = source_counts.get(source, 0) + 1
+
+        entry = _USAGE_DATASETS.setdefault(
+            dataset_id,
+            {
+                "dataset_id": dataset_id,
+                "requests": 0,
+                "cache_hits": 0,
+                "cache_misses": 0,
+                "errors": 0,
+                "latency_ms_total": 0.0,
+                "latency_ms_max": 0.0,
+                "sources": {},
+                "last_utc": None,
+            },
+        )
+        entry["requests"] += 1
+        if cache_hit:
+            entry["cache_hits"] += 1
+        else:
+            entry["cache_misses"] += 1
+        if error:
+            entry["errors"] += 1
+        entry["latency_ms_total"] += latency_ms
+        entry["latency_ms_max"] = max(entry["latency_ms_max"], latency_ms)
+        entry_sources = entry["sources"]
+        entry_sources[source] = entry_sources.get(source, 0) + 1
+        entry["last_utc"] = datetime.now(UTC).isoformat()
+
+
+def tile_usage_stats(top: int = 20) -> dict[str, Any]:
+    """Return process-lifetime tile usage and cache statistics."""
+
+    with _USAGE_LOCK:
+        totals = dict(_USAGE_TOTALS)
+        totals["sources"] = dict(_USAGE_TOTALS["sources"])
+        requests = int(totals["requests"])
+        totals["cache_hit_rate"] = (
+            round(totals["cache_hits"] / requests, 4) if requests else 0.0
+        )
+        totals["avg_latency_ms"] = (
+            round(totals["latency_ms_total"] / requests, 2) if requests else 0.0
+        )
+        totals["latency_ms_total"] = round(totals["latency_ms_total"], 2)
+        totals["latency_ms_max"] = round(totals["latency_ms_max"], 2)
+        datasets = []
+        for entry in _USAGE_DATASETS.values():
+            item = dict(entry)
+            item["sources"] = dict(entry["sources"])
+            item_requests = int(item["requests"])
+            item["cache_hit_rate"] = (
+                round(item["cache_hits"] / item_requests, 4) if item_requests else 0.0
+            )
+            item["avg_latency_ms"] = (
+                round(item["latency_ms_total"] / item_requests, 2)
+                if item_requests
+                else 0.0
+            )
+            item["latency_ms_total"] = round(item["latency_ms_total"], 2)
+            item["latency_ms_max"] = round(item["latency_ms_max"], 2)
+            datasets.append(item)
+        datasets.sort(key=lambda item: item["requests"], reverse=True)
+        return {
+            "since": "process_start",
+            "totals": totals,
+            "top_datasets": datasets[: max(0, int(top))],
+        }
+
 
 
 class TileError(RuntimeError):
@@ -474,7 +593,7 @@ def _write_tile_cache(
             prune_tile_cache(cache_root, max_bytes=cache_max_bytes)
 
 
-def render_tile(
+def _render_tile_impl(
     dataset_id: str,
     z: int,
     x: int,
@@ -483,8 +602,8 @@ def render_tile(
     archive_root: str | Path | None = None,
     cache_root: str | Path | None = None,
     cache_max_bytes: int = DEFAULT_TILE_CACHE_MAX_BYTES,
-) -> bytes:
-    """Render one Web-Mercator PNG tile from the recovered source raster."""
+) -> tuple[bytes, str]:
+    """Render one tile and return ``(png, source_kind)``."""
 
     if z < 0 or z > 15:
         raise TileError("Tile zoom must be between 0 and 15.")
@@ -502,7 +621,7 @@ def render_tile(
             / f"{y}.png"
         )
         if cache_path.is_file():
-            return cache_path.read_bytes()
+            return cache_path.read_bytes(), "cache"
         try:
             overlay = _overlay_tile(dataset_id, z, x, y)
         except (OSError, ValueError):
@@ -514,8 +633,9 @@ def render_tile(
                 cache_root=Path(cache_root).expanduser().resolve(),
                 cache_max_bytes=cache_max_bytes,
             )
-            return overlay
+            return overlay, "overlay"
 
+    source_kind = "cog" if _cog_path(dataset_id) else "zip"
     record, zip_path, member, resolution, manifest = _source(dataset_id, archive_root)
     vfs = _raster_vfs(dataset_id, zip_path, member)
     classes = manifest.get("value_classes") or []
@@ -576,4 +696,46 @@ def render_tile(
             cache_root=Path(cache_root).expanduser().resolve(),
             cache_max_bytes=cache_max_bytes,
         )
+    return png, source_kind
+
+
+def render_tile(
+    dataset_id: str,
+    z: int,
+    x: int,
+    y: int,
+    *,
+    archive_root: str | Path | None = None,
+    cache_root: str | Path | None = None,
+    cache_max_bytes: int = DEFAULT_TILE_CACHE_MAX_BYTES,
+) -> bytes:
+    """Render one Web-Mercator PNG tile and record usage statistics."""
+
+    started = time.perf_counter()
+    try:
+        png, source_kind = _render_tile_impl(
+            dataset_id,
+            z,
+            x,
+            y,
+            archive_root=archive_root,
+            cache_root=cache_root,
+            cache_max_bytes=cache_max_bytes,
+        )
+    except Exception:
+        _record_tile_usage(
+            dataset_id,
+            latency_ms=(time.perf_counter() - started) * 1000,
+            source="error",
+            cache_hit=False,
+            error=True,
+        )
+        raise
+    _record_tile_usage(
+        dataset_id,
+        latency_ms=(time.perf_counter() - started) * 1000,
+        source=source_kind,
+        cache_hit=source_kind == "cache",
+        error=False,
+    )
     return png
