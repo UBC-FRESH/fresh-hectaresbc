@@ -59,6 +59,11 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   only visible tiles. Max useful zoom is 13 (1-ha cells); deeper zoom
   over-samples. Without the service the app falls back to the static 3857
   preview image.
+- Low-zoom tile fast path: z0–8 tiles are cropped/resampled from the existing
+  2048 px EPSG:3857 map overlays; z9+ still reads/warps the source raster.
+  Catalog/manifest/source-path lookups are process-cached. Cold BCTS tile
+  timings improved from ~8.7 s at z6 to ~0.13 s, ~3.2 s at z7 to ~0.06 s, and
+  ~1.7 s at z8 to ~0.05 s; warm tiles are ~3 ms.
 
 ### Agent Service And GIS Bundles (P20)
 
@@ -246,8 +251,9 @@ python scripts/agent_tools.py list-bundles
 
 ## Verified At Handoff
 
-- Web/agent tests: 8 passed in `tests/test_agent_gis.py`, including a drawn
-  GeoJSON bundle, candidate-name extraction, and job-history pruning.
+- Web/agent tests: 9 passed in `tests/test_agent_gis.py`, including a drawn
+  GeoJSON bundle, candidate-name extraction, job-history pruning, and the
+  low-zoom overlay tile path.
 - Browser smoke: desktop/tablet/mobile, search, facets, inspector, dataset,
   `#/map`, map fallback, legacy routes, keyboard.
 - Sphinx `-W`: passed (recheck after documentation edits).
@@ -269,8 +275,8 @@ resolution tests. Use the web/agent test command above for this feature set.
 ## Next Steps
 
 1. Keep the Cloudflare Access/Globus OAuth policy restricted to UBC CWL.
-2. Optionally harden tile throughput with COG/TiTiler if tile latency becomes
-   visible.
+2. If high-zoom cold latency matters, evaluate source overviews/COG conversion
+   for the most-viewed layers; z9+ still opens the zip:// source.
 3. If more layers should be sharp, continue generating 2048 px overrides with
    `scripts/generate_highres_web_previews.py --family data_layer ...` and
    `--reindex-only` after interrupted runs.

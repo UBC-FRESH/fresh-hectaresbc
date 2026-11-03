@@ -318,6 +318,7 @@ hosted workers, a database, or a frontend build pipeline.
 - [x] P19.9 Complete full-library 2048 px previews for all 2,183 records, including virtual layers and the sparse pine-beetle rasters previously marked not previewable, and reproject the full set to EPSG:3857.
 - [x] P19.10 Add on-demand 1-ha source raster tiles (`/api/tiles/{id}/{z}/{x}/{y}.png`) with Web-Mercator reprojection, legend colors, nodata handling, and disk caching; MapLibre uses raster tiles when the service is available and falls back to the static preview otherwise.
 - [x] P19.11 Add demo service operations: detached `demo_ctl.sh`, systemd/env/cloudflared templates, public-origin health checker, and LRU tile-cache pruning.
+- [x] P19.12 Add a low-zoom tile fast path from the 2048 px EPSG:3857 overlays and cache catalog/manifest/source-path lookups; keep z9+ source-raster tiles.
 - [x] P19.7 Verify, document, and close the browser UI upgrade phase.
 
 ## Phase 20: Agent GIS Assistant And AOI Bundles

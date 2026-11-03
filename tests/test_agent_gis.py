@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import rasterio
+from PIL import Image
 from rasterio.transform import from_origin
 from shapely.geometry import box, mapping
 
@@ -199,7 +200,49 @@ def test_bundle_job_history_prunes_old_terminal_records(tmp_path: Path) -> None:
         manager.close()
 
 
-def test_tiles_render_source_raster_without_preview(tmp_path: Path) -> None:
+def test_overlay_tile_renders_existing_3857_preview(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fresh_hectaresbc import tiles
+
+    root = tmp_path / "mercator"
+    layer_dir = root / "layers" / "demo"
+    layer_dir.mkdir(parents=True)
+    Image.new("RGBA", (4, 4), (200, 50, 50, 255)).save(layer_dir / "map.png")
+    (root / "index.json").write_text(
+        json.dumps(
+            {
+                "layers": [
+                    {
+                        "dataset_id": "demo",
+                        "map_path": "layers/demo/map.png",
+                        "map_bounds_3857": [
+                            -20037508.34,
+                            -20037508.34,
+                            20037508.34,
+                            20037508.34,
+                        ],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(tiles, "_MERCATOR_ROOT", root)
+    monkeypatch.setattr(tiles, "_MERCATOR_INDEX", None)
+
+    png = tiles._overlay_tile("demo", 0, 0, 0)
+    assert png is not None
+    assert png.startswith(b"\x89PNG")
+    assert tiles._overlay_tile("demo", 9, 0, 0) is None
+
+
+def test_tiles_render_source_raster_without_preview(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fresh_hectaresbc import tiles
+
+    monkeypatch.setattr(tiles, "_overlay_tile", lambda *args, **kwargs: None)
     from fresh_hectaresbc.tiles import layer_metadata, render_tile
 
     archive_root = _make_archive(tmp_path)

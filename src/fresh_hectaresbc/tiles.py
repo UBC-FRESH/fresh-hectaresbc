@@ -4,6 +4,11 @@ The source rasters are 100 m (1 ha) BC Albers GeoTIFFs, usually tiled 64×64
 inside the recovered ZIP payloads. This module renders 256×256 Web-Mercator
 tiles on demand so MapLibre can request only the tiles visible at the current
 zoom/pan instead of drawing one flattened preview image.
+
+At z0–8 the renderer serves tiles from the already-generated 2048 px EPSG:3857
+map overlay, which avoids reopening the multi-hundred-megabyte zip:// source
+for every low-zoom tile. At z9+ it reads and warps the source raster so the
+1-ha cells remain available at high zoom.
 """
 
 from __future__ import annotations
@@ -13,6 +18,7 @@ import math
 import os
 import tempfile
 import threading
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -40,7 +46,13 @@ PUBLISHED_ROOT = (
 )
 TILE_SIZE = 256
 WEB_MERCATOR = "EPSG:3857"
+# Low zooms are served from the 2048 px EPSG:3857 overlays; high zooms use the
+# source raster. z8 is roughly the overlay's native resolution over BC.
+OVERLAY_MAX_ZOOM = 8
 DEFAULT_TILE_CACHE_MAX_BYTES = 4 * 1024**3
+_MERCATOR_ROOT = REPO_ROOT / "web" / "data" / "map_previews_3857"
+_MERCATOR_INDEX: dict[str, dict[str, Any]] | None = None
+_MERCATOR_INDEX_LOCK = threading.Lock()
 _TILE_WRITE_COUNT = 0
 PALETTE = (
     (20, 81, 117, 230),
@@ -73,6 +85,7 @@ def _manifest_path(dataset_id: str) -> Path | None:
     return None
 
 
+@lru_cache(maxsize=512)
 def _read_manifest(dataset_id: str) -> dict[str, Any]:
     path = _manifest_path(dataset_id)
     if path is None:
@@ -81,6 +94,24 @@ def _read_manifest(dataset_id: str) -> dict[str, Any]:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return {}
+
+
+@lru_cache(maxsize=256)
+def _record(dataset_id: str) -> Any:
+    return HectaresBC().get(dataset_id)
+
+
+@lru_cache(maxsize=256)
+def _source_paths(
+    dataset_id: str, archive_key: str
+) -> tuple[str, str, str]:
+    record = _record(dataset_id)
+    if record is None:
+        raise TileError(f"Unknown dataset ID {dataset_id!r}.")
+    archive = Path(archive_key).expanduser() if archive_key else None
+    zip_path, resolution = resolve_source_zip(record, archive)
+    member = pick_raster_member(zip_path, record)
+    return str(zip_path), member, resolution
 
 
 def _max_zoom(pixel_size_m: float) -> int:
@@ -94,14 +125,13 @@ def _max_zoom(pixel_size_m: float) -> int:
 
 
 def _source(dataset_id: str, archive_root: str | Path | None) -> tuple[Any, Path, str, str, dict[str, Any]]:
-    record = HectaresBC().get(dataset_id)
+    record = _record(dataset_id)
     if record is None:
         raise TileError(f"Unknown dataset ID {dataset_id!r}.")
-    archive = Path(archive_root).expanduser() if archive_root else None
-    zip_path, resolution = resolve_source_zip(record, archive)
-    member = pick_raster_member(zip_path, record)
+    archive_key = str(Path(archive_root).expanduser()) if archive_root else ""
+    zip_path, member, resolution = _source_paths(dataset_id, archive_key)
     manifest = _read_manifest(dataset_id)
-    return record, zip_path, member, resolution, manifest
+    return record, Path(zip_path), member, resolution, manifest
 
 
 def layer_metadata(
@@ -261,6 +291,111 @@ def _transparent_png() -> bytes:
     return buffer.read()
 
 
+def _mercator_layers() -> dict[str, dict[str, Any]]:
+    global _MERCATOR_INDEX
+    with _MERCATOR_INDEX_LOCK:
+        if _MERCATOR_INDEX is not None:
+            return _MERCATOR_INDEX
+        layers: dict[str, dict[str, Any]] = {}
+        try:
+            document = json.loads(
+                (_MERCATOR_ROOT / "index.json").read_text(encoding="utf-8")
+            )
+        except (OSError, json.JSONDecodeError):
+            document = {}
+        for layer in document.get("layers", []):
+            dataset_id = layer.get("dataset_id")
+            if (
+                isinstance(dataset_id, str)
+                and layer.get("map_path")
+                and layer.get("map_bounds_3857")
+            ):
+                layers[dataset_id] = layer
+        _MERCATOR_INDEX = layers
+        return layers
+
+
+def _overlay_tile(dataset_id: str, z: int, x: int, y: int) -> bytes | None:
+    """Render a low-zoom tile from the existing EPSG:3857 map overlay."""
+
+    if z > OVERLAY_MAX_ZOOM:
+        return None
+    layer = _mercator_layers().get(dataset_id)
+    if not layer:
+        return None
+    image_path = _MERCATOR_ROOT / str(layer["map_path"])
+    try:
+        image = Image.open(image_path).convert("RGBA")
+        image.load()
+    except (OSError, ValueError):
+        return None
+
+    bounds = layer["map_bounds_3857"]
+    if not isinstance(bounds, list) or len(bounds) != 4:
+        return None
+    west, south, east, north = (float(value) for value in bounds)
+    if east <= west or north <= south:
+        return None
+    tile = mercantile.xy_bounds(x, y, z)
+    if tile.right <= west or tile.left >= east or tile.top <= south or tile.bottom >= north:
+        return _transparent_png()
+
+    width, height = image.size
+    px0 = (tile.left - west) / (east - west) * width
+    px1 = (tile.right - west) / (east - west) * width
+    py0 = (north - tile.top) / (north - south) * height
+    py1 = (north - tile.bottom) / (north - south) * height
+    cx0 = max(0.0, px0)
+    cy0 = max(0.0, py0)
+    cx1 = min(float(width), px1)
+    cy1 = min(float(height), py1)
+    if cx1 <= cx0 or cy1 <= cy0:
+        return _transparent_png()
+
+    left = int(math.floor(cx0))
+    top = int(math.floor(cy0))
+    right = int(math.ceil(cx1))
+    bottom = int(math.ceil(cy1))
+    if right <= left or bottom <= top:
+        return _transparent_png()
+    crop = image.crop((left, top, right, bottom))
+
+    def destination(value: float, start: float, end: float) -> int:
+        return int(round((value - start) / (end - start) * TILE_SIZE))
+
+    dx0 = max(0, min(TILE_SIZE, destination(left, px0, px1)))
+    dy0 = max(0, min(TILE_SIZE, destination(top, py0, py1)))
+    dx1 = max(0, min(TILE_SIZE, destination(right, px0, px1)))
+    dy1 = max(0, min(TILE_SIZE, destination(bottom, py0, py1)))
+    if dx1 <= dx0 or dy1 <= dy0:
+        return _transparent_png()
+    resized = crop.resize((dx1 - dx0, dy1 - dy0), Image.Resampling.BILINEAR)
+    tile_image = Image.new("RGBA", (TILE_SIZE, TILE_SIZE), (0, 0, 0, 0))
+    tile_image.alpha_composite(resized, (dx0, dy0))
+    buffer = tempfile.SpooledTemporaryFile()
+    tile_image.save(buffer, "PNG", compress_level=6)
+    buffer.seek(0)
+    return buffer.read()
+
+
+def _write_tile_cache(
+    cache_path: Path,
+    png: bytes,
+    *,
+    cache_root: str | Path,
+    cache_max_bytes: int,
+) -> None:
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = cache_path.with_suffix(f".{os.getpid()}.{threading.get_ident()}.tmp")
+    with _TILE_LOCK:
+        temp_path.write_bytes(png)
+        temp_path.replace(cache_path)
+        global _TILE_WRITE_COUNT
+        _TILE_WRITE_COUNT += 1
+        if _TILE_WRITE_COUNT % 200 == 0:
+            prune_tile_cache(cache_root, max_bytes=cache_max_bytes)
+
+
 def render_tile(
     dataset_id: str,
     z: int,
@@ -290,6 +425,18 @@ def render_tile(
         )
         if cache_path.is_file():
             return cache_path.read_bytes()
+        try:
+            overlay = _overlay_tile(dataset_id, z, x, y)
+        except (OSError, ValueError):
+            overlay = None
+        if overlay is not None:
+            _write_tile_cache(
+                cache_path,
+                overlay,
+                cache_root=Path(cache_root).expanduser().resolve(),
+                cache_max_bytes=cache_max_bytes,
+            )
+            return overlay
 
     record, zip_path, member, resolution, manifest = _source(dataset_id, archive_root)
     vfs = f"zip://{zip_path}!{member}"
@@ -339,13 +486,10 @@ def render_tile(
         png = buffer.read()
 
     if cache_path is not None:
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        temp_path = cache_path.with_suffix(f".{os.getpid()}.{threading.get_ident()}.tmp")
-        with _TILE_LOCK:
-            temp_path.write_bytes(png)
-            temp_path.replace(cache_path)
-            global _TILE_WRITE_COUNT
-            _TILE_WRITE_COUNT += 1
-            if _TILE_WRITE_COUNT % 200 == 0:
-                prune_tile_cache(cache_path.parents[3], max_bytes=cache_max_bytes)
+        _write_tile_cache(
+            cache_path,
+            png,
+            cache_root=Path(cache_root).expanduser().resolve(),
+            cache_max_bytes=cache_max_bytes,
+        )
     return png
