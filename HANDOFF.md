@@ -2,8 +2,8 @@
 
 Date: 2026-11-02
 Branch: `main`
-Latest feature merge: `57de247`
-Latest merged PR: #147 (bundle failure retry); Clip AOI drawer: #142
+Latest feature merge: `5912056`
+Latest merged PR: #149 (job retention); Clip AOI drawer: #142
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
