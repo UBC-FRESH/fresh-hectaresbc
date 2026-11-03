@@ -483,7 +483,7 @@ Status: implementation in progress on `feature/p31-accessibility-mobile`. Parent
 Phase 31 fixes concrete keyboard, focus, touch-target, contrast, and
 reduced-motion gaps across the browser app and adds regression coverage.
 
-- [ ] P31.1 Plan accessibility and mobile audit. Child issue: #238.
+- [x] P31.1 Plan accessibility and mobile audit. Child issue: #238.
 - [ ] P31.2 Fix navigation, panel focus, and keyboard behavior. Child issue: #239.
 - [ ] P31.3 Fix touch targets, contrast, and reduced motion. Child issue: #240.
 - [ ] P31.4 Verify and close Phase 31. Child issue: #241.
