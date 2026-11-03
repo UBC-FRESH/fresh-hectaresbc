@@ -709,6 +709,13 @@
         const center = map.getCenter();
         return { center: [center.lng, center.lat], zoom: map.getZoom() };
       },
+      getBounds: () => {
+        const current = map.getBounds();
+        return [
+          [current.getWest(), current.getSouth()],
+          [current.getEast(), current.getNorth()],
+        ];
+      },
       setView: (nextView) => {
         const parsedView = validView(nextView);
         if (parsedView) {

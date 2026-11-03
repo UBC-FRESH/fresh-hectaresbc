@@ -413,8 +413,8 @@ Phase 25 finds previewable layers whose bounds intersect the current map view or
 AOI, then lets users add results to the tray.
 
 - [x] P25.1 Plan spatial discovery contract. Child issue: #192.
-- [ ] P25.2 Add map bounds and preview intersection helpers. Child issue: #193.
-- [ ] P25.3 Add discovery UI and tray integration. Child issue: #194.
+- [x] P25.2 Add map bounds and preview intersection helpers. Child issue: #193.
+- [x] P25.3 Add discovery UI and tray integration. Child issue: #194.
 - [ ] P25.4 Verify and close Phase 25. Child issue: #195.
 
 ## Current Next Steps

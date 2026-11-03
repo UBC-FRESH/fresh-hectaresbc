@@ -96,6 +96,13 @@
     aois: {
       items: [],
     },
+    discover: {
+      open: false,
+      source: "view",
+      results: [],
+      family: "all",
+      query: "",
+    },
     workspace: {
       applied: null,
       view: null,
@@ -183,6 +190,9 @@
       trayPanel: document.querySelector("#tray-panel"),
       trayBody: document.querySelector("#tray-body"),
       trayClose: document.querySelector("#tray-close"),
+      discoverPanel: document.querySelector("#discover-panel"),
+      discoverBody: document.querySelector("#discover-body"),
+      discoverClose: document.querySelector("#discover-close"),
     };
     bindEvents();
     loadTray();
@@ -487,6 +497,7 @@
 
   function renderBrowse() {
     stopHistoryPolling();
+    closeDiscover();
     resetIdentifyState();
     window.HectaresBCMap?.destroy();
     closeClipPanel();
@@ -990,6 +1001,7 @@
   async function renderDataset() {
     const token = ++state.renderToken;
     stopHistoryPolling();
+    closeDiscover();
     resetIdentifyState();
     window.HectaresBCMap?.destroy();
     closeClipPanel();
@@ -1543,6 +1555,7 @@
   async function renderBundles() {
     const token = ++state.renderToken;
     stopHistoryPolling();
+    closeDiscover();
     window.HectaresBCMap?.destroy();
     closeClipPanel();
     closeTray();
@@ -1739,6 +1752,7 @@
   async function renderAdmin() {
     const token = ++state.renderToken;
     stopHistoryPolling();
+    closeDiscover();
     window.HectaresBCMap?.destroy();
     closeClipPanel();
     closeTray();
@@ -1903,6 +1917,7 @@
   async function renderMap() {
     const token = ++state.renderToken;
     stopHistoryPolling();
+    closeDiscover();
     document.body.dataset.view = "map";
     document.body.classList.remove("filters-open", "inspector-open");
     els.content.innerHTML = loadingTemplate("Loading map preview…");
@@ -2112,6 +2127,7 @@
             <a class="secondary-button" href="${state.lastBrowseHash || "#/catalog"}">Browse</a>
             <a class="secondary-button" href="#/catalog?preview=available">Preview layers</a>
             <button class="secondary-button" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}">Add to tray</button>
+            <button class="secondary-button" type="button" data-discover-open>Discover</button>
             <button class="secondary-button" type="button" data-identify-toggle ${state.serviceAvailable ? "" : "hidden"}>Identify</button>
             <button class="secondary-button" type="button" data-open-clip ${state.serviceAvailable ? "" : "hidden"}>Clip AOI</button>
             <button class="secondary-button" type="button" data-copy="${Catalog.escapeHtml(record.dataset_id)}">Copy ID</button>
@@ -2362,6 +2378,10 @@ python scripts/fetch_web_previews.py</pre>
 
   function handleContentClick(event) {
     const target = event.target;
+    if (target.closest("[data-discover-open]")) {
+      openDiscover();
+      return;
+    }
     if (target.closest("[data-admin-refresh]")) {
       void renderAdmin();
       return;
@@ -2558,6 +2578,9 @@ python scripts/fetch_web_previews.py</pre>
       }
       if (els.trayPanel && !els.trayPanel.hidden) {
         closeTray();
+      }
+      if (els.discoverPanel && !els.discoverPanel.hidden) {
+        closeDiscover();
       }
       if (els.clipPanel && !els.clipPanel.hidden) {
         closeClipPanel();
@@ -2911,6 +2934,7 @@ python scripts/fetch_web_previews.py</pre>
 
   function openTray() {
     closeAssistant();
+    closeDiscover();
     if (els.clipPanel && !els.clipPanel.hidden) {
       closeClipPanel();
     }
@@ -3463,6 +3487,7 @@ python scripts/fetch_web_previews.py</pre>
       closeClipPanel();
     }
     closeTray();
+    closeDiscover();
     els.assistantPanel.hidden = false;
     els.assistantButton.setAttribute("aria-expanded", "true");
     els.assistantInput.focus();
@@ -3594,7 +3619,261 @@ python scripts/fetch_web_previews.py</pre>
     }
   }
 
-  /* -------------------------------------------------------------- clip panel */
+  /* ------------------------------------------------------------- discover */
+
+  function validBbox(bounds) {
+    return Array.isArray(bounds) &&
+      bounds.length === 4 &&
+      bounds.every((value) => Number.isFinite(Number(value)))
+      ? bounds.map(Number)
+      : null;
+  }
+
+  function bboxFromPairs(bounds) {
+    if (!Array.isArray(bounds) || bounds.length !== 2) {
+      return null;
+    }
+    const west = Math.min(Number(bounds[0][0]), Number(bounds[1][0]));
+    const east = Math.max(Number(bounds[0][0]), Number(bounds[1][0]));
+    const south = Math.min(Number(bounds[0][1]), Number(bounds[1][1]));
+    const north = Math.max(Number(bounds[0][1]), Number(bounds[1][1]));
+    if (![west, south, east, north].every(Number.isFinite)) {
+      return null;
+    }
+    return [west, south, east, north];
+  }
+
+  function bboxIntersects(left, right) {
+    return (
+      left[0] <= right[2] &&
+      left[2] >= right[0] &&
+      left[1] <= right[3] &&
+      left[3] >= right[1]
+    );
+  }
+
+  function geometryBbox(geometry) {
+    const coordinates = [];
+    const walk = (value) => {
+      if (!Array.isArray(value)) {
+        return;
+      }
+      if (
+        value.length >= 2 &&
+        Number.isFinite(Number(value[0])) &&
+        Number.isFinite(Number(value[1]))
+      ) {
+        coordinates.push([Number(value[0]), Number(value[1])]);
+        return;
+      }
+      value.forEach(walk);
+    };
+    walk(geometry?.coordinates);
+    if (!coordinates.length) {
+      return null;
+    }
+    return [
+      Math.min(...coordinates.map((point) => point[0])),
+      Math.min(...coordinates.map((point) => point[1])),
+      Math.max(...coordinates.map((point) => point[0])),
+      Math.max(...coordinates.map((point) => point[1])),
+    ];
+  }
+
+  function currentAoiBbox() {
+    const bounds = validBbox(state.clip.aoi?.bbox_wgs84);
+    if (bounds) {
+      return bounds;
+    }
+    return geometryBbox(state.clip.geometry);
+  }
+
+  function artifactBbox(artifact) {
+    return (
+      validBbox(artifact?._map_bounds_wgs84) ||
+      validBbox(artifact?.wgs84_bounds)
+    );
+  }
+
+  function discoverResults() {
+    const query = Catalog.normalizeText(state.discover.query);
+    return state.discover.results
+      .filter(
+        (item) =>
+          state.discover.family === "all" ||
+          item.family === state.discover.family
+      )
+      .filter(
+        (item) =>
+          !query ||
+          Catalog.normalizeText(`${item.title} ${item.dataset_id}`).includes(
+            query
+          )
+      );
+  }
+
+  function runSpatialDiscovery() {
+    if (!state.previewIndex) {
+      state.discover.results = [];
+      renderDiscover();
+      return;
+    }
+    let bbox = null;
+    if (state.discover.source === "aoi") {
+      bbox = currentAoiBbox();
+    } else {
+      bbox = bboxFromPairs(state.mapHandle?.__hbc?.getBounds?.());
+    }
+    if (!bbox) {
+      state.discover.results = [];
+      renderDiscover();
+      return;
+    }
+    state.discover.results = [...state.previewIndex.values()]
+      .filter((artifact) =>
+        ["source_derived_preview", "already_present"].includes(
+          artifact.artifact_status || artifact.status
+        )
+      )
+      .map((artifact) => ({
+        dataset_id: artifact.dataset_id,
+        title: artifact.title || artifact.dataset_id,
+        family: artifact.source_family || "",
+        bounds: artifactBbox(artifact),
+      }))
+      .filter((item) => item.bounds && bboxIntersects(item.bounds, bbox))
+      .sort((left, right) =>
+        left.title.localeCompare(right.title, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        })
+      );
+    renderDiscover();
+  }
+
+  function renderDiscover() {
+    if (!els?.discoverBody) {
+      return;
+    }
+    const aoiBbox = currentAoiBbox();
+    if (state.discover.source === "aoi" && !aoiBbox) {
+      state.discover.source = "view";
+    }
+    const results = discoverResults();
+    const capacity = Math.max(0, state.clip.maxLayers - state.tray.ids.length);
+    const visible = results.slice(0, 60);
+    els.discoverBody.innerHTML = `
+      <div class="discover-source" role="group" aria-label="Discovery source">
+        <button type="button" data-discover-source="view" class="${state.discover.source === "view" ? "is-active" : ""}">Current view</button>
+        <button type="button" data-discover-source="aoi" class="${state.discover.source === "aoi" ? "is-active" : ""}" ${aoiBbox ? "" : "disabled"}>AOI</button>
+      </div>
+      <div class="discover-actions">
+        <button class="primary-button" type="button" data-discover-run>Find layers</button>
+        <button class="secondary-button" type="button" data-discover-bulk ${visible.length && capacity ? "" : "disabled"}>Add ${Math.min(capacity, visible.length)} to tray</button>
+      </div>
+      <p class="clip-status">${Catalog.formatNumber(state.discover.results.length)} previewable layers have bounds intersecting the ${state.discover.source === "aoi" ? "AOI" : "current map view"}. This is a bounds test, not an exact spatial intersection.</p>
+      <label class="clip-field">Filter results
+        <input id="discover-search" type="search" value="${Catalog.escapeHtml(state.discover.query)}" placeholder="Search discovered layers…" autocomplete="off">
+      </label>
+      <label class="clip-field">Family
+        <select id="discover-family">
+          <option value="all" ${state.discover.family === "all" ? "selected" : ""}>All families</option>
+          <option value="data_layer" ${state.discover.family === "data_layer" ? "selected" : ""}>Data layers</option>
+          <option value="virtual_layer" ${state.discover.family === "virtual_layer" ? "selected" : ""}>Virtual layers</option>
+        </select>
+      </label>
+      ${visible.length
+        ? `<div class="discover-results">${visible
+            .map(
+              (item) => `<div class="discover-result">
+                <div>
+                  <b>${Catalog.escapeHtml(item.title)}</b>
+                  <small>${Catalog.escapeHtml(item.dataset_id)} · ${Catalog.escapeHtml(Catalog.familyLabel(item.family))}</small>
+                </div>
+                <button class="tray-add" type="button" data-discover-add="${Catalog.escapeHtml(item.dataset_id)}" aria-label="Add ${Catalog.escapeHtml(item.title)} to tray">+</button>
+              </div>`
+            )
+            .join("")}</div>`
+        : '<p class="tray-empty">No previewable layers intersect this area. Try a larger view or another AOI.</p>'}
+      <p class="clip-status">${state.tray.ids.length}/${state.clip.maxLayers} tray slots used.</p>`;
+  }
+
+  function openDiscover() {
+    closeAssistant();
+    closeClipPanel();
+    closeTray();
+    state.discover.open = true;
+    els.discoverPanel.hidden = false;
+    renderDiscover();
+    if (state.discover.source === "view") {
+      runSpatialDiscovery();
+    }
+  }
+
+  function closeDiscover() {
+    state.discover.open = false;
+    if (els.discoverPanel) {
+      els.discoverPanel.hidden = true;
+    }
+  }
+
+  function handleDiscoverClick(event) {
+    const target = event.target;
+    if (target.closest("[data-discover-close]")) {
+      closeDiscover();
+      return;
+    }
+    const source = target.closest("[data-discover-source]");
+    if (source) {
+      state.discover.source = source.dataset.discoverSource;
+      renderDiscover();
+      return;
+    }
+    if (target.closest("[data-discover-run]")) {
+      runSpatialDiscovery();
+      return;
+    }
+    const add = target.closest("[data-discover-add]");
+    if (add) {
+      addToTray(add.dataset.discoverAdd);
+      renderDiscover();
+      return;
+    }
+    if (target.closest("[data-discover-bulk]")) {
+      const capacity = Math.max(0, state.clip.maxLayers - state.tray.ids.length);
+      for (const item of discoverResults().slice(0, capacity)) {
+        if (!state.tray.ids.includes(item.dataset_id)) {
+          state.tray.ids.push(item.dataset_id);
+        }
+      }
+      saveTray();
+      renderTray();
+      renderDiscover();
+      showToast("Layers added to tray.");
+    }
+  }
+
+  function handleDiscoverInput(event) {
+    if (event.target.id === "discover-search") {
+      state.discover.query = event.target.value;
+      renderDiscover();
+      const input = els.discoverBody?.querySelector("#discover-search");
+      if (input) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    }
+  }
+
+  function handleDiscoverChange(event) {
+    if (event.target.id === "discover-family") {
+      state.discover.family = event.target.value;
+      renderDiscover();
+    }
+  }
+
+  /* ------------------------------------------------------------------ clip */
+
 
   function currentMapDatasetId() {
     return state.route.datasetId || state.selectedId || null;
@@ -3857,6 +4136,7 @@ python scripts/fetch_web_previews.py</pre>
     }
     closeAssistant();
     closeTray();
+    closeDiscover();
     const datasetId = currentMapDatasetId();
     if (state.clip.datasetId && datasetId && state.clip.datasetId !== datasetId) {
       resetClipState();
@@ -4541,6 +4821,11 @@ python scripts/fetch_web_previews.py</pre>
     els.trayButton?.addEventListener("click", toggleTray);
     els.trayClose?.addEventListener("click", closeTray);
     els.trayPanel?.addEventListener("click", handleTrayClick);
+
+    els.discoverClose?.addEventListener("click", closeDiscover);
+    els.discoverPanel?.addEventListener("click", handleDiscoverClick);
+    els.discoverPanel?.addEventListener("input", handleDiscoverInput);
+    els.discoverPanel?.addEventListener("change", handleDiscoverChange);
 
     document.addEventListener("keydown", handleGlobalKeydown);
     window.addEventListener("hashchange", scheduleSync);
