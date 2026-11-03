@@ -343,12 +343,14 @@ service.
 - [x] P20.9 Add queued bundle jobs with persisted progress, per-layer status, best-effort cancellation, and a browser progress bar.
 - [x] P20.10 Add per-layer failure details and failed-layer retry for partial/failed bundles.
 - [x] P20.11 Add terminal job-history retention with count/age pruning and health stats.
+- [x] P20.12 Add bundle-output and temporary-AOI retention by count/age, including stale incomplete directories.
 - [ ] P20.7 Verify and close the agent GIS assistant phase.
 
 ## Current Next Steps
 
-1. Verify the Clip AOI drawer, job progress, cancellation, failure details,
-   retry, job retention, and assistant through the protected public demo.
-2. Optionally harden tile throughput with COG/TiTiler.
+1. Verify bundle-output retention, job retention, Clip AOI, and assistant through
+   the protected public demo.
+2. Optionally harden high-zoom source-tile latency with overviews/COGs for the
+   most-viewed layers.
 3. Close the Phase 19/20 GitHub issue tree or create a follow-up issue for
    remaining hardening.

@@ -197,8 +197,9 @@ installed OpenCode CLI with the service user's permissions.
 - Bundle IDs are validated; download paths cannot escape the bundle root.
 - Bundle jobs are serialized through one worker and persisted under
   `var/bundles/jobs/`; cancellation is checked between clipping steps.
-- Terminal job records are pruned by count and age on startup and after each
-  finished job; active jobs are never pruned.
+- Terminal job records, completed bundle directories/ZIPs, and temporary
+  drawn-AOI files are pruned by count and age. Defaults: 100 job records /
+  30 days, 50 bundles / 30 days, and 500 drawn AOIs / 7 days.
 - Browser-drawn AOI geometry is validated as a finite Polygon/MultiPolygon,
   bounded in coordinate count, and written under `var/bundles/aoi/`; no
   client-supplied filesystem paths are accepted.

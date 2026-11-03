@@ -23,6 +23,7 @@ from fresh_hectaresbc.bundle import (
     BundleError,
     prepare_bundle,
 )
+from fresh_hectaresbc.bundle_retention import prune_bundle_outputs
 
 TERMINAL_STATUSES = {
     "complete",
@@ -68,6 +69,10 @@ class BundleJobManager:
         max_workers: int = 1,
         job_history_limit: int = 100,
         job_history_max_age_days: float = 30.0,
+        bundle_history_limit: int = 50,
+        bundle_history_max_age_days: float = 30.0,
+        bundle_aoi_max_age_days: float = 7.0,
+        bundle_aoi_max_files: int = 500,
     ) -> None:
         self.output_root = Path(output_root).expanduser().resolve()
         self.jobs_dir = self.output_root / "jobs"
@@ -79,6 +84,10 @@ class BundleJobManager:
         self.public_url = public_url
         self.job_history_limit = max(1, int(job_history_limit))
         self.job_history_max_age_days = float(job_history_max_age_days)
+        self.bundle_history_limit = max(1, int(bundle_history_limit))
+        self.bundle_history_max_age_days = float(bundle_history_max_age_days)
+        self.bundle_aoi_max_age_days = float(bundle_aoi_max_age_days)
+        self.bundle_aoi_max_files = max(1, int(bundle_aoi_max_files))
         self._lock = threading.RLock()
         self._jobs: dict[str, dict[str, Any]] = {}
         self._cancels: dict[str, threading.Event] = {}
@@ -88,6 +97,7 @@ class BundleJobManager:
         )
         self._load_existing()
         self.prune_jobs()
+        self._prune_outputs()
 
     def _job_path(self, job_id: str) -> Path:
         if not _JOB_ID_RE.fullmatch(job_id):
@@ -193,6 +203,15 @@ class BundleJobManager:
                 counts[status] = counts.get(status, 0) + 1
             counts["total"] = len(self._jobs)
             return counts
+
+    def _prune_outputs(self) -> dict[str, int]:
+        return prune_bundle_outputs(
+            self.output_root,
+            max_bundles=self.bundle_history_limit,
+            max_age_days=self.bundle_history_max_age_days,
+            aoi_max_age_days=self.bundle_aoi_max_age_days,
+            aoi_max_files=self.bundle_aoi_max_files,
+        )
 
     def _update(self, job_id: str, **changes: Any) -> dict[str, Any] | None:
         with self._lock:
@@ -368,6 +387,7 @@ class BundleJobManager:
             error=None if status != "failed" else message,
         )
         self.prune_jobs()
+        self._prune_outputs()
 
     def _finish_canceled(self, job_id: str) -> None:
         self._update(
@@ -381,6 +401,7 @@ class BundleJobManager:
         with self._lock:
             self._cancels.pop(job_id, None)
         self.prune_jobs()
+        self._prune_outputs()
 
     def _finish_failed(self, job_id: str, message: str) -> None:
         self._update(
@@ -393,6 +414,7 @@ class BundleJobManager:
             error=message,
         )
         self.prune_jobs()
+        self._prune_outputs()
 
     def get(self, job_id: str) -> dict[str, Any] | None:
         with self._lock:

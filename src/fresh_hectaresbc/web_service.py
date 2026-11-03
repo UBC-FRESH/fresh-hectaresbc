@@ -89,6 +89,10 @@ class ServiceConfig:
     max_area_ha: float = 10_000_000.0
     job_history_limit: int = 100
     job_history_max_age_days: float = 30.0
+    bundle_history_limit: int = 50
+    bundle_history_max_age_days: float = 30.0
+    bundle_aoi_max_age_days: float = 7.0
+    bundle_aoi_max_files: int = 500
     public_url: str | None = None
     title: str = "HectaresBC"
 
@@ -273,6 +277,10 @@ def create_app(config: ServiceConfig) -> FastAPI:
         public_url=config.public_url,
         job_history_limit=config.job_history_limit,
         job_history_max_age_days=config.job_history_max_age_days,
+        bundle_history_limit=config.bundle_history_limit,
+        bundle_history_max_age_days=config.bundle_history_max_age_days,
+        bundle_aoi_max_age_days=config.bundle_aoi_max_age_days,
+        bundle_aoi_max_files=config.bundle_aoi_max_files,
     )
     app = FastAPI(title=config.title, version="0.0.0")
     app.state.config = config
