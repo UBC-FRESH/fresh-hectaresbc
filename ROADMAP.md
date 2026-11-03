@@ -394,8 +394,7 @@ actions in the Clip drawer.
 
 ## Phase 24: Protected Admin Statistics Dashboard
 
-Status: implementation in progress on `feature/p24-admin-dashboard`.
-Parent issue: #185. Planning: `planning/admin_dashboard_plan.md`.
+Status: completed and merged to `main` via PR #190. Parent issue: #185. Planning: `planning/admin_dashboard_plan.md`.
 
 Phase 24 turns `/api/stats` into a protected admin view of cache health, latency,
 source mix, COG coverage, job status, and top datasets.
@@ -403,7 +402,7 @@ source mix, COG coverage, job status, and top datasets.
 - [x] P24.1 Plan admin dashboard route and metrics contract. Child issue: #186.
 - [x] P24.2 Add admin stats API details and route. Child issue: #187.
 - [x] P24.3 Add admin dashboard UI and browser coverage. Child issue: #188.
-- [ ] P24.4 Verify and close Phase 24. Child issue: #189.
+- [x] P24.4 Verify and close Phase 24. Child issue: #189.
 
 ## Current Next Steps
 
