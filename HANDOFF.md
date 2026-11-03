@@ -3,8 +3,8 @@
 Date: 2026-11-03
 Status: P19/P20 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
-Latest feature merge: `cf392ea`
-Latest merged PR: #161 (tile usage stats); COG derivatives: #159
+Latest feature merge: `6f43df9`
+Latest merged PR: #163 (AOI area preflight); tile stats: #161
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
@@ -304,6 +304,7 @@ resolution tests. Use the web/agent test command above for this feature set.
 - P19 and P20 are complete; no active implementation branch remains.
 - No open GitHub issues or pull requests at closeout.
 - Final protected public verification and browser smoke checks passed.
+- Sphinx sources refreshed for tiles, COGs, stats, Clip AOI preflight, jobs, and retention; GitHub Pages redeploys from `main`.
 - Remaining items below are optional follow-ups, not blockers.
 
 ## Optional Follow-Ups
