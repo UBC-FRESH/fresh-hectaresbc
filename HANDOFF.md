@@ -92,6 +92,8 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   - run bundle preparation as a queued job with progress polling, current-layer
     status, a progress bar, best-effort cancellation, per-layer failure details,
     failed-layer retry, and recent bundles
+  - automated browser smoke coverage mocks the API and checks job progress,
+    partial failures, failed-layer retry, and cancellation
   - enabled only when `/api/health` reports a running service
 - Bundle jobs run one at a time in a single worker, persist under
   `var/bundles/jobs/`, and are marked `interrupted` after a service restart.
@@ -227,6 +229,7 @@ python scripts/reproject_map_previews.py --workers 8
 python scripts/smoke_test_web_static_app.py
 node scripts/smoke_test_web_catalog_ui.js web/data/catalog.json
 python scripts/smoke_test_web_ui_browser.py
+python scripts/smoke_test_clip_aoi_browser.py
 ```
 
 Web/agent tests:
@@ -265,6 +268,8 @@ python scripts/agent_tools.py list-bundles
   retention, and the low-zoom overlay tile path.
 - Browser smoke: desktop/tablet/mobile, search, facets, inspector, dataset,
   `#/map`, map fallback, legacy routes, keyboard.
+- Clip AOI browser smoke: mocked API job progress, partial failure details,
+  failed-layer retry body, and cancellation.
 - Sphinx `-W`: passed (recheck after documentation edits).
 - TSA 27 resolved to Revelstoke TSA (758,443 ha).
 - BCTS + BEC clipped bundle produced (1.27 MB ZIP) and downloaded.
@@ -293,10 +298,8 @@ resolution tests. Use the web/agent test command above for this feature set.
 1. Keep the Cloudflare Access/Globus OAuth policy restricted to UBC CWL.
 2. Evaluate source overviews/COG conversion for the first high-zoom source open
    on the most-viewed layers; repeated z9+ tiles are already fast.
-3. Add automated browser coverage for Clip AOI job progress, cancellation,
-   partial failures, and retry.
-4. If more layers should be sharp, continue generating 2048 px overrides with
+3. If more layers should be sharp, continue generating 2048 px overrides with
    `scripts/generate_highres_web_previews.py --family data_layer ...` and
    `--reindex-only` after interrupted runs.
-5. If the demo clone is recreated, re-materialize previews and high-res
+4. If the demo clone is recreated, re-materialize previews and high-res
    overrides; they are generated/ignored data, not tracked.

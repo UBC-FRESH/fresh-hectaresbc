@@ -193,4 +193,5 @@
 - Added a low-zoom raster tile fast path that crops/resamples existing 2048 px EPSG:3857 overlays for z0–8 and keeps source-raster warping for z9+; added process caches for catalog records, manifests, and source-path resolution. Cold BCTS z6/z7/z8 tiles dropped from roughly 8.7/3.2/1.7 seconds to 0.13/0.06/0.05 seconds.
 - Added bounded source-handle caching with per-handle locking for z9+ tiles; after the initial source/metadata open, BCTS z9–11 reads dropped to roughly 15–30 ms locally.
 - Closed P19/P20 after final verification: no open issues or PRs, targeted tests and browser/Sphinx checks passing, and protected public demo checks passing.
+- Added `scripts/smoke_test_clip_aoi_browser.py`, an API-mocked Playwright test covering Clip AOI draw, job progress, partial failure details, failed-layer retry, and cancellation; wired it into the browser UI pytest wrapper.
 - Added bundle-output retention for completed bundle directories/ZIPs (default 50 / 30 days), temporary drawn-AOI files (default 500 / 7 days), orphan ZIP cleanup, and stale incomplete-directory cleanup on startup and after terminal jobs; all thresholds are configurable.
