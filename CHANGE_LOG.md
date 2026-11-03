@@ -190,3 +190,4 @@
 - Updated the Clip AOI drawer to submit jobs, poll progress, show a striped progress bar and current-layer status, cancel between layers, and keep the synchronous `/api/bundles` endpoint for CLI/script clients.
 - Added expandable per-layer failure details and a retry action that re-queues only the failed layer IDs with the same AOI; bumped browser asset cache keys to `p27`.
 - Added terminal bundle job retention with default 100-record / 30-day pruning on startup and after each finished job, configurable through CLI/env settings; active jobs are preserved and health reports job counts.
+- Added a low-zoom raster tile fast path that crops/resamples existing 2048 px EPSG:3857 overlays for z0–8 and keeps source-raster warping for z9+; added process caches for catalog records, manifests, and source-path resolution. Cold BCTS z6/z7/z8 tiles dropped from roughly 8.7/3.2/1.7 seconds to 0.13/0.06/0.05 seconds.
