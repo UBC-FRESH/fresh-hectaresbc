@@ -2358,6 +2358,7 @@
       window.addEventListener("resize", resize);
       requestAnimationFrame(() => resize());
     } catch (error) {
+      clearSeriesFlicker();
       els.content.innerHTML = mapFallbackTemplate(
         getRecordSync(loaded[0].dataset_id),
         Catalog.previewStatus(
