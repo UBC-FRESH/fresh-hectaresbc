@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light">
     <title>HectaresBC — Recovered Catalog</title>
-    <link rel="stylesheet" href="styles.css?v=20261102-p28">
+    <link rel="stylesheet" href="styles.css?v=20261102-p31">
   </head>
   <body data-view="catalog">
     <a class="skip-link" href="#content">Skip to catalog</a>
@@ -25,6 +25,9 @@
         </a>
         <a id="tab-map" class="workspace-tab" href="#/catalog" role="tab" aria-selected="false" aria-disabled="true">
           Map
+        </a>
+        <a id="tab-bundles" class="workspace-tab" href="#/bundles" role="tab" aria-selected="false">
+          Bundles
         </a>
       </nav>
 
@@ -50,6 +53,9 @@
       <div class="header-meta">
         <span id="preview-status" class="header-pill" hidden></span>
         <span id="status" class="header-status" role="status">Loading catalog…</span>
+        <button id="tray-button" class="tray-button" type="button" aria-expanded="false" aria-controls="tray-panel">
+          Tray <span id="tray-count" class="tray-count">0</span>
+        </button>
         <button id="assistant-button" class="assistant-button" type="button" hidden>
           <span aria-hidden="true">✦</span> Ask
         </button>
@@ -116,6 +122,17 @@
       <div id="clip-body" class="clip-body"></div>
     </aside>
 
+    <aside id="tray-panel" class="tray-panel" hidden aria-label="Layer tray">
+      <div class="tray-head">
+        <div>
+          <strong>Layer tray</strong>
+          <span class="clip-subtitle">Collect layers, then open them on the map</span>
+        </div>
+        <button id="tray-close" class="icon-button" type="button" aria-label="Close layer tray">×</button>
+      </div>
+      <div id="tray-body" class="tray-body"></div>
+    </aside>
+
     <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
     <dialog id="help-dialog" class="help-dialog" aria-labelledby="help-title">
@@ -142,8 +159,8 @@
       <p class="noscript">This catalog needs JavaScript to search and render dataset details.</p>
     </noscript>
 
-    <script src="catalog.js?v=20261102-p28" defer></script>
-    <script src="map.js?v=20261102-p28" defer></script>
-    <script src="app.js?v=20261102-p28" defer></script>
+    <script src="catalog.js?v=20261102-p31" defer></script>
+    <script src="map.js?v=20261102-p31" defer></script>
+    <script src="app.js?v=20261102-p31" defer></script>
   </body>
 </html>

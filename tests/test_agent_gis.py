@@ -477,6 +477,21 @@ def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
     )
     assert bad_inspect.status_code == 422
 
+    identify_lon, identify_lat = transformer.transform(102_100, 98_000)
+    identify = client.get(
+        "/api/tiles/dl_adminunits_bcts/identify",
+        params={"lon": identify_lon, "lat": identify_lat},
+    )
+    assert identify.status_code == 200, identify.text
+    assert identify.json()["status"] == "ok"
+    assert identify.json()["value"] is not None
+    outside = client.get(
+        "/api/tiles/dl_adminunits_bcts/identify",
+        params={"lon": -130, "lat": 40},
+    )
+    assert outside.status_code == 200
+    assert outside.json()["status"] == "outside"
+
     bundle = client.post(
         "/api/bundles",
         json={
@@ -520,6 +535,9 @@ def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
     assert job["progress"] == 100
     assert job["result"]["layers"][0]["dataset_id"] == "dl_adminunits_bcts"
     assert job["result"]["download_url"].endswith(f"/api/bundles/{job['result']['bundle_id']}/download")
+    job_list = client.get("/api/bundle-jobs")
+    assert job_list.status_code == 200
+    assert any(item["job_id"] == job_id for item in job_list.json()["jobs"])
 
     bad_job = client.post(
         "/api/bundle-jobs",

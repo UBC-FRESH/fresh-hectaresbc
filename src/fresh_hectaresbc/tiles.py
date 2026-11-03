@@ -34,6 +34,7 @@ from PIL import Image
 from rasterio.enums import Resampling
 from rasterio.transform import from_bounds
 from rasterio.vrt import WarpedVRT
+from rasterio.warp import transform as warp_transform
 from rasterio.warp import transform_bounds
 
 from fresh_hectaresbc import HectaresBC
@@ -739,3 +740,100 @@ def render_tile(
         error=False,
     )
     return png
+
+
+def _class_for_value(classes: list[dict[str, Any]], value: Any) -> dict[str, Any] | None:
+    for item in classes:
+        if not isinstance(item, dict):
+            continue
+        if "value_min" in item and "value_max" in item:
+            try:
+                if float(item["value_min"]) <= float(value) <= float(item["value_max"]):
+                    return item
+            except (TypeError, ValueError):
+                continue
+        elif "value" in item:
+            try:
+                if float(item["value"]) == float(value):
+                    return item
+            except (TypeError, ValueError):
+                continue
+    return None
+
+
+def identify_pixel(
+    dataset_id: str,
+    lon: float,
+    lat: float,
+    *,
+    archive_root: str | Path | None = None,
+) -> dict[str, Any]:
+    """Read the source raster value and legend class at a WGS84 point."""
+
+    record, zip_path, member, resolution, manifest = _source(dataset_id, archive_root)
+    vfs = _raster_vfs(dataset_id, zip_path, member)
+    source = None
+    handle_cached = False
+    try:
+        source, source_lock, handle_cached = _source_handle(vfs)
+        with source_lock:
+            if source.crs is None:
+                raise TileError(f"{dataset_id} source raster has no CRS.")
+            xs, ys = warp_transform("EPSG:4326", source.crs, [lon], [lat])
+            x, y = float(xs[0]), float(ys[0])
+            bounds = source.bounds
+            result = {
+                "status": "ok",
+                "dataset_id": dataset_id,
+                "title": record.title_candidate or record.source_stem,
+                "lon": lon,
+                "lat": lat,
+                "crs": str(source.crs),
+                "pixel_size_m": abs(float(source.transform.a)),
+                "source_resolution": resolution,
+                "source_raster": "cog" if _cog_path(dataset_id) else "zip",
+            }
+            if not (
+                bounds.left <= x < bounds.right and bounds.bottom <= y < bounds.top
+            ):
+                result["status"] = "outside"
+                return result
+            row, col = source.index(x, y)
+            if row < 0 or col < 0 or row >= source.height or col >= source.width:
+                result["status"] = "outside"
+                return result
+            data = source.read(
+                1,
+                window=rasterio.windows.Window(col, row, 1, 1),
+                masked=True,
+            )
+            raw = data[0, 0]
+            if np.ma.is_masked(raw):
+                result["status"] = "nodata"
+                return result
+            value = raw.item()
+            if source.nodata is not None and float(value) == float(source.nodata):
+                result["status"] = "nodata"
+                return result
+            if isinstance(value, np.integer):
+                value = int(value)
+            else:
+                value = float(value)
+            classes = manifest.get("value_classes") or []
+            item = _class_for_value(classes, value)
+            result.update(
+                {
+                    "value": value,
+                    "label": item.get("label") if item else None,
+                    "categorical": bool(classes),
+                    "color": (item.get("rgba") or item.get("rgb")) if item else None,
+                }
+            )
+            return result
+    except (rasterio.errors.RasterioError, ValueError) as exc:
+        raise TileError(
+            f"Could not identify {dataset_id} at {lon},{lat}: {exc}"
+        ) from exc
+    finally:
+        if source is not None and not handle_cached:
+            source.close()

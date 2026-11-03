@@ -249,6 +249,7 @@ class BundleJobManager:
             "current_layer": None,
             "completed_layers": 0,
             "failed_layers": 0,
+            "aoi_name": aoi_name,
             "result": None,
             "error": None,
         }
@@ -420,6 +421,47 @@ class BundleJobManager:
         with self._lock:
             job = self._jobs.get(job_id)
             return copy.deepcopy(job) if job is not None else None
+
+    def list_jobs(self, limit: int = 50) -> list[dict[str, Any]]:
+        with self._lock:
+            jobs = sorted(
+                self._jobs.values(),
+                key=lambda job: str(job.get("created_utc") or ""),
+                reverse=True,
+            )[: max(1, int(limit))]
+            return [copy.deepcopy(job) for job in jobs]
+
+    def retry(self, job_id: str) -> dict[str, Any] | None:
+        """Re-queue the failed layers of a terminal job using its bundle AOI."""
+
+        with self._lock:
+            job = copy.deepcopy(self._jobs.get(job_id))
+        if job is None:
+            return None
+        result = job.get("result") or {}
+        failures = result.get("failures") or []
+        layer_ids = [
+            str(item.get("dataset_id"))
+            for item in failures
+            if isinstance(item, dict) and item.get("dataset_id")
+        ]
+        layer_ids = list(dict.fromkeys(layer_ids))
+        bundle_dir_value = result.get("bundle_dir")
+        if not layer_ids or not bundle_dir_value:
+            return None
+        try:
+            bundle_dir = Path(bundle_dir_value).expanduser().resolve()
+            bundle_dir.relative_to(self.output_root)
+            aoi_path = bundle_dir / "aoi.geojson"
+        except (OSError, ValueError):
+            return None
+        if not aoi_path.is_file():
+            return None
+        return self.submit(
+            layer_ids=layer_ids,
+            aoi_name=job.get("aoi_name") or result.get("aoi", {}).get("name"),
+            aoi_geojson=aoi_path,
+        )
 
     def cancel(self, job_id: str) -> dict[str, Any] | None:
         with self._lock:

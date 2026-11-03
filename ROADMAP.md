@@ -351,10 +351,26 @@ service.
 - [x] P20.14 Add exact drawn-AOI area preflight, a live limit meter, and pre-submit rejection above the configured limit.
 - [x] P20.7 Verify and close the agent GIS assistant phase.
 
+## Phase 21: Browser Workspace Enhancements
+
+Status: implementation in progress on `feature/p21-workspace-enhancements`.
+Parent issue: #166. Planning:
+`planning/ui_workspace_enhancements_plan.md`.
+
+Phase 21 turns the single-layer browser into a reusable workspace: a persistent
+layer tray, a small multi-layer map context stack, a bundle/job history route,
+and click-to-identify raster values. It stays static-first and keeps the optional
+service boundary intact.
+
+- [x] P21.1 Plan workspace routes, tray state, and identify contract. Child issue: #167.
+- [x] P21.2 Add layer tray and multi-layer map. Child issue: #168.
+- [x] P21.3 Add bundle and job history route. Child issue: #169.
+- [x] P21.4 Add click-to-identify raster values. Child issue: #170.
+- [ ] P21.5 Verify and close Phase 21. Child issue: #171.
+
 ## Current Next Steps
 
-No active implementation phase. Optional follow-ups:
-
-1. Evaluate source overviews/COGs for the first high-zoom source open on the
-   most-viewed layers.
-2. Add tile/job usage and cache statistics if operational tuning becomes useful.
+1. Complete P21.1 planning contract and close child issue #167.
+2. Implement P21.2 layer tray and multi-layer map.
+3. Implement P21.3 history and P21.4 identify.
+4. Open the Phase 21 PR, verify, merge, and close parent #166.

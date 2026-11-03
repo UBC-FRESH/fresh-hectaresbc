@@ -274,6 +274,7 @@ def create_app(config: ServiceConfig) -> FastAPI:
     from fresh_hectaresbc.tiles import (
         clear_source_cache,
         configure_tile_cog_root,
+        identify_pixel,
         prune_tile_cache,
         tile_usage_stats,
     )
@@ -458,6 +459,29 @@ def create_app(config: ServiceConfig) -> FastAPI:
         except TileError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
+    @app.get("/api/tiles/{dataset_id}/identify")
+    def tile_identify(
+        dataset_id: str,
+        lon: float = Query(ge=-180, le=180),
+        lat: float = Query(ge=-90, le=90),
+    ) -> dict[str, Any]:
+        from fresh_hectaresbc.tiles import TileError, identify_pixel
+
+        if not config.archive_root:
+            raise HTTPException(
+                status_code=503,
+                detail="raster identify needs --archive-root pointing at the recovered archive",
+            )
+        try:
+            return identify_pixel(
+                dataset_id,
+                lon,
+                lat,
+                archive_root=config.archive_root,
+            )
+        except TileError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
     @app.get("/api/tiles/{dataset_id}/{z}/{x}/{y}.png")
     def tile_png(dataset_id: str, z: int, x: int, y: int) -> Response:
         from fresh_hectaresbc.tiles import TileError, render_tile
@@ -636,12 +660,28 @@ def create_app(config: ServiceConfig) -> FastAPI:
             raise HTTPException(status_code=404, detail="bundle job not found")
         return job
 
+    @app.get("/api/bundle-jobs")
+    def bundle_job_list(
+        limit: int = Query(default=50, ge=1, le=200),
+    ) -> dict[str, Any]:
+        return {"status": "ok", "jobs": job_manager.list_jobs(limit=limit)}
+
     @app.post("/api/bundle-jobs/{job_id}/cancel")
     def bundle_job_cancel(job_id: str) -> dict[str, Any]:
         job = job_manager.cancel(job_id)
         if job is None:
             raise HTTPException(status_code=404, detail="bundle job not found")
         return job
+
+    @app.post("/api/bundle-jobs/{job_id}/retry")
+    def bundle_job_retry(job_id: str) -> dict[str, Any]:
+        job = job_manager.retry(job_id)
+        if job is None:
+            raise HTTPException(
+                status_code=422,
+                detail="job has no retryable failed layers or AOI",
+            )
+        return {"status": job["status"], "job_id": job["job_id"], "job": job}
 
     @app.get("/api/bundles")
     def bundle_list(limit: int = Query(default=20, ge=1, le=100)) -> dict[str, Any]:
@@ -657,10 +697,12 @@ def create_app(config: ServiceConfig) -> FastAPI:
                 {
                     "bundle_id": manifest.get("bundle_id"),
                     "status": manifest.get("status"),
+                    "generated_utc": manifest.get("generated_utc"),
                     "aoi": manifest.get("aoi"),
                     "layer_count": len(manifest.get("layers", [])),
                     "failures": len(manifest.get("failures", [])),
                     "download_url": f"/api/bundles/{manifest.get('bundle_id')}/download",
+                    "manifest_url": f"/api/bundles/{manifest.get('bundle_id')}",
                 }
             )
         return {"status": "ok", "bundles": bundles}

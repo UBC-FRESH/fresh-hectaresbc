@@ -478,6 +478,7 @@
       sort: "relevance",
       page: 1,
       pageSize: 50,
+      layers: [],
     };
   }
 
@@ -496,6 +497,21 @@
 
   function oneOf(value, allowed, fallback) {
     return allowed.includes(value) ? value : fallback;
+  }
+
+  function parseLayerIds(params) {
+    const raw = params.get("layers");
+    if (!raw) {
+      return [];
+    }
+    return [
+      ...new Set(
+        raw
+          .split(",")
+          .map((value) => safeDecode(value.trim()))
+          .filter(Boolean)
+      ),
+    ].slice(0, 6);
   }
 
   function parseRoute(hash) {
@@ -524,6 +540,9 @@
       state.view = "dataset";
       state.datasetId = parts[1] ? safeDecode(parts[1]) : null;
       state.map = parts[2] === "map";
+      if (state.map) {
+        state.layers = parseLayerIds(params);
+      }
       return state;
     }
 
@@ -531,6 +550,12 @@
       state.view = "map";
       state.map = true;
       state.datasetId = params.get("id") || null;
+      state.layers = parseLayerIds(params);
+      return state;
+    }
+
+    if (path === "bundles") {
+      state.view = "bundles";
       return state;
     }
 
@@ -582,15 +607,24 @@
   }
 
   function buildRoute(state) {
+    const layerQuery = state.layers?.length
+      ? `layers=${encodeURIComponent(state.layers.join(","))}`
+      : "";
+    if (state.view === "bundles") {
+      return "#/bundles";
+    }
     if (state.view === "dataset" && state.datasetId) {
       const suffix = state.map ? "/map" : "";
-      return `#/dataset/${encodeURIComponent(state.datasetId)}${suffix}`;
+      const query = state.map && layerQuery ? `?${layerQuery}` : "";
+      return `#/dataset/${encodeURIComponent(state.datasetId)}${suffix}${query}`;
     }
 
     if (state.view === "map") {
-      return state.datasetId
-        ? `#/dataset/${encodeURIComponent(state.datasetId)}/map`
-        : "#/map";
+      if (state.datasetId) {
+        const query = layerQuery ? `?${layerQuery}` : "";
+        return `#/dataset/${encodeURIComponent(state.datasetId)}/map${query}`;
+      }
+      return layerQuery ? `#/map?${layerQuery}` : "#/map";
     }
 
     const params = new URLSearchParams();

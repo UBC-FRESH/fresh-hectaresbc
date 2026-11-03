@@ -121,7 +121,7 @@ def main() -> int:
                 assert "No map layer" in page.locator("#content").inner_text()
 
             page.goto(f"{base_url}#/dataset/dl_adminunits_bcts/map", wait_until="domcontentloaded")
-            page.wait_for_timeout(2500)
+            page.wait_for_selector("#map-canvas", timeout=30000)
             assert page.locator("#map-canvas").count() == 1
             assert (
                 page.locator(".maplibregl-canvas").count() == 1
@@ -132,7 +132,7 @@ def main() -> int:
                 f"{base_url}#/dataset/dl_pinebeetle_pinekill1999/map",
                 wait_until="domcontentloaded",
             )
-            page.wait_for_timeout(2500)
+            page.wait_for_selector("#map-canvas", timeout=30000)
             assert (
                 page.locator("#map-canvas").count() == 1
                 or page.locator(".map-fallback").count() == 1

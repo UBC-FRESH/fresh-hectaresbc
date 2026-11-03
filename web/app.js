@@ -80,6 +80,22 @@
     },
     serviceAvailable: false,
     mapHandle: null,
+    tray: {
+      ids: [],
+      open: false,
+    },
+    history: {
+      jobs: [],
+      bundles: [],
+      timer: null,
+      loading: false,
+    },
+    identify: {
+      enabled: false,
+      busy: false,
+      datasetId: null,
+      result: null,
+    },
     clip: {
       open: false,
       datasetId: null,
@@ -123,6 +139,7 @@
       searchInput: document.querySelector("#search-input"),
       tabBrowse: document.querySelector("#tab-browse"),
       tabMap: document.querySelector("#tab-map"),
+      tabBundles: document.querySelector("#tab-bundles"),
       filterRail: document.querySelector("#filter-rail"),
       facets: document.querySelector("#facets"),
       previewNote: document.querySelector("#preview-note"),
@@ -148,8 +165,14 @@
       clipPanel: document.querySelector("#clip-panel"),
       clipBody: document.querySelector("#clip-body"),
       clipClose: document.querySelector("#clip-close"),
+      trayButton: document.querySelector("#tray-button"),
+      trayCount: document.querySelector("#tray-count"),
+      trayPanel: document.querySelector("#tray-panel"),
+      trayBody: document.querySelector("#tray-body"),
+      trayClose: document.querySelector("#tray-close"),
     };
     bindEvents();
+    loadTray();
     const header = document.querySelector(".app-header");
     if (header && window.ResizeObserver) {
       new ResizeObserver(() => syncHeaderHeight()).observe(header);
@@ -344,6 +367,7 @@
       document: manifest,
     };
     updateHeader();
+    renderTray();
     if (state.ready) {
       renderCurrent();
     }
@@ -428,6 +452,8 @@
     }
     if (route.view === "map" || route.map) {
       void renderMap();
+    } else if (route.view === "bundles") {
+      void renderBundles();
     } else {
       void renderDataset();
     }
@@ -443,6 +469,8 @@
   /* ----------------------------------------------------------------- browse */
 
   function renderBrowse() {
+    stopHistoryPolling();
+    resetIdentifyState();
     window.HectaresBCMap?.destroy();
     closeClipPanel();
     document.body.dataset.view = "catalog";
@@ -620,6 +648,7 @@
               <a href="${href}" data-result-link title="${Catalog.escapeHtml(Catalog.titleLabel(record))}">
                 ${Catalog.highlightText(Catalog.titleLabel(record), route.query)}
               </a>
+              <button class="tray-add" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}" aria-label="Add ${Catalog.escapeHtml(Catalog.titleLabel(record))} to tray">+</button>
               <span class="result-subtitle">${Catalog.escapeHtml(record.dataset_id)}</span>
               <span class="result-badges">${badgesTemplate(record, preview)}</span>
             </div>
@@ -636,21 +665,24 @@
     const preview = Catalog.previewStatus(record, state.previewIndex);
     const href = `#/dataset/${encodeURIComponent(record.dataset_id)}`;
     return `
-      <a class="result-card" href="${href}" data-dataset-id="${Catalog.escapeHtml(record.dataset_id)}">
-        <div class="result-card-head">
-          ${thumbnailTemplate(record, preview)}
-          <div style="min-width:0">
-            <div class="result-card-title">${Catalog.highlightText(Catalog.titleLabel(record), route.query)}</div>
-            <div class="result-subtitle">${Catalog.escapeHtml(record.dataset_id)}</div>
-            <div class="result-badges">${badgesTemplate(record, preview)}</div>
+      <div class="result-card-wrap">
+        <a class="result-card" href="${href}" data-dataset-id="${Catalog.escapeHtml(record.dataset_id)}">
+          <div class="result-card-head">
+            ${thumbnailTemplate(record, preview)}
+            <div style="min-width:0">
+              <div class="result-card-title">${Catalog.highlightText(Catalog.titleLabel(record), route.query)}</div>
+              <div class="result-subtitle">${Catalog.escapeHtml(record.dataset_id)}</div>
+              <div class="result-badges">${badgesTemplate(record, preview)}</div>
+            </div>
           </div>
-        </div>
-        <div class="result-card-meta">
-          <span>${Catalog.escapeHtml(Catalog.familyLabel(record.source_family))}</span>
-          <span>${Catalog.escapeHtml(Catalog.formatLabel(record))}</span>
-          <span>${Catalog.formatBytes(record.manifest_size_bytes)}</span>
-        </div>
-      </a>
+          <div class="result-card-meta">
+            <span>${Catalog.escapeHtml(Catalog.familyLabel(record.source_family))}</span>
+            <span>${Catalog.escapeHtml(Catalog.formatLabel(record))}</span>
+            <span>${Catalog.formatBytes(record.manifest_size_bytes)}</span>
+          </div>
+        </a>
+        <button class="tray-add result-card-tray" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}" aria-label="Add ${Catalog.escapeHtml(Catalog.titleLabel(record))} to tray">+</button>
+      </div>
     `;
   }
 
@@ -940,6 +972,8 @@
 
   async function renderDataset() {
     const token = ++state.renderToken;
+    stopHistoryPolling();
+    resetIdentifyState();
     window.HectaresBCMap?.destroy();
     closeClipPanel();
     document.body.dataset.view = "dataset";
@@ -1005,6 +1039,7 @@
           </div>
           <div class="dataset-actions">
             <a class="primary-button" href="${mapHref}">Open map</a>
+            <button class="secondary-button" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}">Add to tray</button>
             <button class="secondary-button" type="button" data-copy="fresh-hectaresbc catalog show ${Catalog.escapeHtml(record.dataset_id)}">Copy CLI</button>
             <button class="secondary-button" type="button" data-download-json="${Catalog.escapeHtml(record.dataset_id)}">Download JSON</button>
           </div>
@@ -1292,8 +1327,407 @@
     return null;
   }
 
+  async function loadContextLayer(datasetId) {
+    const record = getRecordSync(datasetId);
+    if (!record) {
+      return null;
+    }
+    const artifact = await loadArtifactDetails(
+      Catalog.previewArtifact(record, state.previewIndex)
+    );
+    const preview = Catalog.previewStatus(record, state.previewIndex);
+    if (!artifact || preview.status !== "available") {
+      return null;
+    }
+    const tileMeta = await fetchJson(
+      `../api/tiles/${encodeURIComponent(datasetId)}/metadata`
+    );
+    const tileBounds = window.HectaresBCMap?.validBounds(tileMeta?.bounds_wgs84);
+    const staticBounds =
+      window.HectaresBCMap?.validBounds(artifact._map_bounds_wgs84) ||
+      window.HectaresBCMap?.validBounds(artifact.wgs84_bounds);
+    const bounds = tileBounds || staticBounds;
+    if (!bounds) {
+      return null;
+    }
+    let previewUrl = artifact._map_path
+      ? artifactUrl({ _base: artifact._map_base }, artifact._map_path)
+      : artifact.artifact_path
+        ? artifactUrl(artifact, artifact.artifact_path)
+        : null;
+    if (previewUrl && artifact._map_path && state.mapPreviewVersion) {
+      previewUrl += `${previewUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(state.mapPreviewVersion)}`;
+    }
+    const tileUrl =
+      tileMeta?.status === "ok" && tileBounds
+        ? `../api/tiles/${encodeURIComponent(datasetId)}/{z}/{x}/{y}.png`
+        : null;
+    if (!tileUrl && !previewUrl) {
+      return null;
+    }
+    return {
+      dataset_id: datasetId,
+      title: Catalog.titleLabel(record),
+      previewUrl: tileUrl ? null : previewUrl,
+      tileUrl,
+      bounds,
+      minzoom: tileMeta?.minzoom || 0,
+      maxzoom: tileMeta?.maxzoom || 14,
+      categorical: Boolean(
+        artifact.value_class_count || artifact.value_classes?.length
+      ),
+      opacity: 0.55,
+    };
+  }
+
+  function contextLayerIds(primaryId) {
+    const routeLayers = Array.isArray(state.route.layers) ? state.route.layers : [];
+    const trayLayers = state.tray.ids;
+    return [...new Set([...routeLayers, ...trayLayers])]
+      .filter((datasetId) => datasetId && datasetId !== primaryId)
+      .slice(0, 3);
+  }
+
+  /* --------------------------------------------------------------- bundles */
+
+  function stopHistoryPolling() {
+    if (state.history.timer) {
+      clearTimeout(state.history.timer);
+      state.history.timer = null;
+    }
+  }
+
+  function historyStatusTone(status) {
+    if (status === "complete") return "ok";
+    if (status === "partial") return "warn";
+    if (status === "failed" || status === "interrupted") return "error";
+    if (status === "canceled") return "muted";
+    return "active";
+  }
+
+  function historyProgress(job) {
+    const progress = Math.max(0, Math.min(100, Number(job.progress || 0)));
+    return `<div class="clip-progress" role="progressbar" aria-label="Bundle job progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(progress)}"><div class="clip-progress-bar" style="width:${progress}%"></div></div>`;
+  }
+
+  function historyJobTemplate(job) {
+    const status = String(job.status || "unknown");
+    const result = job.result || {};
+    const failures = Array.isArray(result.failures) ? result.failures : [];
+    const active = ["queued", "running", "canceling"].includes(status);
+    const tone = historyStatusTone(status);
+    return `<article class="history-card">
+      <header class="history-card-head">
+        <span class="history-status ${tone}">${Catalog.escapeHtml(status)}</span>
+        <strong>${Catalog.escapeHtml(job.aoi_name || "Bundle job")}</strong>
+        <span class="history-date">${Catalog.formatDate(job.created_utc)}</span>
+      </header>
+      <p class="history-message">${Catalog.escapeHtml(job.message || "")}</p>
+      ${active ? historyProgress(job) : ""}
+      <div class="history-meta">
+        <span>${Catalog.formatNumber((job.layer_ids || []).length)} layers</span>
+        <span>${Catalog.escapeHtml(job.job_id || "")}</span>
+        ${job.failed_layers ? `<span>${Catalog.formatNumber(job.failed_layers)} failed</span>` : ""}
+      </div>
+      <div class="history-actions">
+        ${result.download_url ? `<a class="secondary-button" href="${Catalog.escapeHtml(result.download_url)}" target="_blank" rel="noreferrer">Download ZIP</a>` : ""}
+        ${active ? `<button class="secondary-button" type="button" data-history-cancel="${Catalog.escapeHtml(job.job_id)}">Cancel</button>` : ""}
+        ${failures.length ? `<button class="secondary-button" type="button" data-history-retry="${Catalog.escapeHtml(job.job_id)}">Retry failed layers</button>` : ""}
+      </div>
+    </article>`;
+  }
+
+  function historyBundleTemplate(bundle) {
+    const status = String(bundle.status || "unknown");
+    const tone = historyStatusTone(status);
+    const aoi = bundle.aoi || {};
+    return `<article class="history-card">
+      <header class="history-card-head">
+        <span class="history-status ${tone}">${Catalog.escapeHtml(status)}</span>
+        <strong>${Catalog.escapeHtml(aoi.name || bundle.bundle_id || "Bundle")}</strong>
+        <span class="history-date">${Catalog.formatDate(bundle.generated_utc)}</span>
+      </header>
+      <div class="history-meta">
+        <span>${Catalog.formatNumber(bundle.layer_count || 0)} layers</span>
+        ${aoi.area_ha ? `<span>${Catalog.formatNumber(aoi.area_ha)} ha</span>` : ""}
+        ${bundle.failures ? `<span>${Catalog.formatNumber(bundle.failures)} failures</span>` : ""}
+      </div>
+      <div class="history-actions">
+        ${bundle.download_url ? `<a class="secondary-button" href="${Catalog.escapeHtml(bundle.download_url)}" target="_blank" rel="noreferrer">Download ZIP</a>` : ""}
+        ${bundle.manifest_url ? `<a class="secondary-button" href="${Catalog.escapeHtml(bundle.manifest_url)}" target="_blank" rel="noreferrer">Manifest</a>` : ""}
+      </div>
+    </article>`;
+  }
+
+  function renderBundleHistory() {
+    const jobs = state.history.jobs || [];
+    const bundles = state.history.bundles || [];
+    const active = jobs.filter((job) =>
+      ["queued", "running", "canceling"].includes(String(job.status))
+    );
+    const recentJobs = jobs.filter(
+      (job) => !["queued", "running", "canceling"].includes(String(job.status))
+    );
+    const body = jobs.length || bundles.length
+      ? `<section class="history-section">
+          <h2>Jobs</h2>
+          ${active.length ? active.map(historyJobTemplate).join("") : '<p class="history-empty">No active jobs.</p>'}
+          ${recentJobs.slice(0, 8).map(historyJobTemplate).join("")}
+        </section>
+        <section class="history-section">
+          <h2>Completed bundles</h2>
+          ${bundles.length ? bundles.map(historyBundleTemplate).join("") : '<p class="history-empty">No completed bundles yet.</p>'}
+        </section>`
+      : `<div class="history-empty">
+          <p>No bundle jobs or downloads yet.</p>
+          <p>Open a map, choose an AOI, and prepare a bundle.</p>
+          <a class="primary-button" href="#/map">Open map</a>
+        </div>`;
+    els.content.innerHTML = `
+      <div class="history-shell">
+        <header class="history-head">
+          <div>
+            <span class="dataset-eyebrow"><span class="badge badge-accent">Workspace</span></span>
+            <h1 tabindex="-1">Bundle history</h1>
+            <p>Active jobs, recent runs, failed-layer retries, and downloadable bundles.</p>
+          </div>
+          <button class="secondary-button" type="button" data-history-refresh>Refresh</button>
+        </header>
+        ${state.serviceAvailable ? "" : '<div class="history-warning">The bundle service is offline. Start the optional FastAPI service to create or refresh jobs.</div>'}
+        ${body}
+      </div>`;
+    els.content.querySelector("h1")?.focus();
+    if (active.length && !state.history.timer && state.route.view === "bundles") {
+      state.history.timer = setTimeout(() => {
+        state.history.timer = null;
+        if (state.route.view === "bundles") {
+          void loadBundleHistory(++state.renderToken);
+        }
+      }, 5000);
+    }
+  }
+
+  async function loadBundleHistory(token) {
+    state.history.loading = true;
+    const [bundlePayload, jobPayload] = await Promise.all([
+      fetchJson("../api/bundles"),
+      fetchJson("../api/bundle-jobs?limit=50"),
+    ]);
+    if (token !== state.renderToken) {
+      return;
+    }
+    state.history.loading = false;
+    state.history.bundles = bundlePayload?.bundles || [];
+    state.history.jobs = jobPayload?.jobs || [];
+    state.serviceAvailable = Boolean(bundlePayload || jobPayload);
+    renderBundleHistory();
+  }
+
+  async function renderBundles() {
+    const token = ++state.renderToken;
+    stopHistoryPolling();
+    window.HectaresBCMap?.destroy();
+    closeClipPanel();
+    closeTray();
+    document.body.dataset.view = "bundles";
+    document.body.classList.remove("filters-open", "inspector-open");
+    els.content.innerHTML = loadingTemplate("Loading bundle history…");
+    updateHeader();
+    updateTabs();
+    if (els.liveStatus) {
+      els.liveStatus.textContent = "Bundle history.";
+    }
+    document.title = "Bundle history · HectaresBC";
+    await loadBundleHistory(token);
+  }
+
+  async function refreshBundleHistory() {
+    stopHistoryPolling();
+    await loadBundleHistory(++state.renderToken);
+  }
+
+  async function cancelHistoryJob(jobId) {
+    try {
+      const response = await fetch(
+        `../api/bundle-jobs/${encodeURIComponent(jobId)}/cancel`,
+        { method: "POST" }
+      );
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.detail || `cancel failed (${response.status})`);
+      }
+      showToast("Bundle job canceled.");
+      await refreshBundleHistory();
+    } catch (error) {
+      showToast(`Could not cancel job: ${error.message}`);
+    }
+  }
+
+  async function retryHistoryJob(jobId) {
+    try {
+      const response = await fetch(
+        `../api/bundle-jobs/${encodeURIComponent(jobId)}/retry`,
+        { method: "POST" }
+      );
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.detail || `retry failed (${response.status})`);
+      }
+      showToast("Failed layers queued for retry.");
+      await refreshBundleHistory();
+    } catch (error) {
+      showToast(`Could not retry job: ${error.message}`);
+    }
+  }
+
+  /* -------------------------------------------------------------- identify */
+
+  function updateIdentifyButton() {
+    document.querySelectorAll("[data-identify-toggle]").forEach((button) => {
+      button.textContent = state.identify.enabled ? "Stop identify" : "Identify";
+      button.classList.toggle("is-active", state.identify.enabled);
+      button.setAttribute(
+        "aria-pressed",
+        state.identify.enabled ? "true" : "false"
+      );
+    });
+  }
+
+  function resetIdentifyState() {
+    state.identify.enabled = false;
+    state.identify.busy = false;
+    state.identify.result = null;
+    state.mapHandle?.__hbc?.setIdentifyMode?.(false, null);
+    const card = document.querySelector("#map-identify-card");
+    if (card) {
+      card.hidden = true;
+      card.innerHTML = "";
+    }
+    updateIdentifyButton();
+  }
+
+  function identifyColor(result) {
+    const color = result?.color;
+    if (!Array.isArray(color) || color.length < 3) {
+      return "";
+    }
+    const channels = color.slice(0, 4).map((value) => {
+      const number = Math.max(0, Math.min(255, Number(value)));
+      return Number.isFinite(number) ? Math.round(number) : 0;
+    });
+    const alpha = channels.length === 4 ? channels[3] / 255 : 1;
+    return `rgba(${channels[0]}, ${channels[1]}, ${channels[2]}, ${alpha})`;
+  }
+
+  function renderIdentifyCard() {
+    const card = document.querySelector("#map-identify-card");
+    if (!card) {
+      return;
+    }
+    if (!state.identify.enabled && !state.identify.busy && !state.identify.result) {
+      card.hidden = true;
+      card.innerHTML = "";
+      return;
+    }
+    card.hidden = false;
+    if (state.identify.busy) {
+      card.innerHTML = '<p class="map-identify-status">Reading raster value…</p>';
+      return;
+    }
+    const result = state.identify.result;
+    if (!result) {
+      card.innerHTML =
+        '<p class="map-identify-status">Click the map to read a raster value.</p>';
+      return;
+    }
+    const close = '<button class="icon-button" type="button" data-identify-close aria-label="Close identify result">×</button>';
+    if (result.status === "outside") {
+      card.innerHTML = `<div class="map-identify-head"><strong>Outside layer</strong>${close}</div><p class="map-identify-status">This point is outside the raster extent.</p><p class="map-identify-coords">${Number(result.lon).toFixed(5)}, ${Number(result.lat).toFixed(5)}</p>`;
+      return;
+    }
+    if (result.status === "nodata") {
+      card.innerHTML = `<div class="map-identify-head"><strong>${Catalog.escapeHtml(result.title || result.dataset_id)}</strong>${close}</div><p class="map-identify-status">No data at this cell.</p><p class="map-identify-coords">${Number(result.lon).toFixed(5)}, ${Number(result.lat).toFixed(5)}</p>`;
+      return;
+    }
+    if (result.status === "error") {
+      card.innerHTML = `<div class="map-identify-head"><strong>${Catalog.escapeHtml(result.title || "Identify failed")}</strong>${close}</div><p class="map-identify-status">${Catalog.escapeHtml(result.message || "Could not read this cell.")}</p>`;
+      return;
+    }
+    const color = identifyColor(result);
+    const label = result.label
+      ? `<span class="map-identify-label">${Catalog.escapeHtml(result.label)}</span>`
+      : "";
+    card.innerHTML = `<div class="map-identify-head"><strong>${Catalog.escapeHtml(result.title || result.dataset_id)}</strong>${close}</div>
+      <div class="map-identify-value">
+        ${color ? `<span class="map-identify-swatch" style="background:${color}"></span>` : ""}
+        <strong>${Catalog.escapeHtml(String(result.value))}</strong>${label}
+      </div>
+      <p class="map-identify-coords">${Number(result.lon).toFixed(5)}, ${Number(result.lat).toFixed(5)} · ${Catalog.escapeHtml(result.source_raster || "source")}</p>`;
+  }
+
+  async function identifyAt(lngLat) {
+    const datasetId = state.identify.datasetId;
+    if (!datasetId) {
+      return;
+    }
+    const token = (state.identify.token || 0) + 1;
+    state.identify.token = token;
+    state.identify.busy = true;
+    renderIdentifyCard();
+    try {
+      const response = await fetch(
+        `../api/tiles/${encodeURIComponent(datasetId)}/identify?lon=${encodeURIComponent(lngLat.lng)}&lat=${encodeURIComponent(lngLat.lat)}`
+      );
+      if (token !== state.identify.token) {
+        return;
+      }
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.detail || `identify failed (${response.status})`);
+      }
+      state.identify.result = payload;
+      state.identify.busy = false;
+      renderIdentifyCard();
+    } catch (error) {
+      if (token !== state.identify.token) {
+        return;
+      }
+      state.identify.busy = false;
+      state.identify.result = {
+        status: "error",
+        title: "Identify failed",
+        message: error.message,
+      };
+      showToast(`Could not identify: ${error.message}`);
+      renderIdentifyCard();
+    }
+  }
+
+  function toggleIdentify() {
+    if (!state.serviceAvailable) {
+      showToast("Identify requires the map service.");
+      return;
+    }
+    if (!state.mapHandle?.__hbc) {
+      showToast("Open a map first.");
+      return;
+    }
+    state.identify.enabled = !state.identify.enabled;
+    state.identify.result = null;
+    state.mapHandle.__hbc.setIdentifyMode(
+      state.identify.enabled,
+      ({ lng, lat }) => void identifyAt({ lng, lat })
+    );
+    updateIdentifyButton();
+    renderIdentifyCard();
+    if (state.identify.enabled) {
+      showToast("Click the map to identify a raster value.");
+    }
+  }
+
   async function renderMap() {
     const token = ++state.renderToken;
+    stopHistoryPolling();
     document.body.dataset.view = "map";
     document.body.classList.remove("filters-open", "inspector-open");
     els.content.innerHTML = loadingTemplate("Loading map preview…");
@@ -1312,6 +1746,8 @@
       }
       state.selectedId = datasetId;
     }
+    state.identify.datasetId = datasetId;
+    resetIdentifyState();
     if (state.clip.open && state.clip.datasetId && state.clip.datasetId !== datasetId) {
       resetClipState();
       state.clip.datasetId = datasetId;
@@ -1376,12 +1812,20 @@
     const referenceUrl = reference?.artifact_path
       ? artifactUrl(reference, reference.artifact_path)
       : null;
+    const contextIds = contextLayerIds(datasetId);
+    const extraLayers = (
+      await Promise.all(contextIds.map((id) => loadContextLayer(id)))
+    ).filter(Boolean);
+    if (token !== state.renderToken) {
+      return;
+    }
     els.content.innerHTML = mapTemplate(
       record,
       preview,
       artifact,
       bounds,
-      tileMeta
+      tileMeta,
+      extraLayers
     );
     bindMapLayerSearch();
     updateHeader();
@@ -1407,6 +1851,7 @@
         ),
         panel: document.querySelector("#map-layer-panel"),
         loading: document.querySelector("#map-loading"),
+        extraLayers,
         onError: () => {
           const card = document.querySelector(".map-status-card p");
           if (card) {
@@ -1425,6 +1870,8 @@
       if (state.clip.geometry && !els.clipPanel.hidden) {
         state.mapHandle.__hbc?.setAoi(state.clip.geometry, { fit: false });
       }
+      state.identify.datasetId = datasetId;
+      updateIdentifyButton();
     } catch (error) {
       state.mapHandle = null;
       if (token !== state.renderToken) {
@@ -1442,9 +1889,19 @@
     }
   }
 
-  function mapTemplate(record, preview, artifact, bounds, tileMeta = null) {
+  function mapTemplate(record, preview, artifact, bounds, tileMeta = null, extraLayers = []) {
     const datasetHref = `#/dataset/${encodeURIComponent(record.dataset_id)}`;
     const legend = mapLegendTemplate(artifact);
+    const contextLayers = extraLayers.length
+      ? extraLayers
+          .map(
+            (layer, index) => `<div class="map-context-layer">
+              <label class="layer-control"><input type="checkbox" data-context-visible="${index}" checked> ${Catalog.escapeHtml(layer.title)}</label>
+              <label class="layer-control">Opacity <input type="range" min="0" max="1" step="0.05" value="${layer.opacity}" data-context-opacity="${index}"></label>
+            </div>`
+          )
+          .join("")
+      : '<p class="muted" style="font-size:0.68rem">Add layers to the tray to show them as map context.</p>';
     return `
       <div class="map-view">
         <div id="map-canvas" class="map-canvas" aria-label="Map preview for ${Catalog.escapeHtml(Catalog.titleLabel(record))}"></div>
@@ -1461,6 +1918,8 @@
             <a class="secondary-button" href="${datasetHref}">Dataset</a>
             <a class="secondary-button" href="${state.lastBrowseHash || "#/catalog"}">Browse</a>
             <a class="secondary-button" href="#/catalog?preview=available">Preview layers</a>
+            <button class="secondary-button" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}">Add to tray</button>
+            <button class="secondary-button" type="button" data-identify-toggle ${state.serviceAvailable ? "" : "hidden"}>Identify</button>
             <button class="secondary-button" type="button" data-open-clip ${state.serviceAvailable ? "" : "hidden"}>Clip AOI</button>
             <button class="secondary-button" type="button" data-copy="${Catalog.escapeHtml(record.dataset_id)}">Copy ID</button>
           </div>
@@ -1477,6 +1936,8 @@
             </select>
           </label>
           <button id="map-fit-layer" class="secondary-button" type="button">Fit layer</button>
+          <h2>Context layers</h2>
+          <div class="map-context-layers" id="map-context-layers">${contextLayers}</div>
           <h2>Change layer</h2>
           <label class="layer-control map-layer-search-label">
             <input id="map-layer-search" type="search" placeholder="Find a previewable layer…" autocomplete="off">
@@ -1498,6 +1959,7 @@
             <dt>Artifact</dt><dd>${Catalog.escapeHtml(artifact?.artifact_status || "unknown")}</dd>
           </dl>
         </div>
+        <div id="map-identify-card" class="map-identify-card" hidden></div>
         <div id="map-loading" class="map-loading"><span><span class="spinner"></span>Loading map…</span></div>
       </div>
     `;
@@ -1707,6 +2169,35 @@ python scripts/fetch_web_previews.py</pre>
 
   function handleContentClick(event) {
     const target = event.target;
+    if (target.closest("[data-identify-toggle]")) {
+      toggleIdentify();
+      return;
+    }
+    if (target.closest("[data-identify-close]")) {
+      state.identify.result = null;
+      renderIdentifyCard();
+      return;
+    }
+    if (target.closest("[data-history-refresh]")) {
+      void refreshBundleHistory();
+      return;
+    }
+    const cancelJob = target.closest("[data-history-cancel]");
+    if (cancelJob) {
+      void cancelHistoryJob(cancelJob.dataset.historyCancel);
+      return;
+    }
+    const retryJob = target.closest("[data-history-retry]");
+    if (retryJob) {
+      void retryHistoryJob(retryJob.dataset.historyRetry);
+      return;
+    }
+    const trayAdd = target.closest("[data-tray-add]");
+    if (trayAdd) {
+      event.preventDefault();
+      addToTray(trayAdd.dataset.trayAdd);
+      return;
+    }
     const openClip = target.closest("[data-open-clip]");
     if (openClip) {
       void openClipPanel();
@@ -1867,6 +2358,9 @@ python scripts/fetch_web_previews.py</pre>
       document.body.classList.remove("filters-open", "inspector-open");
       if (els.helpDialog.open) {
         els.helpDialog.close();
+      }
+      if (els.trayPanel && !els.trayPanel.hidden) {
+        closeTray();
       }
       if (els.clipPanel && !els.clipPanel.hidden) {
         closeClipPanel();
@@ -2029,6 +2523,12 @@ python scripts/fetch_web_previews.py</pre>
         ? "true"
         : "false"
     );
+    if (els.tabBundles) {
+      els.tabBundles.setAttribute(
+        "aria-selected",
+        state.route.view === "bundles" ? "true" : "false"
+      );
+    }
   }
 
   /* --------------------------------------------------------------- assistant */
@@ -2045,6 +2545,179 @@ python scripts/fetch_web_previews.py</pre>
     document.querySelectorAll("[data-open-clip]").forEach((button) => {
       button.hidden = !state.serviceAvailable;
     });
+  }
+
+  /* ---------------------------------------------------------------- tray */
+
+  const TrayStorageKey = "fresh-hectaresbc.layer-tray.v1";
+
+  function loadTray() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(TrayStorageKey) || "[]");
+      if (Array.isArray(stored)) {
+        state.tray.ids = [
+          ...new Set(stored.filter((value) => typeof value === "string")),
+        ].slice(0, 6);
+      }
+    } catch (error) {
+      state.tray.ids = [];
+    }
+    syncTrayButton();
+  }
+
+  function saveTray() {
+    try {
+      localStorage.setItem(TrayStorageKey, JSON.stringify(state.tray.ids));
+    } catch (error) {
+      // Private browsing or a full storage quota is non-fatal.
+    }
+    syncTrayButton();
+  }
+
+  function syncTrayButton() {
+    if (els?.trayCount) {
+      els.trayCount.textContent = String(state.tray.ids.length);
+    }
+    els?.trayButton?.setAttribute(
+      "aria-expanded",
+      state.tray.open ? "true" : "false"
+    );
+  }
+
+  function trayLayer(artifactId) {
+    return state.previewIndex?.get(artifactId) || null;
+  }
+
+  function addToTray(datasetId) {
+    if (!datasetId) {
+      return;
+    }
+    if (state.tray.ids.includes(datasetId)) {
+      showToast("Layer is already in the tray.");
+      return;
+    }
+    if (state.tray.ids.length >= 6) {
+      showToast("The tray holds at most 6 layers.");
+      return;
+    }
+    const artifact = trayLayer(datasetId);
+    if (!artifact) {
+      showToast("Layer is not previewable.");
+      return;
+    }
+    state.tray.ids.push(datasetId);
+    saveTray();
+    renderTray();
+    showToast("Layer added to tray.");
+  }
+
+  function removeFromTray(datasetId) {
+    state.tray.ids = state.tray.ids.filter((value) => value !== datasetId);
+    saveTray();
+    renderTray();
+  }
+
+  function moveTray(datasetId, delta) {
+    const index = state.tray.ids.indexOf(datasetId);
+    if (index < 0) {
+      return;
+    }
+    const next = index + delta;
+    if (next < 0 || next >= state.tray.ids.length) {
+      return;
+    }
+    const ids = [...state.tray.ids];
+    [ids[index], ids[next]] = [ids[next], ids[index]];
+    state.tray.ids = ids;
+    saveTray();
+    renderTray();
+  }
+
+  function clearTray() {
+    state.tray.ids = [];
+    saveTray();
+    renderTray();
+  }
+
+  function trayMapHref() {
+    if (!state.tray.ids.length) {
+      return "#/map";
+    }
+    return Catalog.buildRoute({
+      ...Catalog.defaultState(),
+      view: "dataset",
+      datasetId: state.tray.ids[0],
+      map: true,
+      layers: [...state.tray.ids],
+    });
+  }
+
+  function renderTray() {
+    if (!els?.trayBody) {
+      return;
+    }
+    syncTrayButton();
+    if (!state.tray.ids.length) {
+      els.trayBody.innerHTML = `
+        <div class="tray-empty">
+          <p>No layers in the tray.</p>
+          <p>Use the + buttons in Browse, Dataset, or Map to collect layers.</p>
+          <a class="secondary-button" href="#/catalog?preview=available">Browse previewable layers</a>
+        </div>`;
+      return;
+    }
+    els.trayBody.innerHTML = `
+      <div class="tray-list">
+        ${state.tray.ids
+          .map((datasetId, index) => {
+            const artifact = trayLayer(datasetId);
+            const title = artifact?.title || datasetId;
+            return `<div class="tray-layer" data-tray-id="${Catalog.escapeHtml(datasetId)}">
+              <div>
+                <b>${Catalog.escapeHtml(title)}</b>
+                <small>${Catalog.escapeHtml(datasetId)}</small>
+              </div>
+              <div class="tray-layer-actions">
+                <button type="button" data-tray-move="${Catalog.escapeHtml(datasetId)}" data-direction="-1" aria-label="Move ${Catalog.escapeHtml(title)} up" ${index === 0 ? "disabled" : ""}>↑</button>
+                <button type="button" data-tray-move="${Catalog.escapeHtml(datasetId)}" data-direction="1" aria-label="Move ${Catalog.escapeHtml(title)} down" ${index === state.tray.ids.length - 1 ? "disabled" : ""}>↓</button>
+                <button type="button" data-tray-remove="${Catalog.escapeHtml(datasetId)}" aria-label="Remove ${Catalog.escapeHtml(title)}">×</button>
+              </div>
+            </div>`;
+          })
+          .join("")}
+      </div>
+      <div class="tray-actions">
+        <a class="primary-button" href="${trayMapHref()}" data-tray-open-map>Open map with tray</a>
+        <button class="secondary-button" type="button" data-tray-clear>Clear tray</button>
+      </div>
+      <p class="clip-status">The first tray layer becomes the primary map layer. Up to three additional tray layers render as context overlays.</p>`;
+  }
+
+  function openTray() {
+    closeAssistant();
+    if (els.clipPanel && !els.clipPanel.hidden) {
+      closeClipPanel();
+    }
+    state.tray.open = true;
+    els.trayPanel.hidden = false;
+    renderTray();
+    syncTrayButton();
+  }
+
+  function closeTray() {
+    state.tray.open = false;
+    if (els.trayPanel) {
+      els.trayPanel.hidden = true;
+    }
+    syncTrayButton();
+  }
+
+  function toggleTray() {
+    if (state.tray.open) {
+      closeTray();
+    } else {
+      openTray();
+    }
   }
 
   async function loadAssistantInfo() {
@@ -2097,6 +2770,7 @@ python scripts/fetch_web_previews.py</pre>
     if (els.clipPanel && !els.clipPanel.hidden) {
       closeClipPanel();
     }
+    closeTray();
     els.assistantPanel.hidden = false;
     els.assistantButton.setAttribute("aria-expanded", "true");
     els.assistantInput.focus();
@@ -2489,6 +3163,7 @@ python scripts/fetch_web_previews.py</pre>
       return;
     }
     closeAssistant();
+    closeTray();
     const datasetId = currentMapDatasetId();
     if (state.clip.datasetId && datasetId && state.clip.datasetId !== datasetId) {
       resetClipState();
@@ -2951,6 +3626,30 @@ python scripts/fetch_web_previews.py</pre>
     }
   }
 
+  function handleTrayClick(event) {
+    const target = event.target;
+    if (target.closest("[data-tray-open-map]")) {
+      closeTray();
+      return;
+    }
+    const remove = target.closest("[data-tray-remove]");
+    if (remove) {
+      removeFromTray(remove.dataset.trayRemove);
+      return;
+    }
+    const move = target.closest("[data-tray-move]");
+    if (move) {
+      const direction = Number.parseInt(move.dataset.direction || "0", 10);
+      if (Number.isFinite(direction)) {
+        moveTray(move.dataset.trayMove, direction);
+      }
+      return;
+    }
+    if (target.closest("[data-tray-clear]")) {
+      clearTray();
+    }
+  }
+
   function handleClipClick(event) {
     const target = event.target;
     const close = target.closest("[data-clip-close]");
@@ -3101,6 +3800,10 @@ python scripts/fetch_web_previews.py</pre>
     els.clipPanel?.addEventListener("click", handleClipClick);
     els.clipPanel?.addEventListener("input", handleClipInput);
     els.clipPanel?.addEventListener("change", handleClipChange);
+
+    els.trayButton?.addEventListener("click", toggleTray);
+    els.trayClose?.addEventListener("click", closeTray);
+    els.trayPanel?.addEventListener("click", handleTrayClick);
 
     document.addEventListener("keydown", handleGlobalKeydown);
     window.addEventListener("hashchange", scheduleSync);

@@ -15,6 +15,9 @@ Generate the catalog and its lazy detail/index artifacts with:
    node scripts/smoke_test_web_catalog_ui.js web/data/catalog.json
    python scripts/smoke_test_web_ui_browser.py
    python scripts/smoke_test_clip_aoi_browser.py
+   python scripts/smoke_test_tray_browser.py
+   python scripts/smoke_test_bundles_browser.py
+   python scripts/smoke_test_identify_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -35,6 +38,7 @@ Routes
    /web/#/dataset/dl_adminunits_bcts
    /web/#/dataset/dl_adminunits_bcts/map
    /web/#/map
+   /web/#/bundles
 
 Legacy hashes redirect automatically:
 
@@ -130,6 +134,50 @@ configured separately.
 source mix (``cache``, ``overlay``, ``cog``, ``zip``), latency, and top
 datasets without recording client identifiers.
 
+Layer Tray And Map Context
+--------------------------
+
+The header tray collects previewable layers across Browse, Dataset, and Map.
+The tray is stored in browser-local storage and holds at most six layers.
+Rows, cards, dataset actions, and map actions expose an add control. The tray
+drawer supports removal, reordering, clearing, and opening the map.
+
+The first tray layer becomes the primary map layer. Up to three additional tray
+layers render as context overlays with independent visibility and opacity
+controls. Map routes encode the context list in the URL:
+
+.. code-block:: text
+
+   #/map?layers=dataset_id_1,dataset_id_2
+   #/dataset/<dataset_id>/map?layers=dataset_id_1,dataset_id_2
+
+Context layers use the same raster tile source when the service is available
+and fall back to the static EPSG:3857 overlay otherwise.
+
+Bundle History
+--------------
+
+The `#/bundles` route lists active and recent bundle jobs plus completed bundle
+downloads. It shows job status/progress, AOI names and areas, layer counts,
+failure counts, timestamps, download links, manifest links, cancellation, and
+failed-layer retry. It refreshes active jobs while the route is open and
+provides an explicit Refresh action.
+
+Click-To-Identify
+-----------------
+
+The map Identify control enters a click-to-query mode. Clicking the primary
+raster layer calls:
+
+.. code-block:: text
+
+   GET /api/tiles/{dataset_id}/identify?lon=...&lat=...
+
+The response includes the raster value, legend class/label and color when
+available, coordinates, source kind (``cog`` or ``zip``), and a status of
+``ok``, ``nodata``, or ``outside``. The map shows a result card and a point
+marker; the Identify control toggles the mode off.
+
 Optional Service, Assistant, And Clip AOI
 -----------------------------------------
 
@@ -175,13 +223,16 @@ Service endpoints:
    GET  /api/layers/{dataset_id}
    GET  /api/tiles/{dataset_id}/metadata
    GET  /api/tiles/{dataset_id}/{z}/{x}/{y}.png
+   GET  /api/tiles/{dataset_id}/identify?lon=&lat=
    POST /api/aoi/inspect
    POST /api/aoi/resolve
    GET  /api/aoi/search?q=
    POST /api/bundles
    POST /api/bundle-jobs
+  GET  /api/bundle-jobs
    GET  /api/bundle-jobs/{job_id}
    POST /api/bundle-jobs/{job_id}/cancel
+  POST /api/bundle-jobs/{job_id}/retry
    GET  /api/bundles
    GET  /api/bundles/{bundle_id}
    GET  /api/bundles/{bundle_id}/download
