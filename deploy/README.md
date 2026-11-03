@@ -28,6 +28,8 @@ The service binds `0.0.0.0:8030` and reads:
 - `FRESH_HECTARESBC_FEMIC_SRC` for FEMIC BCDC boundary resolution;
 - `FRESH_HECTARESBC_PUBLIC_URL` for bundle download links;
 - `FRESH_HECTARESBC_TILE_CACHE_MAX_BYTES` for the tile-cache budget.
+- `FRESH_HECTARESBC_TILE_COG_ROOT` for optional per-layer COG derivatives
+  (default `var/tile-cogs`).
 - `FRESH_HECTARESBC_JOB_HISTORY_LIMIT` for terminal bundle job records kept
   (default 100).
 - `FRESH_HECTARESBC_JOB_HISTORY_MAX_AGE_DAYS` for job-record age pruning
@@ -120,3 +122,6 @@ checks are wanted.
 Tiles are written under `var/tile-cache/`. The service prunes least-recently-used
 tiles when the cache exceeds `FRESH_HECTARESBC_TILE_CACHE_MAX_BYTES` (default
 4 GiB). Budget disk for the tile cache separately from the preview data.
+Optional COG derivatives under `FRESH_HECTARESBC_TILE_COG_ROOT` take priority
+over `zip://` source rasters at high zoom; generate them with
+`scripts/build_tile_cog.py --dataset-id ...`.

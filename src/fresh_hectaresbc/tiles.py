@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import re
 import tempfile
 import threading
 from functools import lru_cache
@@ -55,6 +56,8 @@ DEFAULT_TILE_CACHE_MAX_BYTES = 4 * 1024**3
 _MERCATOR_ROOT = REPO_ROOT / "web" / "data" / "map_previews_3857"
 _MERCATOR_INDEX: dict[str, dict[str, Any]] | None = None
 _MERCATOR_INDEX_LOCK = threading.Lock()
+_COG_ROOT = REPO_ROOT / "var" / "tile-cogs"
+_DATASET_ID_RE = re.compile(r"^[0-9A-Za-z_-]+$")
 _TILE_WRITE_COUNT = 0
 PALETTE = (
     (20, 81, 117, 230),
@@ -77,6 +80,25 @@ _TILE_LOCK = threading.Lock()
 
 class TileError(RuntimeError):
     """Raised when a tile cannot be rendered."""
+
+
+def configure_tile_cog_root(root: str | Path) -> None:
+    global _COG_ROOT
+    _COG_ROOT = Path(root).expanduser().resolve()
+
+
+def _cog_path(dataset_id: str) -> Path | None:
+    if not _DATASET_ID_RE.fullmatch(dataset_id):
+        return None
+    path = _COG_ROOT / f"{dataset_id}.tif"
+    return path if path.is_file() else None
+
+
+def _raster_vfs(dataset_id: str, zip_path: Path, member: str) -> str:
+    cog_path = _cog_path(dataset_id)
+    if cog_path is not None:
+        return str(cog_path)
+    return f"zip://{zip_path}!{member}"
 
 
 def _manifest_path(dataset_id: str) -> Path | None:
@@ -186,7 +208,7 @@ def layer_metadata(
     """Return MapLibre raster-source metadata for one layer."""
 
     record, zip_path, member, resolution, manifest = _source(dataset_id, archive_root)
-    vfs = f"zip://{zip_path}!{member}"
+    vfs = _raster_vfs(dataset_id, zip_path, member)
     source = None
     cached = False
     try:
@@ -206,6 +228,7 @@ def layer_metadata(
                 "title": record.title_candidate or record.source_stem,
                 "source_zip_path": record.source_zip_path,
                 "source_resolution": resolution,
+                "source_raster": "cog" if _cog_path(dataset_id) else "zip",
                 "crs": str(source.crs),
                 "tile_crs": WEB_MERCATOR,
                 "tile_size": TILE_SIZE,
@@ -494,7 +517,7 @@ def render_tile(
             return overlay
 
     record, zip_path, member, resolution, manifest = _source(dataset_id, archive_root)
-    vfs = f"zip://{zip_path}!{member}"
+    vfs = _raster_vfs(dataset_id, zip_path, member)
     classes = manifest.get("value_classes") or []
     categorical = bool(classes)
     resampling = Resampling.nearest if categorical else Resampling.bilinear

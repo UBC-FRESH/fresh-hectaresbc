@@ -71,6 +71,11 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   roughly 15–30 ms locally; the first z9 read after metadata was ~0.8 s. Through
   the protected public host, the first z9 tile was ~0.87 s and subsequent
   z9/z10/z11 tiles were ~0.05–0.08 s.
+- Optional COG derivatives are supported. `scripts/build_tile_cog.py` writes a
+  compressed, tiled GeoTIFF with overviews under `var/tile-cogs/`; the tile
+  service prefers it when present (`source_raster` in metadata). A BCTS pilot
+  is ~3.1 MB, takes ~32 s to build, and reduces the first z9 read from ~0.8 s to
+  ~0.06 s locally.
 
 ### Agent Service And GIS Bundles (P20)
 
@@ -226,6 +231,8 @@ cd /srv/shared-data/gep/ws4/fresh-hectaresbc
 source .venv/bin/activate
 python scripts/generate_web_catalog.py
 python scripts/reproject_map_previews.py --workers 8
+python scripts/build_tile_cog.py --dataset-id dl_adminunits_bcts \
+  --archive-root /path/to/hectaresbc --output-root var/tile-cogs
 python scripts/smoke_test_web_static_app.py
 node scripts/smoke_test_web_catalog_ui.js web/data/catalog.json
 python scripts/smoke_test_web_ui_browser.py
@@ -296,8 +303,8 @@ resolution tests. Use the web/agent test command above for this feature set.
 ## Optional Follow-Ups
 
 1. Keep the Cloudflare Access/Globus OAuth policy restricted to UBC CWL.
-2. Evaluate source overviews/COG conversion for the first high-zoom source open
-   on the most-viewed layers; repeated z9+ tiles are already fast.
+2. Extend optional COG derivatives to more most-viewed layers using
+   `scripts/build_tile_cog.py`; BCTS is the current pilot.
 3. If more layers should be sharp, continue generating 2048 px overrides with
    `scripts/generate_highres_web_previews.py --family data_layer ...` and
    `--reindex-only` after interrupted runs.
