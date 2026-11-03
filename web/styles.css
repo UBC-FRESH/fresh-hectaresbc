@@ -2029,10 +2029,54 @@ kbd {
   color: #8f1d1d;
 }
 
+.clip-result.warn {
+  border-color: #e7d3a4;
+  background: #fff8e7;
+  color: #7a5610;
+}
+
 .clip-result a {
   display: inline-block;
   margin-top: 0.3rem;
   font-weight: 700;
+}
+
+.clip-failures {
+  margin-top: 0.45rem;
+}
+
+.clip-failures summary {
+  cursor: pointer;
+  color: #8f1d1d;
+  font-weight: 700;
+}
+
+.clip-result.warn .clip-failures summary {
+  color: #7a5610;
+}
+
+.clip-failures ul {
+  margin: 0.3rem 0 0;
+  padding-left: 1rem;
+}
+
+.clip-failures li {
+  margin-bottom: 0.28rem;
+}
+
+.clip-failures code {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+}
+
+.clip-failures span {
+  display: block;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.clip-retry {
+  margin-top: 0.45rem;
 }
 
 .clip-recent {

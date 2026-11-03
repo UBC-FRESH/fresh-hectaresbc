@@ -340,12 +340,13 @@ service.
 - [x] P20.6 Add agent tools, tests, docs, and the separate demo deployment.
 - [x] P20.8 Add the browser Clip AOI drawer with boundary candidates, mouse/touch drawing, searchable layer selection, validated GeoJSON bundle requests, and recent bundle links.
 - [x] P20.9 Add queued bundle jobs with persisted progress, per-layer status, best-effort cancellation, and a browser progress bar.
+- [x] P20.10 Add per-layer failure details and failed-layer retry for partial/failed bundles.
 - [ ] P20.7 Verify and close the agent GIS assistant phase.
 
 ## Current Next Steps
 
-1. Verify the Clip AOI drawer, job progress, cancellation, and assistant through
-   the protected public demo.
-2. Add per-layer failure details and retry for partial bundles.
+1. Verify the Clip AOI drawer, job progress, cancellation, failure details,
+   retry, and assistant through the protected public demo.
+2. Add job-history retention/pruning for `var/bundles/jobs/`.
 3. Close the Phase 19/20 GitHub issue tree or create a follow-up issue for the
    remaining hardening.

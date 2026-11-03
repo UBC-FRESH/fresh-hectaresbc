@@ -141,6 +141,8 @@ The map workspace exposes a **Clip AOI** drawer (`.clip-panel` in
 - show the AOI outline on the map and submit its exact GeoJSON geometry;
 - run bundle preparation through `/api/bundle-jobs`, poll progress, show the
   current layer and a progress bar, and request cancellation between layers;
+- expand per-layer failures for partial/failed bundles and retry only the failed
+  layer IDs with the same AOI;
 - show bundle status, layer count, ZIP size, download link, and recent bundles.
 
 The panel is only enabled when `/api/health` reports a running service. Map
