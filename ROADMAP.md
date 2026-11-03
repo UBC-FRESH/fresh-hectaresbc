@@ -471,7 +471,7 @@ Status: implementation in progress on `feature/p30-series-v2`. Parent issue: #23
 Phase 30 refactors Series to one map with frame-layer switching, adds an in-place
 frame editor, and detects year-suffixed layer families for one-click playback.
 
-- [ ] P30.1 Plan series v2 contract. Child issue: #232.
+- [x] P30.1 Plan series v2 contract. Child issue: #232.
 - [ ] P30.2 Refactor series to one map with frame layers. Child issue: #233.
 - [ ] P30.3 Add series editor and year-sequence discovery. Child issue: #234.
 - [ ] P30.4 Verify and close Phase 30. Child issue: #235.
