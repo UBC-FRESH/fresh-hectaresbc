@@ -14,6 +14,8 @@ FEMIC_SRC="${FRESH_HECTARESBC_FEMIC_SRC:-}"
 BUNDLE_ROOT="${FRESH_HECTARESBC_BUNDLE_ROOT:-${REPO_ROOT}/var/bundles}"
 TILE_CACHE_ROOT="${FRESH_HECTARESBC_TILE_CACHE_ROOT:-${REPO_ROOT}/var/tile-cache}"
 TILE_CACHE_MAX_BYTES="${FRESH_HECTARESBC_TILE_CACHE_MAX_BYTES:-4294967296}"
+JOB_HISTORY_LIMIT="${FRESH_HECTARESBC_JOB_HISTORY_LIMIT:-100}"
+JOB_HISTORY_MAX_AGE_DAYS="${FRESH_HECTARESBC_JOB_HISTORY_MAX_AGE_DAYS:-30}"
 
 args=(
   "--host" "0.0.0.0"
@@ -24,6 +26,8 @@ args=(
   "--bundle-root" "${BUNDLE_ROOT}"
   "--tile-cache-root" "${TILE_CACHE_ROOT}"
   "--tile-cache-max-bytes" "${TILE_CACHE_MAX_BYTES}"
+  "--job-history-limit" "${JOB_HISTORY_LIMIT}"
+  "--job-history-max-age-days" "${JOB_HISTORY_MAX_AGE_DAYS}"
   "--public-url" "${PUBLIC_URL}"
 )
 if [[ -n "${ARCHIVE_ROOT}" ]]; then

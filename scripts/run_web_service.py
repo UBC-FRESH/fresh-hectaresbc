@@ -73,6 +73,18 @@ def main() -> int:
     parser.add_argument("--max-layers", type=int, default=6)
     parser.add_argument("--max-area-ha", type=float, default=10_000_000.0)
     parser.add_argument(
+        "--job-history-limit",
+        type=int,
+        default=100,
+        help="Keep at most this many terminal bundle job records.",
+    )
+    parser.add_argument(
+        "--job-history-max-age-days",
+        type=float,
+        default=30.0,
+        help="Remove terminal bundle job records older than this; 0 disables.",
+    )
+    parser.add_argument(
         "--public-url",
         default=os.environ.get("FRESH_HECTARESBC_PUBLIC_URL"),
         help="Public origin used for bundle download links.",
@@ -95,6 +107,8 @@ def main() -> int:
         tile_cache_max_bytes=args.tile_cache_max_bytes,
         max_layers=args.max_layers,
         max_area_ha=args.max_area_ha,
+        job_history_limit=args.job_history_limit,
+        job_history_max_age_days=args.job_history_max_age_days,
         public_url=args.public_url,
     )
     scheme = "http"

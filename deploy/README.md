@@ -28,6 +28,10 @@ The service binds `0.0.0.0:8030` and reads:
 - `FRESH_HECTARESBC_FEMIC_SRC` for FEMIC BCDC boundary resolution;
 - `FRESH_HECTARESBC_PUBLIC_URL` for bundle download links;
 - `FRESH_HECTARESBC_TILE_CACHE_MAX_BYTES` for the tile-cache budget.
+- `FRESH_HECTARESBC_JOB_HISTORY_LIMIT` for terminal bundle job records kept
+  (default 100).
+- `FRESH_HECTARESBC_JOB_HISTORY_MAX_AGE_DAYS` for job-record age pruning
+  (default 30; `0` disables age pruning).
 
 Restart and inspect:
 

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 import threading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -33,9 +34,23 @@ TERMINAL_STATUSES = {
     "interrupted",
 }
 
+_JOB_ID_RE = re.compile(r"^[0-9A-Za-z_-]+$")
+
 
 def _now() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _job_time(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
 
 
 class BundleJobManager:
@@ -51,6 +66,8 @@ class BundleJobManager:
         max_area_ha: float = 10_000_000.0,
         public_url: str | None = None,
         max_workers: int = 1,
+        job_history_limit: int = 100,
+        job_history_max_age_days: float = 30.0,
     ) -> None:
         self.output_root = Path(output_root).expanduser().resolve()
         self.jobs_dir = self.output_root / "jobs"
@@ -60,6 +77,8 @@ class BundleJobManager:
         self.max_layers = max_layers
         self.max_area_ha = max_area_ha
         self.public_url = public_url
+        self.job_history_limit = max(1, int(job_history_limit))
+        self.job_history_max_age_days = float(job_history_max_age_days)
         self._lock = threading.RLock()
         self._jobs: dict[str, dict[str, Any]] = {}
         self._cancels: dict[str, threading.Event] = {}
@@ -68,6 +87,12 @@ class BundleJobManager:
             thread_name_prefix="hbc-bundle",
         )
         self._load_existing()
+        self.prune_jobs()
+
+    def _job_path(self, job_id: str) -> Path:
+        if not _JOB_ID_RE.fullmatch(job_id):
+            raise ValueError("invalid bundle job id")
+        return self.jobs_dir / f"{job_id}.json"
 
     def _load_existing(self) -> None:
         for path in sorted(self.jobs_dir.glob("*.json")):
@@ -76,7 +101,11 @@ class BundleJobManager:
             except (OSError, json.JSONDecodeError):
                 continue
             job_id = payload.get("job_id")
-            if not isinstance(job_id, str) or not job_id:
+            if (
+                not isinstance(job_id, str)
+                or not _JOB_ID_RE.fullmatch(job_id)
+                or path.stem != job_id
+            ):
                 continue
             if payload.get("status") in {"queued", "running"}:
                 payload.update(
@@ -92,8 +121,14 @@ class BundleJobManager:
             self._jobs[job_id] = payload
 
     def _write(self, payload: dict[str, Any]) -> None:
-        path = self.jobs_dir / f"{payload['job_id']}.json"
-        tmp = self.jobs_dir / f".{payload['job_id']}.{uuid.uuid4().hex}.tmp"
+        job_id = payload.get("job_id")
+        if not isinstance(job_id, str):
+            return
+        try:
+            path = self._job_path(job_id)
+        except ValueError:
+            return
+        tmp = self.jobs_dir / f".{job_id}.{uuid.uuid4().hex}.tmp"
         try:
             tmp.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
             tmp.replace(path)
@@ -102,6 +137,62 @@ class BundleJobManager:
                 tmp.unlink(missing_ok=True)
             except OSError:
                 pass
+
+    def prune_jobs(
+        self,
+        *,
+        limit: int | None = None,
+        max_age_days: float | None = None,
+    ) -> dict[str, int]:
+        """Remove old terminal job records while keeping active jobs.
+
+        A terminal job is kept only when it is within both the newest-record
+        limit and the age limit. Setting ``max_age_days`` to zero or a negative
+        value disables age pruning.
+        """
+
+        keep_limit = max(1, int(limit if limit is not None else self.job_history_limit))
+        age_limit = float(
+            max_age_days
+            if max_age_days is not None
+            else self.job_history_max_age_days
+        )
+        now = datetime.now(UTC)
+        removed = 0
+        with self._lock:
+            terminal: list[tuple[datetime, str]] = []
+            for job_id, job in self._jobs.items():
+                if job.get("status") not in TERMINAL_STATUSES:
+                    continue
+                timestamp = _job_time(job.get("finished_utc")) or _job_time(
+                    job.get("created_utc")
+                )
+                terminal.append((timestamp or datetime.min.replace(tzinfo=UTC), job_id))
+            terminal.sort(reverse=True)
+            for index, (timestamp, job_id) in enumerate(terminal):
+                too_old = False
+                if age_limit > 0:
+                    age_days = (now - timestamp).total_seconds() / 86400
+                    too_old = age_days > age_limit
+                if index < keep_limit and not too_old:
+                    continue
+                self._jobs.pop(job_id, None)
+                self._cancels.pop(job_id, None)
+                try:
+                    self._job_path(job_id).unlink(missing_ok=True)
+                except (OSError, ValueError):
+                    pass
+                removed += 1
+            return {"removed": removed, "kept": len(self._jobs)}
+
+    def stats(self) -> dict[str, int]:
+        with self._lock:
+            counts: dict[str, int] = {}
+            for job in self._jobs.values():
+                status = str(job.get("status") or "unknown")
+                counts[status] = counts.get(status, 0) + 1
+            counts["total"] = len(self._jobs)
+            return counts
 
     def _update(self, job_id: str, **changes: Any) -> dict[str, Any] | None:
         with self._lock:
@@ -120,7 +211,9 @@ class BundleJobManager:
         aoi_name: str | None = None,
         aoi_geojson: str | Path | None = None,
     ) -> dict[str, Any]:
-        unique_layers = list(dict.fromkeys(str(layer).strip() for layer in layer_ids if layer))
+        unique_layers = list(
+            dict.fromkeys(str(layer).strip() for layer in layer_ids if layer)
+        )
         job_id = f"{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:8]}"
         job = {
             "job_id": job_id,
@@ -274,6 +367,7 @@ class BundleJobManager:
             finished_utc=_now(),
             error=None if status != "failed" else message,
         )
+        self.prune_jobs()
 
     def _finish_canceled(self, job_id: str) -> None:
         self._update(
@@ -286,6 +380,7 @@ class BundleJobManager:
         )
         with self._lock:
             self._cancels.pop(job_id, None)
+        self.prune_jobs()
 
     def _finish_failed(self, job_id: str, message: str) -> None:
         self._update(
@@ -297,6 +392,7 @@ class BundleJobManager:
             finished_utc=_now(),
             error=message,
         )
+        self.prune_jobs()
 
     def get(self, job_id: str) -> dict[str, Any] | None:
         with self._lock:

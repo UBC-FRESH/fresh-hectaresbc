@@ -87,6 +87,8 @@ class ServiceConfig:
     tile_cache_max_bytes: int = 4 * 1024**3
     max_layers: int = 6
     max_area_ha: float = 10_000_000.0
+    job_history_limit: int = 100
+    job_history_max_age_days: float = 30.0
     public_url: str | None = None
     title: str = "HectaresBC"
 
@@ -269,6 +271,8 @@ def create_app(config: ServiceConfig) -> FastAPI:
         max_layers=config.max_layers,
         max_area_ha=config.max_area_ha,
         public_url=config.public_url,
+        job_history_limit=config.job_history_limit,
+        job_history_max_age_days=config.job_history_max_age_days,
     )
     app = FastAPI(title=config.title, version="0.0.0")
     app.state.config = config
@@ -322,6 +326,7 @@ def create_app(config: ServiceConfig) -> FastAPI:
             "agent_available": shutil.which("opencode") is not None,
             "archive_root": str(config.archive_root) if config.archive_root else None,
             "bundle_root": str(config.bundle_root),
+            "bundle_jobs": job_manager.stats(),
         }
 
     @app.get("/api/agent")
