@@ -3,7 +3,7 @@
   const MAPLIBRE_CSS = "vendor/maplibre-gl.css";
   const OSM_TILES = ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"];
   let maplibrePromise = null;
-  let activeMap = null;
+  const activeMaps = new Set();
 
   function ensureStylesheet() {
     const existing = document.querySelector(`link[data-maplibre-css]`);
@@ -613,7 +613,7 @@
     return { center, zoom };
   }
 
-  async function create(options) {
+  async function createMap(options) {
     const {
       container,
       previewUrl = null,
@@ -624,15 +624,18 @@
       referenceUrl = null,
       referenceBounds = null,
       bounds,
+      fitBounds = null,
       panel = null,
       loading = null,
       onError = null,
       categorical = false,
       extraLayers = [],
       view = null,
+      controls = true,
     } = options;
 
     const parsed = validBounds(bounds);
+    const parsedFit = validBounds(fitBounds) || parsed;
     if (!parsed) {
       throw new Error("The preview artifact does not have usable WGS84 bounds.");
     }
@@ -641,7 +644,6 @@
     }
 
     const maplibregl = await ensureMaplibre();
-    destroy();
 
     const map = new maplibregl.Map({
       container,
@@ -658,8 +660,8 @@
         extraLayers,
       }),
       bounds: [
-        [parsed[0], parsed[1]],
-        [parsed[2], parsed[3]],
+        [parsedFit[0], parsedFit[1]],
+        [parsedFit[2], parsedFit[3]],
       ],
       fitBoundsOptions: { padding: 48 },
       minZoom: 1,
@@ -667,8 +669,10 @@
       attributionControl: true,
     });
 
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
-    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
+    if (controls) {
+      map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
+      map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
+    }
     map.dragRotate.disable();
     map.touchZoomRotate.disableRotation();
 
@@ -680,8 +684,8 @@
       } else {
         map.fitBounds(
           [
-            [parsed[0], parsed[1]],
-            [parsed[2], parsed[3]],
+            [parsedFit[0], parsedFit[1]],
+            [parsedFit[2], parsedFit[3]],
           ],
           { padding: 48, duration: 0 }
         );
@@ -726,23 +730,66 @@
         }
       },
     };
-    activeMap = map;
+    activeMaps.add(map);
     return map;
   }
 
+  async function create(options) {
+    destroy();
+    return createMap(options);
+  }
+
+  async function createCompare({ left, right }) {
+    destroy();
+    const leftMap = await createMap({ ...left, controls: true });
+    let rightMap;
+    try {
+      rightMap = await createMap({ ...right, controls: false });
+    } catch (error) {
+      destroy();
+      throw error;
+    }
+    let syncing = false;
+    const sync = (source, target) => {
+      if (syncing) {
+        return;
+      }
+      syncing = true;
+      target.jumpTo({
+        center: source.getCenter(),
+        zoom: source.getZoom(),
+        bearing: 0,
+        pitch: 0,
+      });
+      syncing = false;
+    };
+    leftMap.on("move", () => sync(leftMap, rightMap));
+    rightMap.on("move", () => sync(rightMap, leftMap));
+    return {
+      maps: [leftMap, rightMap],
+      left: leftMap,
+      right: rightMap,
+      resize: () => {
+        leftMap.resize();
+        rightMap.resize();
+      },
+    };
+  }
+
   function destroy() {
-    if (activeMap) {
+    for (const map of activeMaps) {
       try {
-        activeMap.remove();
+        map.remove();
       } catch (error) {
         // A removed container is harmless.
       }
-      activeMap = null;
     }
+    activeMaps.clear();
   }
 
   globalScope.HectaresBCMap = {
     create,
+    createCompare,
     destroy,
     validBounds,
   };

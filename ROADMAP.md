@@ -437,8 +437,8 @@ Phase 27 adds synchronized side-by-side comparison for two previewable layers,
 with tray/map entry points and selectors.
 
 - [x] P27.1 Plan compare route and sync contract. Child issue: #204.
-- [ ] P27.2 Add multi-map compare support. Child issue: #205.
-- [ ] P27.3 Add compare UI and browser coverage. Child issue: #206.
+- [x] P27.2 Add multi-map compare support. Child issue: #205.
+- [x] P27.3 Add compare UI and browser coverage. Child issue: #206.
 - [ ] P27.4 Verify and close Phase 27. Child issue: #207.
 
 ## Current Next Steps

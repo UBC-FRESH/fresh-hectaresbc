@@ -480,6 +480,8 @@
       pageSize: 50,
       layers: [],
       workspace: null,
+      compareLeft: null,
+      compareRight: null,
     };
   }
 
@@ -567,6 +569,13 @@
       return state;
     }
 
+    if (path === "compare") {
+      state.view = "compare";
+      state.compareLeft = params.get("left") || null;
+      state.compareRight = params.get("right") || null;
+      return state;
+    }
+
     if (path === "catalog" || path === "") {
       const rows = firstValue(params, "rows", "50");
       state.query = firstValue(params, "q", "");
@@ -628,6 +637,13 @@
     }
     if (state.view === "admin") {
       return "#/admin";
+    }
+    if (state.view === "compare") {
+      const params = new URLSearchParams();
+      if (state.compareLeft) params.set("left", state.compareLeft);
+      if (state.compareRight) params.set("right", state.compareRight);
+      const query = params.toString();
+      return `#/compare${query ? `?${query}` : ""}`;
     }
     if (state.view === "dataset" && state.datasetId) {
       const suffix = state.map ? "/map" : "";

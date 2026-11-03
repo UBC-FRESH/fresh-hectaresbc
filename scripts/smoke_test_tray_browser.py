@@ -59,9 +59,9 @@ def main() -> int:
             page.locator("#tray-button").click()
             page.wait_for_selector("#tray-panel:not([hidden])")
             assert page.locator(".tray-layer").count() == 2
-            href = page.locator(".tray-actions a").get_attribute("href")
+            href = page.locator("[data-tray-open-map]").get_attribute("href")
             assert href and "layers=" in href
-            page.locator(".tray-actions a").click()
+            page.locator("[data-tray-open-map]").click()
             page.wait_for_selector(".map-loading", state="detached", timeout=60000)
             page.wait_for_timeout(1500)
             assert page.locator(".maplibregl-canvas").count() == 1
