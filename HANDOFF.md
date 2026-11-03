@@ -3,7 +3,7 @@
 Date: 2026-11-03
 Status: P19/P20 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
-Latest feature merge: `6f43df9`
+Latest feature merge: `b559c35`
 Latest merged PR: #165 (Sphinx refresh); AOI preflight: #163
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)

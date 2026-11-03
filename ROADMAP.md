@@ -353,8 +353,7 @@ service.
 
 ## Phase 21: Browser Workspace Enhancements
 
-Status: implementation in progress on `feature/p21-workspace-enhancements`.
-Parent issue: #166. Planning:
+Status: completed and merged to `main` via PR #172. Parent issue: #166. Planning:
 `planning/ui_workspace_enhancements_plan.md`.
 
 Phase 21 turns the single-layer browser into a reusable workspace: a persistent
@@ -366,7 +365,7 @@ service boundary intact.
 - [x] P21.2 Add layer tray and multi-layer map. Child issue: #168.
 - [x] P21.3 Add bundle and job history route. Child issue: #169.
 - [x] P21.4 Add click-to-identify raster values. Child issue: #170.
-- [ ] P21.5 Verify and close Phase 21. Child issue: #171.
+- [x] P21.5 Verify and close Phase 21. Child issue: #171.
 
 ## Current Next Steps
 
