@@ -388,7 +388,7 @@ Phase 23 stores named and recent AOIs in local browser storage, restores boundar
 AOIs through FEMIC, restores compact drawn AOIs directly, and exposes apply/delete
 actions in the Clip drawer.
 
-- [ ] P23.1 Plan AOI library storage and restore. Child issue: #180.
+- [x] P23.1 Plan AOI library storage and restore. Child issue: #180.
 - [ ] P23.2 Add AOI persistence and Clip restore. Child issue: #181.
 - [ ] P23.3 Add AOI library UI and browser coverage. Child issue: #182.
 - [ ] P23.4 Verify and close Phase 23. Child issue: #183.
