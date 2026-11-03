@@ -96,6 +96,22 @@ def main() -> int:
             assert clip_before != clip_after
             page.locator('[data-compare-mode="split"]').click()
             page.wait_for_selector(".compare-stage:not(.is-wipe)", timeout=10000)
+            page.locator('[data-compare-mode="flicker"]').click()
+            page.wait_for_selector(".compare-stage.is-flicker", timeout=10000)
+            page.wait_for_timeout(1800)
+            assert "mode=flicker" in page.evaluate("location.hash")
+            assert page.locator(".maplibregl-canvas").count() == 2
+            assert page.locator("[data-flicker-toggle]").count() == 1
+            first_opacity = page.locator(".compare-pane.is-left").evaluate(
+                "(element) => getComputedStyle(element).opacity"
+            )
+            page.wait_for_timeout(1200)
+            second_opacity = page.locator(".compare-pane.is-left").evaluate(
+                "(element) => getComputedStyle(element).opacity"
+            )
+            assert first_opacity != second_opacity
+            page.locator("[data-flicker-toggle]").click()
+            assert page.locator("[data-flicker-toggle]").inner_text() == "Play"
             browser.close()
     finally:
         server.shutdown()
