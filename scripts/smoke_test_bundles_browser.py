@@ -137,6 +137,7 @@ def main() -> int:
             page.route("**/api/**", api)
             page.goto(f"{base_url}#/bundles", wait_until="domcontentloaded")
             page.wait_for_selector(".history-shell", timeout=30000)
+            page.wait_for_function("() => document.querySelectorAll('.history-card').length === 3", timeout=10000)
             assert page.locator(".history-card").count() == 3
             page.wait_for_selector("[data-history-cancel]", timeout=10000)
             page.wait_for_selector("[data-history-retry]", timeout=10000)
