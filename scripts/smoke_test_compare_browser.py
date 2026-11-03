@@ -67,6 +67,35 @@ def main() -> int:
             assert "right=dl_adminunits_bcts" in hash_value
             page.wait_for_timeout(1800)
             assert page.locator(".maplibregl-canvas").count() == 2
+
+            page.locator('[data-compare-mode="wipe"]').click()
+            page.wait_for_selector(".compare-stage.is-wipe", timeout=10000)
+            page.wait_for_timeout(1800)
+            assert "mode=wipe" in page.evaluate("location.hash")
+            assert page.locator(".maplibregl-canvas").count() == 2
+            clip_before = page.locator(".compare-pane.is-left").evaluate(
+                "(element) => element.style.clipPath"
+            )
+            divider = page.locator(".compare-divider").bounding_box()
+            assert divider is not None
+            page.mouse.move(
+                divider["x"] + divider["width"] / 2,
+                divider["y"] + divider["height"] / 2,
+            )
+            page.mouse.down()
+            page.mouse.move(
+                divider["x"] + 100,
+                divider["y"] + divider["height"] / 2,
+                steps=5,
+            )
+            page.mouse.up()
+            page.wait_for_timeout(300)
+            clip_after = page.locator(".compare-pane.is-left").evaluate(
+                "(element) => element.style.clipPath"
+            )
+            assert clip_before != clip_after
+            page.locator('[data-compare-mode="split"]').click()
+            page.wait_for_selector(".compare-stage:not(.is-wipe)", timeout=10000)
             browser.close()
     finally:
         server.shutdown()

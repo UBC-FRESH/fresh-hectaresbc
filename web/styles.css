@@ -2115,6 +2115,103 @@ kbd {
   margin: 0.65rem 0;
 }
 
+.compare-mode-bar {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.55rem;
+}
+
+.compare-mode-bar button {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.68rem;
+}
+
+.compare-mode-bar button.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.compare-stage.is-wipe {
+  position: relative;
+  display: block;
+}
+
+.compare-stage.is-wipe .compare-pane {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.compare-stage.is-wipe .compare-pane.is-right {
+  z-index: 1;
+}
+
+.compare-stage.is-wipe .compare-pane.is-left {
+  z-index: 2;
+}
+
+.compare-stage.is-wipe .compare-divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  z-index: 6;
+  width: 0.35rem;
+  border: 0;
+  background: transparent;
+  cursor: ew-resize;
+  transform: translateX(-50%);
+}
+
+.compare-stage.is-wipe .compare-divider::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+  content: "";
+  transform: translateX(-50%);
+}
+
+.compare-divider-knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: none;
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.8rem;
+  line-height: 1.8rem;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+.compare-stage.is-wipe .compare-divider-knob {
+  display: block;
+}
+
+.compare-stage.is-wipe .compare-divider.is-dragging .compare-divider-knob {
+  background: var(--accent-strong);
+}
+
+.compare-stage.is-wipe .compare-pane.is-right .compare-label {
+  right: 0.5rem;
+  left: auto;
+}
+
 .compare-select-label {
   display: grid;
   gap: 0.2rem;
