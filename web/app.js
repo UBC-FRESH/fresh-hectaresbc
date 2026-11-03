@@ -2291,16 +2291,34 @@ python scripts/fetch_web_previews.py</pre>
     }
     const failures = Array.isArray(result.failures) ? result.failures : [];
     const layers = Array.isArray(result.layers) ? result.layers : [];
-    const tone = result.status === "failed" ? " error" : "";
+    const tone =
+      result.status === "failed"
+        ? " error"
+        : result.status === "partial"
+          ? " warn"
+          : "";
     const parts = [
       `<strong>${Catalog.escapeHtml(result.status || "complete")}</strong>`,
       `${layers.length} layer${layers.length === 1 ? "" : "s"}`,
       result.zip_bytes ? Catalog.formatBytes(result.zip_bytes) : "",
       failures.length ? `${failures.length} failure${failures.length === 1 ? "" : "s"}` : "",
     ].filter(Boolean);
+    const failureDetails = failures.length
+      ? `<details class="clip-failures">
+          <summary>${failures.length} layer failure${failures.length === 1 ? "" : "s"}</summary>
+          <ul>${failures
+            .map(
+              (failure) =>
+                `<li><code>${Catalog.escapeHtml(failure?.dataset_id || "unknown")}</code><span>${Catalog.escapeHtml(failure?.error || "Clipping failed.")}</span></li>`
+            )
+            .join("")}</ul>
+        </details>
+        <button class="secondary-button clip-retry" type="button" data-clip-retry>Retry failed layer${failures.length === 1 ? "" : "s"}</button>`
+      : "";
     return `<div class="clip-result${tone}">
       ${parts.join(" · ")}
       ${result.download_url ? `<a href="${Catalog.escapeHtml(result.download_url)}" target="_blank" rel="noreferrer">Download bundle ZIP</a>` : ""}
+      ${failureDetails}
     </div>`;
   }
 
@@ -2587,6 +2605,43 @@ python scripts/fetch_web_previews.py</pre>
       renderClipPanel();
       return;
     }
+    await startClipJob(layerIds);
+  }
+
+  async function retryFailedClipLayers() {
+    if (state.clip.busy) {
+      return;
+    }
+    const failures = Array.isArray(state.clip.lastResult?.failures)
+      ? state.clip.lastResult.failures
+      : [];
+    const layerIds = [
+      ...new Set(
+        failures
+          .map((failure) => failure?.dataset_id)
+          .filter((datasetId) => typeof datasetId === "string" && datasetId)
+      ),
+    ];
+    if (!layerIds.length) {
+      state.clip.message = "No failed layers to retry.";
+      state.clip.error = true;
+      renderClipPanel();
+      return;
+    }
+    if (!state.clip.geometry) {
+      state.clip.message = "Resolve or draw the AOI again before retrying.";
+      state.clip.error = true;
+      renderClipPanel();
+      return;
+    }
+    state.clip.selected = new Set(layerIds);
+    await startClipJob(layerIds);
+  }
+
+  async function startClipJob(layerIds) {
+    if (!layerIds.length || !state.clip.geometry) {
+      return;
+    }
     stopClipPolling();
     state.clip.busy = true;
     state.clip.error = false;
@@ -2790,6 +2845,10 @@ python scripts/fetch_web_previews.py</pre>
     }
     if (target.closest("[data-clip-cancel]")) {
       void cancelClipJob();
+      return;
+    }
+    if (target.closest("[data-clip-retry]")) {
+      void retryFailedClipLayers();
       return;
     }
     if (target.closest("[data-clip-prepare]")) {

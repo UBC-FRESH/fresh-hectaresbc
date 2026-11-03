@@ -78,7 +78,8 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   - search all 2,183 previewable layers, select up to six, and submit the exact
     AOI geometry
   - run bundle preparation as a queued job with progress polling, current-layer
-    status, a progress bar, best-effort cancellation, and recent bundles
+    status, a progress bar, best-effort cancellation, per-layer failure details,
+    failed-layer retry, and recent bundles
   - enabled only when `/api/health` reports a running service
 - Bundle jobs run one at a time in a single worker, persist under
   `var/bundles/jobs/`, and are marked `interrupted` after a service restart.
@@ -254,7 +255,8 @@ python scripts/agent_tools.py list-bundles
 - Clip AOI drawer exercised locally and through
   `https://fresh-hectaresbc.01101.dev`: boundary candidate resolution, mouse
   draw, touch draw, 1–6 layer selection, async bundle progress, cancellation,
-  bundle creation, ZIP download, and recent-bundle links.
+  per-layer failure display, failed-layer retry, bundle creation, ZIP download,
+  and recent-bundle links.
 - Public protected check with the saved CWL session: 13/13.
 - Public bundle download returned a valid `application/zip`.
 
@@ -265,7 +267,8 @@ resolution tests. Use the web/agent test command above for this feature set.
 ## Next Steps
 
 1. Keep the Cloudflare Access/Globus OAuth policy restricted to UBC CWL.
-2. Add per-layer failure expansion and a retry action for partial bundles.
+2. Add job-history retention/pruning so `var/bundles/jobs/` does not grow
+   indefinitely.
 3. Optionally harden tile throughput with COG/TiTiler if tile latency becomes
    visible.
 4. If more layers should be sharp, continue generating 2048 px overrides with

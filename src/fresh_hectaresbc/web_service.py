@@ -103,7 +103,8 @@ The UI has three surfaces:
   fit-to-layer. #/map opens BCTS Operating Areas by default. The "Clip AOI"
   button opens a drawer that resolves a boundary or draws a rectangle, lets the
   user search and select up to six previewable layers, runs bundle preparation
-  as a job with progress/cancel, and lists recent downloads.
+  as a job with progress/cancel, retries failed layers from partial results, and
+  lists recent downloads.
 
 Preview facts: the published DataLad index has 2,163 previews and 20
 not-previewable records. Published PNGs are 256 px; ignored 2048 px local
