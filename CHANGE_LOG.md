@@ -223,3 +223,4 @@
 - Activated Phase 27 compare map workspace with parent issue #203, child issues #204-#207, and planning/compare_map_plan.md.
 - Completed P27.2/P27.3 with multi-map lifecycle support, synchronized compare panes, compare route/selectors/swap, tray entry point, responsive layout, and browser coverage.
 - Completed and merged Phase 27 via PR #208: multi-map lifecycle, synchronized compare panes, compare route/selectors/swap, tray entry, responsive layout, and browser coverage.
+- Fixed compare map containers collapsing to zero height after MapLibre applied its own positioning rule; added explicit compare-map sizing and bumped browser assets to p39.
