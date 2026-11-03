@@ -1989,6 +1989,174 @@ kbd {
   margin: 0 0 0.5rem;
 }
 
+/* ----------------------------------------------------------------- admin */
+
+.admin-shell {
+  width: min(76rem, 100%);
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 2.5rem;
+}
+
+.admin-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 0.8rem;
+}
+
+.admin-metric {
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.admin-metric span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+}
+
+.admin-metric strong {
+  display: block;
+  margin: 0.2rem 0;
+  font-size: 1.1rem;
+}
+
+.admin-metric small {
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.admin-panel {
+  margin-bottom: 0.55rem;
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.admin-panel h2 {
+  margin: 0 0 0.55rem;
+  font-size: 0.82rem;
+}
+
+.admin-source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.admin-source-row {
+  display: grid;
+  grid-template-columns: 3.6rem minmax(0, 1fr) 3.5rem;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.7rem;
+}
+
+.admin-source-bar {
+  height: 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.admin-source-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.admin-source-row small {
+  color: var(--muted);
+  text-align: right;
+}
+
+.admin-job-counts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.admin-job-counts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.3rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-soft);
+  font-size: 0.7rem;
+}
+
+.admin-job-counts span {
+  color: var(--muted);
+}
+
+.admin-table-wrap {
+  overflow: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.7rem;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 0.35rem 0.4rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.admin-table th {
+  color: var(--muted);
+  font-size: 0.64rem;
+  text-transform: uppercase;
+}
+
+.admin-source-summary {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-cog-button {
+  min-height: 1.6rem;
+  padding: 0.15rem 0.35rem;
+  font-size: 0.62rem;
+}
+
+.admin-links {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.admin-links a {
+  color: var(--accent-strong);
+}
+
+@media (max-width: 800px) {
+  .admin-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-shell {
+    padding: 1rem;
+  }
+}
+
 /* -------------------------------------------------------------- tray panel */
 
 .tray-button {

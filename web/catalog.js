@@ -562,6 +562,11 @@
       return state;
     }
 
+    if (path === "admin") {
+      state.view = "admin";
+      return state;
+    }
+
     if (path === "catalog" || path === "") {
       const rows = firstValue(params, "rows", "50");
       state.query = firstValue(params, "q", "");
@@ -620,6 +625,9 @@
     const mapQuery = mapParams.toString();
     if (state.view === "bundles") {
       return "#/bundles";
+    }
+    if (state.view === "admin") {
+      return "#/admin";
     }
     if (state.view === "dataset" && state.datasetId) {
       const suffix = state.map ? "/map" : "";

@@ -20,6 +20,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_identify_browser.py
    python scripts/smoke_test_workspace_browser.py
    python scripts/smoke_test_aoi_library_browser.py
+   python scripts/smoke_test_admin_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -212,6 +213,23 @@ The response includes the raster value, legend class/label and color when
 available, coordinates, source kind (``cog`` or ``zip``), and a status of
 ``ok``, ``nodata``, or ``outside``. The map shows a result card and a point
 marker; the Identify control toggles the mode off.
+
+Protected Admin Dashboard
+-------------------------
+
+The `#/admin` route (shown when the optional service is available) turns
+`/api/stats?top=25` into an operational view:
+
+- request, cache hit-rate, average/max latency, and error metrics;
+- source-mix bars for cache, overlay, COG, and zip;
+- tile COG count and dataset list;
+- bundle-job status counts and recent-job table;
+- top-dataset table with request counts, hit rates, latency, source mix, and COG
+  status;
+- a copyable `scripts/build_tile_cog.py` command for datasets without a COG.
+
+The route is protected by the same Cloudflare Access policy as the app. The
+dashboard does not execute builds or add user-specific analytics.
 
 Optional Service, Assistant, And Clip AOI
 -----------------------------------------

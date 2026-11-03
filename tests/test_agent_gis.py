@@ -455,6 +455,7 @@ def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
     assert stats.status_code == 200
     assert stats.json()["tiles"]["totals"]["requests"] >= 1
     assert stats.json()["tile_cogs"] == 0
+    assert stats.json()["cog_datasets"] == []
 
     from pyproj import Transformer
     from shapely.geometry import box, mapping
