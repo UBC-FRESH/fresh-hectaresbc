@@ -65,6 +65,9 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   timings improved from ~8.7 s at z6 to ~0.13 s, ~3.2 s at z7 to ~0.06 s, and
   ~1.7 s at z8 to ~0.05 s; warm tiles are ~3 ms. Through the protected public
   host, cold z6/z7/z8 were ~0.21/0.12/0.11 s.
+- High-zoom source handles are now reused (bounded cache with per-handle
+  locking). After the initial metadata/source open, z9–11 tile reads dropped to
+  roughly 15–30 ms locally; the first z9 read after metadata was ~0.8 s.
 
 ### Agent Service And GIS Bundles (P20)
 
