@@ -19,6 +19,14 @@ from fresh_hectaresbc.femic_bridge import _matching_features
 from fresh_hectaresbc.web_service import ServiceConfig, create_app
 
 
+@pytest.fixture(autouse=True)
+def _clear_tile_source_cache():
+    yield
+    from fresh_hectaresbc import tiles
+
+    tiles.clear_source_cache()
+
+
 def _make_archive(root: Path) -> Path:
     archive_root = root / "archive"
     zip_path = archive_root / "data_layers" / "adminunits_bcts.zip"
@@ -329,6 +337,38 @@ def test_cog_source_is_preferred_for_tiles(
     assert png.startswith(b"\x89PNG")
 
 
+def test_tile_usage_stats_counts_hits_and_sources(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fresh_hectaresbc import tiles
+
+    archive_root = _make_archive(tmp_path)
+    monkeypatch.setattr(tiles, "_overlay_tile", lambda *args, **kwargs: None)
+    monkeypatch.setattr(tiles, "_COG_ROOT", tmp_path / "cogs")
+    tiles.reset_tile_usage_stats()
+    cache_root = tmp_path / "tiles"
+    for _ in range(2):
+        png = tiles.render_tile(
+            "dl_adminunits_bcts",
+            0,
+            0,
+            0,
+            archive_root=archive_root,
+            cache_root=cache_root,
+        )
+        assert png.startswith(b"\x89PNG")
+
+    stats = tiles.tile_usage_stats(top=5)
+    totals = stats["totals"]
+    assert totals["requests"] == 2
+    assert totals["cache_hits"] == 1
+    assert totals["cache_misses"] == 1
+    assert totals["sources"]["zip"] == 1
+    assert totals["sources"]["cache"] == 1
+    assert stats["top_datasets"][0]["dataset_id"] == "dl_adminunits_bcts"
+    assert stats["top_datasets"][0]["requests"] == 2
+
+
 def test_tiles_render_source_raster_without_preview(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -410,6 +450,11 @@ def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
     assert tile.status_code == 200
     assert tile.headers["content-type"] == "image/png"
     assert tile.content.startswith(b"\x89PNG")
+
+    stats = client.get("/api/stats")
+    assert stats.status_code == 200
+    assert stats.json()["tiles"]["totals"]["requests"] >= 1
+    assert stats.json()["tile_cogs"] == 0
 
     from pyproj import Transformer
     from shapely.geometry import box, mapping

@@ -40,6 +40,7 @@ Endpoints:
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | `/api/health` | Service, catalog, preview, archive, bundle, and agent status |
+| GET | `/api/stats` | Process-lifetime tile requests, cache hits, sources, latency, top datasets |
 | GET | `/api/agent` | Whether the assistant is enabled, available, and which model it uses |
 | POST | `/api/agent/chat` | One assistant turn through `opencode run --format json --auto` |
 | GET | `/api/layers/search?q=` | Catalog search for the assistant/UI |

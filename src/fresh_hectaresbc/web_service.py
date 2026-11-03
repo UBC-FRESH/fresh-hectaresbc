@@ -270,6 +270,7 @@ def create_app(config: ServiceConfig) -> FastAPI:
         clear_source_cache,
         configure_tile_cog_root,
         prune_tile_cache,
+        tile_usage_stats,
     )
 
     config.tile_cog_root = Path(config.tile_cog_root).expanduser().resolve()
@@ -345,6 +346,16 @@ def create_app(config: ServiceConfig) -> FastAPI:
             "agent_available": shutil.which("opencode") is not None,
             "archive_root": str(config.archive_root) if config.archive_root else None,
             "bundle_root": str(config.bundle_root),
+            "tile_cog_root": str(config.tile_cog_root),
+            "tile_cogs": len(list(config.tile_cog_root.glob("*.tif"))),
+            "bundle_jobs": job_manager.stats(),
+        }
+
+    @app.get("/api/stats")
+    def stats(top: int = Query(default=20, ge=0, le=100)) -> dict[str, Any]:
+        return {
+            "status": "ok",
+            "tiles": tile_usage_stats(top=top),
             "tile_cog_root": str(config.tile_cog_root),
             "tile_cogs": len(list(config.tile_cog_root.glob("*.tif"))),
             "bundle_jobs": job_manager.stats(),
