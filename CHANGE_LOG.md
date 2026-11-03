@@ -235,3 +235,4 @@
 - Completed and merged Phase 29 via PR #228: ordered multi-layer flicker series route, synchronized MapLibre frames, playback and stepping controls, reduced-motion behavior, tray/compare entry points, active-frame PNG export, responsive full-width workspace, browser coverage, and docs.
 - Activated Phase 30 Series v2 with parent issue #231, child issues #232-#235, and planning/series_v2_plan.md.
 - Completed P30.2/P30.3 with a single-map series engine, 30-frame route limit, in-place frame editor, year-suffix sequence detection, one-click 17-year pine-beetle playback, updated export, browser coverage, and docs.
+- Completed and merged Phase 30 via PR #236: single-map 30-frame series, in-place add/remove/reorder/jump editor, year-suffix sequence detection, one-click 17-year pine-beetle playback, updated PNG export, responsive UI, browser coverage, and docs.

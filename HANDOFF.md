@@ -1,10 +1,10 @@
 # Agent Handoff
 
 Date: 2026-11-03
-Status: P19/P20/P21/P22/P23/P24/P25/P26/P27/P28/P29 complete; no active implementation branch or open issues/PRs.
+Status: P19/P20/P21/P22/P23/P24/P25/P26/P27/P28/P29/P30 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
-Latest feature merge: `a7764ab`
-Latest merged PR: #228 (multi-layer series); compare export: #216
+Latest feature merge: `2c76b87`
+Latest merged PR: #236 (editable series + year discovery); compare export: #216
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
@@ -320,7 +320,7 @@ resolution tests. Use the web/agent test command above for this feature set.
 
 ## Final Closeout
 
-- P19, P20, P21, P22, P23, P24, P25, P26, P27, P28, and P29 are complete; no active implementation branch remains.
+- P19, P20, P21, P22, P23, P24, P25, P26, P27, P28, P29, and P30 are complete; no active implementation branch remains.
 - No open GitHub issues or pull requests at closeout.
 - Final protected public verification and browser smoke checks passed.
 - Sphinx sources refreshed for tiles, COGs, stats, Clip AOI preflight, jobs, and retention.
@@ -333,7 +333,8 @@ resolution tests. Use the web/agent test command above for this feature set.
 - Phase 26 added saved Browse searches and favorite datasets.
 - Phase 27 added synchronized side-by-side, wipe, and flicker compare modes.
 - Phase 28 added Clip bundle preflight estimates.
-- Phase 29 added the `#/series` multi-layer flicker workspace with ordered tray playback, synchronized maps, stepping, speed controls, reduced-motion handling, and active-frame PNG export.
+- Phase 29 added the `#/series` multi-layer flicker workspace.
+- Phase 30 refactored Series to one synchronized map with frame-layer switching, raised the series limit to 30 frames, added an in-place frame editor, and added year-sequence detection for the two real 17-year pine-beetle families.
 - Remaining items below are optional follow-ups, not blockers.
 
 ## Optional Follow-Ups
