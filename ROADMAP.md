@@ -440,9 +440,22 @@ with tray/map entry points and selectors.
 - [x] P27.3 Add compare UI and browser coverage. Child issue: #206.
 - [x] P27.4 Verify and close Phase 27. Child issue: #207.
 
+## Phase 28: Bundle Preflight Estimates
+
+Status: implementation in progress on `feature/p28-bundle-preflight`.
+Parent issue: #217. Planning: `planning/bundle_preflight_plan.md`.
+
+Phase 28 adds advisory output-volume and rough-duration estimates for selected
+Clip layers before a bundle job starts.
+
+- [x] P28.1 Plan bundle preflight contract. Child issue: #218.
+- [x] P28.2 Add bundle estimate API. Child issue: #219.
+- [x] P28.3 Add Clip preflight UI and browser coverage. Child issue: #220.
+- [ ] P28.4 Verify and close Phase 28. Child issue: #221.
+
 ## Current Next Steps
 
-1. Complete P27.1 planning contract and close child issue #204.
-2. Implement P27.2 multi-map support.
-3. Implement P27.3 compare UI and browser coverage.
-4. Open the Phase 27 PR, verify, merge, and close parent #203.
+1. Complete P28.1 planning contract and close child issue #218.
+2. Implement P28.2 estimate API.
+3. Implement P28.3 Clip preflight UI and browser coverage.
+4. Open the Phase 28 PR, verify, merge, and close parent #217.

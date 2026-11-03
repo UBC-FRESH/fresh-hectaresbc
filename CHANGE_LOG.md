@@ -227,3 +227,5 @@
 - Added a Side-by-side / Wipe toggle to the compare workspace with a draggable vertical divider, clipped top map, `mode=wipe` route state, and browser coverage.
 - Added a Flicker compare mode with auto-alternating panes, pause/play, speed controls, reduced-motion fallback, `mode=flicker` route state, and browser coverage.
 - Added labeled compare PNG export for split, wipe, and active flicker frames, with dataset IDs, mode/date, attribution, preserveDrawingBuffer maps, and browser download coverage.
+- Activated Phase 28 bundle preflight estimates with parent issue #217, child issues #218-#221, and planning/bundle_preflight_plan.md.
+- Completed P28.2/P28.3 with a bundle estimate API, per-layer pixel/size/time estimates, Clip preflight card, invalidation on AOI/layer changes, and browser coverage.

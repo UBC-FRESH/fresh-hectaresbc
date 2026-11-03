@@ -300,6 +300,17 @@ AOI area is computed in EPSG:3005 and checked against
 six layers and the configured area. The browser is prevented from submitting a
 known-over-limit AOI; the service enforces the same limits for all clients.
 
+Bundle preflight:
+
+```text
+POST /api/bundles/estimate
+```
+
+The Clip drawer's **Estimate** action returns advisory per-layer clipped pixel
+dimensions, uncompressed output-size estimates, and rough processing duration.
+It does not read or clip raster pixels, and it does not submit a job. The UI
+clears estimates when the AOI or selected layers change.
+
 Service endpoints:
 
 .. code-block:: text
@@ -316,6 +327,7 @@ Service endpoints:
    POST /api/aoi/inspect
    POST /api/aoi/resolve
    GET  /api/aoi/search?q=
+   POST /api/bundles/estimate
    POST /api/bundles
    POST /api/bundle-jobs
   GET  /api/bundle-jobs

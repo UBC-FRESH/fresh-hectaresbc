@@ -93,6 +93,8 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   a shareable map URL; named workspaces save in local browser storage.
 - The Clip drawer keeps a local AOI library with named and recent AOIs, including
   boundary-query restore and compact drawn geometry.
+- Clip preflight estimates pixel volume, uncompressed output size, and rough
+  duration before a bundle job starts.
 - `#/admin` shows protected service statistics, top datasets, source mix, COG
   coverage, job counts, and copyable COG-build commands.
 - The map Discover panel finds previewable layers intersecting the current view

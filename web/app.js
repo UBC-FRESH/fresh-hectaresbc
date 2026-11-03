@@ -119,6 +119,11 @@
       speed: 1000,
       activeLeft: true,
     },
+    preflight: {
+      busy: false,
+      result: null,
+      error: false,
+    },
     identify: {
       enabled: false,
       busy: false,
@@ -3998,7 +4003,31 @@ python scripts/fetch_web_previews.py</pre>
       .join("")}</div>`;
   }
 
-  const AoiStorageKey = "fresh-hectaresbc.aois.v1";
+  function clearPreflight() {
+    state.preflight.busy = false;
+    state.preflight.result = null;
+    state.preflight.error = false;
+  }
+
+  function clipPreflightTemplate() {
+    const result = state.preflight.result;
+    if (!result) {
+      return "";
+    }
+    const layers = Array.isArray(result.layers) ? result.layers : [];
+    const warnings = layers.filter((layer) => layer.status !== "ok");
+    return `<div class="clip-preflight">
+      <strong>Estimate: ${Catalog.formatBytes(result.total_estimated_bytes || 0)} · ${Catalog.formatNumber(result.total_pixels || 0)} px · ~${Catalog.escapeHtml(String(result.estimated_seconds ?? 0))} s</strong>
+      <p>${Catalog.escapeHtml(result.caveat || "")}</p>
+      ${warnings.length ? `<p class="clip-status error">${warnings.length} layer warning${warnings.length === 1 ? "" : "s"}</p>` : ""}
+      <details><summary>Layer estimates</summary><ul>${layers
+        .map(
+          (layer) =>
+            `<li><b>${Catalog.escapeHtml(layer.dataset_id)}</b> · ${Catalog.escapeHtml(layer.status)}${layer.pixels ? ` · ${Catalog.formatNumber(layer.width)}×${Catalog.formatNumber(layer.height)} · ${Catalog.formatBytes(layer.estimated_bytes)}` : ""}${layer.message ? ` · ${Catalog.escapeHtml(layer.message)}` : ""}</li>`
+        )
+        .join("")}</ul></details>
+    </div>`;
+  }
 
   function loadAoiLibrary() {
     try {
@@ -4138,6 +4167,7 @@ python scripts/fetch_web_previews.py</pre>
           : state.clip.areaHa <= state.clip.maxAreaHa;
       state.clip.areaPending = state.clip.areaHa == null;
       state.clip.error = state.clip.areaWithinLimit === false;
+      clearPreflight();
       state.clip.message = state.clip.areaPending
         ? "Saved AOI restored · checking area…"
         : clipAoiSummary();
@@ -4171,6 +4201,7 @@ python scripts/fetch_web_previews.py</pre>
         state.clip.areaPending = false;
         state.clip.error = state.clip.areaWithinLimit === false;
         state.clip.message = clipAoiSummary();
+        clearPreflight();
         state.mapHandle?.__hbc?.setAoi(payload.geometry, { fit: true });
         rememberAoi({
           ...item,
@@ -4683,6 +4714,7 @@ python scripts/fetch_web_previews.py</pre>
     state.clip.areaWithinLimit = null;
     state.clip.areaPending = false;
     state.clip.areaToken += 1;
+    clearPreflight();
     state.mapHandle?.__hbc?.cancelRectangleDraw?.();
     state.mapHandle?.__hbc?.clearAoi?.();
   }
@@ -4853,6 +4885,13 @@ python scripts/fetch_web_previews.py</pre>
       state.clip.selected.has(layer.dataset_id)
     );
     const candidates = clipCandidateOptions();
+    const canEstimate =
+      !state.clip.busy &&
+      !state.preflight.busy &&
+      !state.clip.areaPending &&
+      state.clip.areaWithinLimit !== false &&
+      state.clip.selected.size > 0 &&
+      Boolean(state.clip.geometry);
     const canPrepare =
       !state.clip.busy &&
       !state.clip.areaPending &&
@@ -4900,9 +4939,11 @@ python scripts/fetch_web_previews.py</pre>
       <section class="clip-section">
         <h3>Bundle</h3>
         <div class="clip-actions">
+          <button class="secondary-button" type="button" data-clip-estimate ${canEstimate ? "" : "disabled"}>${state.preflight.busy ? "Estimating…" : "Estimate"}</button>
           <button class="primary-button" type="button" data-clip-prepare ${canPrepare ? "" : "disabled"}>${state.clip.busy ? "Preparing…" : "Prepare bundle"}</button>
           ${state.clip.jobId ? '<button class="secondary-button" type="button" data-clip-cancel>Cancel job</button>' : ""}
         </div>
+        ${clipPreflightTemplate()}
         ${state.clip.jobId ? `<div class="clip-progress" role="progressbar" aria-label="Bundle progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(state.clip.progress || 0)}"><div class="clip-progress-bar" style="width:${Math.max(0, Math.min(100, Number(state.clip.progress || 0)))}%"></div></div>` : ""}
         ${state.clip.jobId ? `<p class="clip-status${state.clip.error ? " error" : ""}">${Catalog.escapeHtml(state.clip.message || "Preparing bundle…")}</p>` : ""}
         ${clipResultTemplate()}
@@ -5005,6 +5046,7 @@ python scripts/fetch_web_previews.py</pre>
             : state.clip.areaHa <= state.clip.maxAreaHa;
         state.clip.error = state.clip.areaWithinLimit === false;
         state.clip.message = clipAoiSummary();
+        clearPreflight();
         state.mapHandle?.__hbc?.setAoi(payload.geometry, { fit: true });
         rememberAoi({
           name: payload.name || state.clip.name,
@@ -5019,6 +5061,7 @@ python scripts/fetch_web_previews.py</pre>
         state.clip.areaHa = null;
         state.clip.areaWithinLimit = null;
         state.clip.areaPending = false;
+        clearPreflight();
         state.clip.candidates =
           payload.candidate_options || payload.candidates || [];
         state.clip.message =
@@ -5063,6 +5106,7 @@ python scripts/fetch_web_previews.py</pre>
       state.clip.areaPending = false;
       state.clip.error = state.clip.areaWithinLimit === false;
       state.clip.message = clipAoiSummary();
+      clearPreflight();
       rememberAoi({
         name: state.clip.name || "Drawn AOI",
         geometry,
@@ -5110,6 +5154,7 @@ python scripts/fetch_web_previews.py</pre>
       state.clip.geometry = geometry;
       state.clip.name = "Drawn AOI";
       state.clip.candidates = [];
+      clearPreflight();
       state.clip.message = "Drawn AOI ready on the map.";
       state.mapHandle.__hbc.setAoi(geometry, { fit: false });
       if (narrow) {
@@ -5146,6 +5191,62 @@ python scripts/fetch_web_previews.py</pre>
       state.clip.pollTimer = null;
       void pollClipJob();
     }, delay);
+  }
+
+  async function estimateClipBundle() {
+    if (state.preflight.busy || state.clip.busy) {
+      return;
+    }
+    const layerIds = [...state.clip.selected];
+    if (!layerIds.length) {
+      state.clip.message = "Select at least one layer.";
+      state.clip.error = true;
+      renderClipPanel();
+      return;
+    }
+    if (!state.clip.geometry) {
+      state.clip.message = "Resolve or draw an AOI first.";
+      state.clip.error = true;
+      renderClipPanel();
+      return;
+    }
+    if (state.clip.areaPending || state.clip.areaWithinLimit === false) {
+      state.clip.error = state.clip.areaWithinLimit === false;
+      state.clip.message = state.clip.areaPending
+        ? "The AOI area check is still running."
+        : `AOI is ${Catalog.formatNumber(Number(state.clip.areaHa || 0))} ha; limit ${Catalog.formatNumber(state.clip.maxAreaHa)} ha.`;
+      renderClipPanel();
+      return;
+    }
+    state.preflight.busy = true;
+    state.preflight.error = false;
+    state.clip.message = "Estimating bundle output…";
+    state.clip.error = false;
+    renderClipPanel();
+    try {
+      const response = await fetch("../api/bundles/estimate", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          layer_ids: layerIds,
+          aoi_geometry: state.clip.geometry,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.detail || `estimate failed (${response.status})`);
+      }
+      state.preflight.result = payload;
+      state.clip.message = "Estimate ready.";
+    } catch (error) {
+      state.preflight.result = null;
+      state.preflight.error = true;
+      state.clip.error = true;
+      state.clip.message = `Could not estimate bundle: ${error.message}`;
+    } finally {
+      state.preflight.busy = false;
+      renderClipPanel();
+    }
   }
 
   async function prepareClipBundle() {
@@ -5463,6 +5564,7 @@ python scripts/fetch_web_previews.py</pre>
       state.clip.areaWithinLimit = null;
       state.clip.areaPending = false;
       state.clip.areaToken += 1;
+      clearPreflight();
       state.clip.message = "AOI cleared.";
       state.clip.error = false;
       state.mapHandle?.__hbc?.clearAoi?.();
@@ -5475,6 +5577,10 @@ python scripts/fetch_web_previews.py</pre>
     }
     if (target.closest("[data-clip-retry]")) {
       void retryFailedClipLayers();
+      return;
+    }
+    if (target.closest("[data-clip-estimate]")) {
+      void estimateClipBundle();
       return;
     }
     if (target.closest("[data-clip-prepare]")) {
@@ -5539,6 +5645,7 @@ python scripts/fetch_web_previews.py</pre>
     } else {
       state.clip.selected.delete(input.value);
     }
+    clearPreflight();
     renderClipPanel();
   }
 

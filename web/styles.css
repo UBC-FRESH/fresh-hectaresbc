@@ -3237,6 +3237,46 @@ kbd {
   font-size: 0.72rem;
 }
 
+.clip-preflight {
+  margin-top: 0.45rem;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-soft);
+  color: var(--ink);
+  font-size: 0.7rem;
+}
+
+.clip-preflight strong {
+  display: block;
+  font-size: 0.72rem;
+}
+
+.clip-preflight p {
+  margin: 0.2rem 0;
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.clip-preflight details {
+  margin-top: 0.25rem;
+}
+
+.clip-preflight summary {
+  cursor: pointer;
+  color: var(--accent-strong);
+}
+
+.clip-preflight ul {
+  margin: 0.25rem 0 0;
+  padding-left: 0.8rem;
+}
+
+.clip-preflight li {
+  margin-bottom: 0.2rem;
+  color: var(--muted);
+}
+
 .clip-result.error {
   border-color: #e6bcbc;
   background: var(--danger-soft);

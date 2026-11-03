@@ -619,6 +619,26 @@ def create_app(config: ServiceConfig) -> FastAPI:
         except ValueError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    @app.post("/api/bundles/estimate")
+    def bundle_estimate(body: BundleRequest) -> dict[str, Any]:
+        from fresh_hectaresbc.preflight import PreflightError, estimate_bundle
+
+        if body.aoi_geometry is None or body.aoi_query:
+            raise HTTPException(
+                status_code=422,
+                detail="estimate requires aoi_geometry only",
+            )
+        try:
+            return estimate_bundle(
+                layer_ids=body.layer_ids,
+                aoi_geometry=body.aoi_geometry,
+                archive_root=config.archive_root,
+                max_layers=config.max_layers,
+                max_area_ha=config.max_area_ha,
+            )
+        except PreflightError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
     @app.post("/api/bundles")
     def bundle_create(body: BundleRequest) -> dict[str, Any]:
         from fresh_hectaresbc.bundle import BundleError, prepare_bundle
