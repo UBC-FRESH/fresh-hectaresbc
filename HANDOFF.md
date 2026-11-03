@@ -2,8 +2,8 @@
 
 Date: 2026-11-02
 Branch: `main`
-Latest feature merge: `1851aed`
-Latest merged PR: #151 (tile fast path); Clip AOI drawer: #142
+Latest feature merge: `ca4a9c1`
+Latest merged PR: #153 (bundle-output retention); Clip AOI drawer: #142
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
