@@ -226,3 +226,4 @@
 - Fixed compare map containers collapsing to zero height after MapLibre applied its own positioning rule; added explicit compare-map sizing and bumped browser assets to p39.
 - Added a Side-by-side / Wipe toggle to the compare workspace with a draggable vertical divider, clipped top map, `mode=wipe` route state, and browser coverage.
 - Added a Flicker compare mode with auto-alternating panes, pause/play, speed controls, reduced-motion fallback, `mode=flicker` route state, and browser coverage.
+- Added labeled compare PNG export for split, wipe, and active flicker frames, with dataset IDs, mode/date, attribution, preserveDrawingBuffer maps, and browser download coverage.
