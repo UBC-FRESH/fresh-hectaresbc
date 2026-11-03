@@ -207,3 +207,4 @@
 - Closed Phase 21 after adding the layer tray, multi-layer map context, bundle/job history route, click-to-identify, and their browser smokes; allowed tray additions before preview-index load and bumped browser assets to `p32`.
 - Activated Phase 22 saved/shareable workspaces with parent issue #173, child issues #174-#177, and planning/workspace_persistence_plan.md.
 - Completed P22.2/P22.3 with encoded workspace routes, map view/primary/tray layer restore, compact or boundary AOI restore, Clip selection restore, named local workspaces, and share-link support; added workspace browser coverage.
+- Completed and merged Phase 22 via PR #178: encoded workspace routes, map view/primary/tray layer restore, boundary/compact drawn AOI restore, Clip selection restore, named local workspace saves, and share links.

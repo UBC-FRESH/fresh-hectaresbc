@@ -369,8 +369,7 @@ service boundary intact.
 
 ## Phase 22: Saved And Shareable Workspaces
 
-Status: implementation in progress on `feature/p22-workspaces`.
-Parent issue: #173. Planning: `planning/workspace_persistence_plan.md`.
+Status: completed and merged to `main` via PR #178. Parent issue: #173. Planning: `planning/workspace_persistence_plan.md`.
 
 Phase 22 encodes tray layers, primary layer, map view, AOI, and Clip selections
 into a shareable map URL and adds named workspaces in local browser storage.
@@ -378,7 +377,7 @@ into a shareable map URL and adds named workspaces in local browser storage.
 - [x] P22.1 Plan workspace route and restore contract. Child issue: #174.
 - [x] P22.2 Add map view state and workspace restore. Child issue: #175.
 - [x] P22.3 Add saved and shareable workspace UI. Child issue: #176.
-- [ ] P22.4 Verify and close Phase 22. Child issue: #177.
+- [x] P22.4 Verify and close Phase 22. Child issue: #177.
 
 ## Current Next Steps
 
