@@ -1906,6 +1906,42 @@ kbd {
   color: var(--danger);
 }
 
+.clip-area {
+  margin-top: 0.45rem;
+}
+
+.clip-area-meter {
+  height: 0.45rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.clip-area-meter-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 0.25s ease;
+}
+
+.clip-area.is-near .clip-area-meter-bar {
+  background: #c58a16;
+}
+
+.clip-area.is-over .clip-area-meter-bar {
+  background: var(--danger);
+}
+
+.clip-area-caption {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.clip-area.is-over .clip-area-caption {
+  color: var(--danger);
+}
+
 .clip-candidates {
   display: flex;
   flex-direction: column;

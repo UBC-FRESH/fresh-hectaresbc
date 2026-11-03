@@ -48,6 +48,7 @@ Endpoints:
 | GET | `/api/tiles/{dataset_id}/metadata` | Tile bounds, min/max zoom, source resolution, legend |
 | GET | `/api/tiles/{dataset_id}/{z}/{x}/{y}.png` | On-demand Web-Mercator raster tile from the 1 ha source |
 | POST | `/api/aoi/resolve` | Resolve a named FEMIC/BCDC boundary to a GeoJSON AOI |
+| POST | `/api/aoi/inspect` | Validate a drawn AOI and return its area, bounds, and limit status |
 | GET | `/api/aoi/search?q=` | Search boundary packages before resolution |
 | POST | `/api/bundles` | Clip selected rasters to an AOI and create a ZIP (synchronous) |
 | POST | `/api/bundle-jobs` | Queue a bundle job and return its job ID |

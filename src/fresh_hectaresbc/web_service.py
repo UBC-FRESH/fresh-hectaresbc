@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import ipaddress
 import json
-import math
 import os
 import shutil
 import subprocess
@@ -53,6 +52,12 @@ class AoiRequest(BaseModel):
 
     query: str = Field(min_length=1, max_length=300)
     name: str | None = Field(default=None, max_length=300)
+
+
+class AoiGeometryRequest(BaseModel):
+    """Inspect a browser-drawn AOI geometry before clipping."""
+
+    geometry: dict[str, Any]
 
 
 class BundleRequest(BaseModel):
@@ -348,6 +353,8 @@ def create_app(config: ServiceConfig) -> FastAPI:
             "bundle_root": str(config.bundle_root),
             "tile_cog_root": str(config.tile_cog_root),
             "tile_cogs": len(list(config.tile_cog_root.glob("*.tif"))),
+            "max_layers": config.max_layers,
+            "max_area_ha": config.max_area_ha,
             "bundle_jobs": job_manager.stats(),
         }
 
@@ -545,6 +552,18 @@ def create_app(config: ServiceConfig) -> FastAPI:
         except FemicBridgeError as exc:
             raise HTTPException(status_code=422, detail=str(exc)) from exc
 
+    @app.post("/api/aoi/inspect")
+    def aoi_inspect(body: AoiGeometryRequest) -> dict[str, Any]:
+        from fresh_hectaresbc.aoi import AoiGeometryError, inspect_aoi_geometry
+
+        try:
+            return inspect_aoi_geometry(
+                body.geometry,
+                max_area_ha=config.max_area_ha,
+            )
+        except AoiGeometryError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
+
     def bundle_request_aoi(body: BundleRequest) -> Path | None:
         unique_layers = list(
             dict.fromkeys(str(layer).strip() for layer in body.layer_ids if layer)
@@ -672,58 +691,14 @@ def create_app(config: ServiceConfig) -> FastAPI:
 def _write_drawn_aoi(config: ServiceConfig, geometry: dict[str, Any]) -> Path:
     """Validate a browser-drawn GeoJSON geometry and write it under the bundle root."""
 
-    if not isinstance(geometry, dict):
-        raise ValueError("aoi_geometry must be a GeoJSON geometry object")
-    if geometry.get("type") not in {"Polygon", "MultiPolygon"}:
-        raise ValueError("aoi_geometry must be a Polygon or MultiPolygon")
-    coordinates = geometry.get("coordinates")
-    if not isinstance(coordinates, list):
-        raise ValueError("aoi_geometry is missing coordinates")
+    from fresh_hectaresbc.aoi import geometry_feature_collection, validate_aoi_geometry
 
-    count = 0
-
-    def walk(value: Any) -> None:
-        nonlocal count
-        if isinstance(value, (list, tuple)):
-            for item in value:
-                walk(item)
-            return
-        if isinstance(value, (int, float)) and not isinstance(value, bool):
-            if not math.isfinite(float(value)):
-                raise ValueError("aoi_geometry contains a non-finite coordinate")
-            count += 1
-            if count > 500_000:
-                raise ValueError("aoi_geometry has too many coordinates")
-            return
-        raise ValueError("aoi_geometry coordinates must be numeric")
-
-    walk(coordinates)
-    try:
-        from shapely.geometry import mapping, shape
-
-        parsed = shape(geometry)
-    except Exception as exc:  # noqa: BLE001 - malformed client geometry
-        raise ValueError(f"aoi_geometry could not be parsed: {exc}") from exc
-    if parsed.is_empty or not parsed.is_valid:
-        raise ValueError("aoi_geometry is empty or invalid")
-
+    parsed = validate_aoi_geometry(geometry)
     aoi_dir = config.bundle_root / "aoi"
     aoi_dir.mkdir(parents=True, exist_ok=True)
     path = aoi_dir / f"drawn-{uuid.uuid4().hex}.geojson"
     path.write_text(
-        json.dumps(
-            {
-                "type": "FeatureCollection",
-                "features": [
-                    {
-                        "type": "Feature",
-                        "properties": {"name": "Drawn AOI"},
-                        "geometry": mapping(parsed),
-                    }
-                ],
-            }
-        )
-        + "\n",
+        json.dumps(geometry_feature_collection(parsed)) + "\n",
         encoding="utf-8",
     )
     return path

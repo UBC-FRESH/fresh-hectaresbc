@@ -50,6 +50,7 @@ def main() -> int:
     post_bodies: list[dict[str, object]] = []
     partial_polls = 0
     canceled = False
+    inspect_area_ha = 123_456.0
 
     partial_result = {
         "status": "partial",
@@ -74,13 +75,35 @@ def main() -> int:
     }
 
     def api(route, request):  # noqa: ANN001, ANN202
-        nonlocal partial_polls, canceled
+        nonlocal partial_polls, canceled, inspect_area_ha
         path = urlparse(request.url).path
         if path == "/api/health":
             route.fulfill(
                 status=200,
                 content_type="application/json",
-                body=json.dumps({"status": "ok", "service": "clip-aoi-test"}),
+                body=json.dumps(
+                    {
+                        "status": "ok",
+                        "service": "clip-aoi-test",
+                        "max_layers": 6,
+                        "max_area_ha": 10_000_000,
+                    }
+                ),
+            )
+            return
+        if path == "/api/aoi/inspect" and request.method == "POST":
+            route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps(
+                    {
+                        "status": "ok",
+                        "area_ha": inspect_area_ha,
+                        "max_area_ha": 10_000_000,
+                        "within_limit": inspect_area_ha <= 10_000_000,
+                        "remaining_ha": max(0.0, 10_000_000 - inspect_area_ha),
+                    }
+                ),
             )
             return
         if path == "/api/agent":
@@ -222,7 +245,11 @@ def main() -> int:
             page.mouse.move(cx + dx, cy + dy, steps=8)
             page.mouse.up()
             page.wait_for_timeout(700)
-            assert "Drawn AOI ready" in page.locator(".clip-status").first.inner_text()
+            page.wait_for_function(
+                "() => document.querySelector('.clip-area-caption')?.innerText.includes('123,456 ha')",
+                timeout=10000,
+            )
+            assert page.locator("[data-clip-prepare]").is_enabled()
 
             page.locator("[data-clip-prepare]").click()
             page.wait_for_selector("[data-clip-cancel]", timeout=10000)
@@ -250,6 +277,20 @@ def main() -> int:
             )
             assert canceled
             assert page.locator("[data-clip-cancel]").count() == 0
+
+            inspect_area_ha = 20_000_000.0
+            page.locator("[data-clip-clear]").click()
+            page.locator("[data-clip-draw]").click()
+            page.wait_for_timeout(300)
+            page.mouse.move(cx - dx, cy - dy)
+            page.mouse.down()
+            page.mouse.move(cx + dx, cy + dy, steps=8)
+            page.mouse.up()
+            page.wait_for_function(
+                "() => document.querySelector('.clip-area-caption')?.innerText.includes('reduce the AOI')",
+                timeout=10000,
+            )
+            assert page.locator("[data-clip-prepare]").is_disabled()
 
             browser.close()
     finally:

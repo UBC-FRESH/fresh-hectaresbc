@@ -194,6 +194,7 @@
 - Added bounded source-handle caching with per-handle locking for z9+ tiles; after the initial source/metadata open, BCTS z9–11 reads dropped to roughly 15–30 ms locally.
 - Added `scripts/build_tile_cog.py` and optional per-layer COG support under `var/tile-cogs`; the tile service prefers a COG when present. A BCTS pilot COG (~3.1 MB, ~32 s build) reduced the first z9 read from ~0.8 s to ~0.06 s locally.
 - Added process-lifetime tile usage/cache statistics and `/api/stats`, covering cache hits, source mix, latency, and top datasets without recording client identifiers.
+- Added exact drawn-AOI area inspection through `/api/aoi/inspect`, a live area/limit meter in the Clip AOI drawer, and pre-submit disabling when the AOI exceeds the configured area limit.
 - Closed P19/P20 after final verification: no open issues or PRs, targeted tests and browser/Sphinx checks passing, and protected public demo checks passing.
 - Added `scripts/smoke_test_clip_aoi_browser.py`, an API-mocked Playwright test covering Clip AOI draw, job progress, partial failure details, failed-layer retry, and cancellation; wired it into the browser UI pytest wrapper.
 - Added bundle-output retention for completed bundle directories/ZIPs (default 50 / 30 days), temporary drawn-AOI files (default 500 / 7 days), orphan ZIP cleanup, and stale incomplete-directory cleanup on startup and after terminal jobs; all thresholds are configurable.

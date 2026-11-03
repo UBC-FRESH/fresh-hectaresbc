@@ -97,6 +97,12 @@
       pollTimer: null,
       message: "",
       error: false,
+      areaHa: null,
+      areaWithinLimit: null,
+      areaPending: false,
+      areaToken: 0,
+      maxAreaHa: 10_000_000,
+      maxLayers: 6,
       lastResult: null,
       recent: [],
     },
@@ -2030,6 +2036,12 @@ python scripts/fetch_web_previews.py</pre>
   async function loadServiceInfo() {
     const health = await fetchJson("../api/health");
     state.serviceAvailable = health?.status === "ok";
+    if (Number.isFinite(Number(health?.max_area_ha))) {
+      state.clip.maxAreaHa = Number(health.max_area_ha);
+    }
+    if (Number.isFinite(Number(health?.max_layers))) {
+      state.clip.maxLayers = Number(health.max_layers);
+    }
     document.querySelectorAll("[data-open-clip]").forEach((button) => {
       button.hidden = !state.serviceAvailable;
     });
@@ -2235,6 +2247,10 @@ python scripts/fetch_web_previews.py</pre>
     state.clip.jobId = null;
     state.clip.job = null;
     state.clip.progress = 0;
+    state.clip.areaHa = null;
+    state.clip.areaWithinLimit = null;
+    state.clip.areaPending = false;
+    state.clip.areaToken += 1;
     state.mapHandle?.__hbc?.cancelRectangleDraw?.();
     state.mapHandle?.__hbc?.clearAoi?.();
   }
@@ -2274,14 +2290,48 @@ python scripts/fetch_web_previews.py</pre>
   }
 
   function clipAoiSummary() {
+    if (state.clip.areaPending) {
+      return "Drawn AOI · checking area…";
+    }
+    if (state.clip.areaHa != null) {
+      const area = Number(state.clip.areaHa);
+      const label = state.clip.aoi?.name || state.clip.name || "AOI";
+      if (state.clip.areaWithinLimit === false) {
+        return `${label} · ${Catalog.formatNumber(area)} ha; limit ${Catalog.formatNumber(state.clip.maxAreaHa)} ha`;
+      }
+      return `${label} · ${Catalog.formatNumber(area)} ha`;
+    }
     if (state.clip.aoi) {
       const area = Number(state.clip.aoi.area_ha || 0);
       return `${state.clip.aoi.name || "AOI"} · ${Catalog.formatNumber(area)} ha`;
     }
     if (state.clip.geometry) {
-      return "Drawn AOI on the map";
+      return "Drawn AOI";
     }
     return "No AOI selected.";
+  }
+
+  function clipAreaPercent() {
+    if (state.clip.areaHa == null || !state.clip.maxAreaHa) {
+      return 0;
+    }
+    return Math.min(100, Math.max(0, (Number(state.clip.areaHa) / state.clip.maxAreaHa) * 100));
+  }
+
+  function clipAreaTemplate() {
+    if (state.clip.areaHa == null) {
+      return "";
+    }
+    const percent = clipAreaPercent();
+    const over = state.clip.areaWithinLimit === false;
+    const near = !over && percent >= 80;
+    const tone = over ? " is-over" : near ? " is-near" : "";
+    return `<div class="clip-area${tone}">
+      <div class="clip-area-meter" role="meter" aria-label="AOI area against limit" aria-valuemin="0" aria-valuemax="${Math.round(state.clip.maxAreaHa)}" aria-valuenow="${Math.round(Number(state.clip.areaHa))}">
+        <div class="clip-area-meter-bar" style="width:${percent}%"></div>
+      </div>
+      <p class="clip-area-caption">${Catalog.formatNumber(Number(state.clip.areaHa))} ha of ${Catalog.formatNumber(state.clip.maxAreaHa)} ha${over ? " · reduce the AOI before preparing a bundle" : ""}</p>
+    </div>`;
   }
 
   function clipResultTemplate() {
@@ -2354,7 +2404,7 @@ python scripts/fetch_web_previews.py</pre>
     node.innerHTML = layers
       .map((layer) => {
         const selected = state.clip.selected.has(layer.dataset_id);
-        const disabled = !selected && state.clip.selected.size >= 6;
+        const disabled = !selected && state.clip.selected.size >= state.clip.maxLayers;
         return `<label class="clip-layer${disabled ? " is-disabled" : ""}">
           <input type="checkbox" data-clip-layer value="${Catalog.escapeHtml(layer.dataset_id)}" ${selected ? "checked" : ""} ${disabled ? "disabled" : ""}>
           <span><b>${Catalog.escapeHtml(layer.title)}</b><small>${Catalog.escapeHtml(layer.dataset_id)}</small></span>
@@ -2373,8 +2423,11 @@ python scripts/fetch_web_previews.py</pre>
     const candidates = clipCandidateOptions();
     const canPrepare =
       !state.clip.busy &&
+      !state.clip.areaPending &&
+      state.clip.areaWithinLimit !== false &&
       state.clip.selected.size > 0 &&
       Boolean(state.clip.geometry);
+    const statusText = state.clip.message || clipAoiSummary();
     els.clipBody.innerHTML = `
       <section class="clip-section">
         <h3>Area of interest</h3>
@@ -2389,7 +2442,8 @@ python scripts/fetch_web_previews.py</pre>
           <button class="secondary-button" type="button" data-clip-draw ${state.clip.busy ? "disabled" : ""}>Draw box</button>
           <button class="secondary-button" type="button" data-clip-clear ${state.clip.busy ? "disabled" : ""}>Clear AOI</button>
         </div>
-        <p class="clip-status${state.clip.error ? " error" : ""}">${Catalog.escapeHtml(state.clip.message || clipAoiSummary())}</p>
+        <p class="clip-status${state.clip.error ? " error" : ""}">${Catalog.escapeHtml(statusText)}</p>
+        ${clipAreaTemplate()}
         ${candidates.length ? `<div class="clip-candidates">${candidates
           .map(
             (candidate) =>
@@ -2398,7 +2452,7 @@ python scripts/fetch_web_previews.py</pre>
           .join("")}</div>` : ""}
       </section>
       <section class="clip-section">
-        <h3>Layers <span class="muted">${state.clip.selected.size}/6</span></h3>
+        <h3>Layers <span class="muted">${state.clip.selected.size}/${state.clip.maxLayers}</span></h3>
         <label class="clip-field">Find a previewable layer
           <input id="clip-layer-search" type="search" value="${Catalog.escapeHtml(state.clip.search)}" placeholder="Search layers…" autocomplete="off">
         </label>
@@ -2419,7 +2473,7 @@ python scripts/fetch_web_previews.py</pre>
         ${state.clip.jobId ? `<div class="clip-progress" role="progressbar" aria-label="Bundle progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(state.clip.progress || 0)}"><div class="clip-progress-bar" style="width:${Math.max(0, Math.min(100, Number(state.clip.progress || 0)))}%"></div></div>` : ""}
         ${state.clip.jobId ? `<p class="clip-status${state.clip.error ? " error" : ""}">${Catalog.escapeHtml(state.clip.message || "Preparing bundle…")}</p>` : ""}
         ${clipResultTemplate()}
-        <p class="clip-status">Bundles are limited to 6 layers and 10,000,000 ha. Clipping runs from the recovered source rasters.</p>
+        <p class="clip-status">Bundles are limited to ${state.clip.maxLayers} layers and ${Catalog.formatNumber(state.clip.maxAreaHa)} ha. Clipping runs from the recovered source rasters.</p>
       </section>
       <section class="clip-section">
         <h3>Recent bundles</h3>
@@ -2450,7 +2504,7 @@ python scripts/fetch_web_previews.py</pre>
           artifact.artifact_status || artifact.status
         ) &&
         !state.clip.selected.has(datasetId) &&
-        state.clip.selected.size < 6
+        state.clip.selected.size < state.clip.maxLayers
       ) {
         state.clip.selected.add(datasetId);
       }
@@ -2501,15 +2555,29 @@ python scripts/fetch_web_previews.py</pre>
         throw new Error(payload.detail || `resolve failed (${response.status})`);
       }
       if (payload.status === "ok" && payload.geometry) {
+        state.clip.areaToken += 1;
         state.clip.aoi = payload;
         state.clip.geometry = payload.geometry;
         state.clip.name = payload.name || state.clip.name;
         state.clip.candidates = [];
-        state.clip.message = `${payload.name || "AOI"} · ${Catalog.formatNumber(payload.area_ha || 0)} ha`;
+        state.clip.areaPending = false;
+        state.clip.areaHa = Number.isFinite(Number(payload.area_ha))
+          ? Number(payload.area_ha)
+          : null;
+        state.clip.areaWithinLimit =
+          state.clip.areaHa == null
+            ? null
+            : state.clip.areaHa <= state.clip.maxAreaHa;
+        state.clip.error = state.clip.areaWithinLimit === false;
+        state.clip.message = clipAoiSummary();
         state.mapHandle?.__hbc?.setAoi(payload.geometry, { fit: true });
       } else {
+        state.clip.areaToken += 1;
         state.clip.aoi = null;
         state.clip.geometry = null;
+        state.clip.areaHa = null;
+        state.clip.areaWithinLimit = null;
+        state.clip.areaPending = false;
         state.clip.candidates =
           payload.candidate_options || payload.candidates || [];
         state.clip.message =
@@ -2524,6 +2592,50 @@ python scripts/fetch_web_previews.py</pre>
     } finally {
       state.clip.busy = false;
       renderClipPanel();
+    }
+  }
+
+  async function inspectClipAoi(geometry) {
+    const token = state.clip.areaToken + 1;
+    state.clip.areaToken = token;
+    state.clip.areaPending = true;
+    state.clip.areaHa = null;
+    state.clip.areaWithinLimit = null;
+    state.clip.error = false;
+    state.clip.message = "Drawn AOI · checking area…";
+    renderClipPanel();
+    try {
+      const response = await fetch("../api/aoi/inspect", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ geometry }),
+      });
+      if (token !== state.clip.areaToken) {
+        return;
+      }
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.detail || `area check failed (${response.status})`);
+      }
+      state.clip.areaHa = Number(payload.area_ha);
+      state.clip.areaWithinLimit = payload.within_limit !== false;
+      state.clip.areaPending = false;
+      state.clip.error = state.clip.areaWithinLimit === false;
+      state.clip.message = clipAoiSummary();
+    } catch (error) {
+      if (token !== state.clip.areaToken) {
+        return;
+      }
+      state.clip.areaPending = false;
+      state.clip.areaHa = null;
+      state.clip.areaWithinLimit = null;
+      state.clip.error = false;
+      state.clip.message =
+        "Drawn AOI · area check unavailable; the server will validate the limit.";
+    } finally {
+      if (token === state.clip.areaToken) {
+        renderClipPanel();
+      }
     }
   }
 
@@ -2557,6 +2669,7 @@ python scripts/fetch_web_previews.py</pre>
         els.clipPanel.hidden = false;
       }
       renderClipPanel();
+      void inspectClipAoi(geometry);
     });
   }
 
@@ -2605,6 +2718,18 @@ python scripts/fetch_web_previews.py</pre>
       renderClipPanel();
       return;
     }
+    if (state.clip.areaPending) {
+      state.clip.message = "The AOI area check is still running.";
+      state.clip.error = false;
+      renderClipPanel();
+      return;
+    }
+    if (state.clip.areaWithinLimit === false) {
+      state.clip.message = `AOI is ${Catalog.formatNumber(Number(state.clip.areaHa || 0))} ha; limit ${Catalog.formatNumber(state.clip.maxAreaHa)} ha.`;
+      state.clip.error = true;
+      renderClipPanel();
+      return;
+    }
     await startClipJob(layerIds);
   }
 
@@ -2640,6 +2765,14 @@ python scripts/fetch_web_previews.py</pre>
 
   async function startClipJob(layerIds) {
     if (!layerIds.length || !state.clip.geometry) {
+      return;
+    }
+    if (state.clip.areaPending || state.clip.areaWithinLimit === false) {
+      state.clip.error = state.clip.areaWithinLimit === false;
+      state.clip.message = state.clip.areaPending
+        ? "The AOI area check is still running."
+        : `AOI is ${Catalog.formatNumber(Number(state.clip.areaHa || 0))} ha; limit ${Catalog.formatNumber(state.clip.maxAreaHa)} ha.`;
+      renderClipPanel();
       return;
     }
     stopClipPolling();
@@ -2837,6 +2970,10 @@ python scripts/fetch_web_previews.py</pre>
       state.clip.aoi = null;
       state.clip.geometry = null;
       state.clip.candidates = [];
+      state.clip.areaHa = null;
+      state.clip.areaWithinLimit = null;
+      state.clip.areaPending = false;
+      state.clip.areaToken += 1;
       state.clip.message = "AOI cleared.";
       state.clip.error = false;
       state.mapHandle?.__hbc?.clearAoi?.();
@@ -2890,9 +3027,9 @@ python scripts/fetch_web_previews.py</pre>
       return;
     }
     if (input.checked) {
-      if (state.clip.selected.size >= 6) {
+      if (state.clip.selected.size >= state.clip.maxLayers) {
         input.checked = false;
-        showToast("Select at most 6 layers.");
+        showToast(`Select at most ${state.clip.maxLayers} layers.`);
         return;
       }
       state.clip.selected.add(input.value);

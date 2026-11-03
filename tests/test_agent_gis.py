@@ -464,6 +464,19 @@ def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
     drawn = shapely_transform(
         transformer.transform, box(102_050, 96_050, 105_950, 99_950)
     )
+    inspect = client.post(
+        "/api/aoi/inspect",
+        json={"geometry": mapping(drawn)},
+    )
+    assert inspect.status_code == 200, inspect.text
+    assert inspect.json()["area_ha"] > 0
+    assert inspect.json()["within_limit"] is True
+    bad_inspect = client.post(
+        "/api/aoi/inspect",
+        json={"geometry": {"type": "Point", "coordinates": [0, 0]}},
+    )
+    assert bad_inspect.status_code == 422
+
     bundle = client.post(
         "/api/bundles",
         json={

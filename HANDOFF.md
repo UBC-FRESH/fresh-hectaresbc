@@ -76,6 +76,9 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   service prefers it when present (`source_raster` in metadata). A BCTS pilot
   is ~3.1 MB, takes ~32 s to build, and reduces the first z9 read from ~0.8 s to
   ~0.06 s locally (~0.12 s through the public host).
+- Clip AOI drawer now calculates exact AOI area through `/api/aoi/inspect`
+  before submission, shows a live limit meter, and disables bundle preparation
+  when the AOI exceeds the configured limit.
 - `/api/stats` reports process-lifetime tile requests, cache hit rate, source
   mix (cache/overlay/COG/zip), latency, and top datasets. Use it to prioritize
   COG conversion for layers that are actually viewed.
