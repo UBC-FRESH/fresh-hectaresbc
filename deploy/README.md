@@ -32,6 +32,13 @@ The service binds `0.0.0.0:8030` and reads:
   (default 100).
 - `FRESH_HECTARESBC_JOB_HISTORY_MAX_AGE_DAYS` for job-record age pruning
   (default 30; `0` disables age pruning).
+- `FRESH_HECTARESBC_BUNDLE_HISTORY_LIMIT` for completed bundle directories/ZIPs
+  kept (default 50).
+- `FRESH_HECTARESBC_BUNDLE_HISTORY_MAX_AGE_DAYS` for completed bundle-output age
+  pruning (default 30; `0` disables age pruning).
+- `FRESH_HECTARESBC_BUNDLE_AOI_MAX_AGE_DAYS` and
+  `FRESH_HECTARESBC_BUNDLE_AOI_MAX_FILES` for temporary drawn-AOI files
+  (default 7 days / 500 files).
 
 Restart and inspect:
 

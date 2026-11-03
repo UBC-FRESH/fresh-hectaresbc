@@ -1,4 +1,5 @@
 import json
+import os
 import time
 import zipfile
 from datetime import UTC, datetime, timedelta
@@ -198,6 +199,69 @@ def test_bundle_job_history_prunes_old_terminal_records(tmp_path: Path) -> None:
         assert (age_dir / f"{new_id}.json").exists()
     finally:
         manager.close()
+
+
+def test_bundle_output_retention_prunes_count_age_and_aoi(tmp_path: Path) -> None:
+    from fresh_hectaresbc.bundle_retention import prune_bundle_outputs
+
+    root = tmp_path / "bundles"
+    now = datetime.now(UTC)
+    bundle_ids = []
+    for index, days in enumerate((0, 10, 40, 100)):
+        bundle_id = f"2026010{index}T000000Z-aaaaaaaa"
+        bundle_ids.append(bundle_id)
+        bundle_dir = root / bundle_id
+        bundle_dir.mkdir(parents=True)
+        (bundle_dir / "layers").mkdir()
+        (bundle_dir / "layers" / "layer.tif").write_bytes(b"x")
+        (bundle_dir / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "bundle_id": bundle_id,
+                    "generated_utc": (now - timedelta(days=days)).isoformat(),
+                }
+            ),
+            encoding="utf-8",
+        )
+        (root / f"hectaresbc-bundle-{bundle_id}.zip").write_bytes(b"zip")
+    (root / "hectaresbc-bundle-orphan.zip").write_bytes(b"orphan")
+    incomplete = root / "20250101T000000Z-dddddddd"
+    incomplete.mkdir()
+    (incomplete / "layers").mkdir()
+    old_dir = time.time() - 100 * 86400
+    os.utime(incomplete, (old_dir, old_dir))
+    jobs_dir = root / "jobs"
+    jobs_dir.mkdir()
+    (jobs_dir / "job.json").write_text("{}", encoding="utf-8")
+    aoi_dir = root / "aoi"
+    aoi_dir.mkdir()
+    old_aoi = aoi_dir / "drawn-old.geojson"
+    new_aoi = aoi_dir / "drawn-new.geojson"
+    old_aoi.write_text("{}", encoding="utf-8")
+    new_aoi.write_text("{}", encoding="utf-8")
+    old = time.time() - 10 * 86400
+    os.utime(old_aoi, (old, old))
+
+    stats = prune_bundle_outputs(
+        root,
+        max_bundles=3,
+        max_age_days=30,
+        aoi_max_age_days=7,
+        aoi_max_files=500,
+    )
+    assert stats["kept_bundles"] == 2
+    assert stats["removed_bundles"] == 3
+    assert not (root / bundle_ids[2]).exists()
+    assert not (root / bundle_ids[3]).exists()
+    assert not incomplete.exists()
+    assert (root / bundle_ids[0]).is_dir()
+    assert (root / bundle_ids[1]).is_dir()
+    assert not (root / f"hectaresbc-bundle-{bundle_ids[2]}.zip").exists()
+    assert not (root / "hectaresbc-bundle-orphan.zip").exists()
+    assert (root / "jobs" / "job.json").is_file()
+    assert not old_aoi.exists()
+    assert new_aoi.is_file()
+    assert stats["removed_aoi"] == 1
 
 
 def test_overlay_tile_renders_existing_3857_preview(

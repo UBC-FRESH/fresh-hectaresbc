@@ -91,6 +91,8 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   `var/bundles/jobs/`, and are marked `interrupted` after a service restart.
   Terminal job records are pruned on startup and after each finished job
   (100 records / 30 days by default; configurable).
+  Completed bundle directories/ZIPs are pruned by count/age (50 / 30 days) and
+  temporary drawn-AOI files by age/count (7 days / 500) on the same schedule.
   The synchronous `/api/bundles` endpoint remains for CLI/script clients.
 - FEMIC bridge: `src/fresh_hectaresbc/femic_bridge.py`
   - resolves BC Data Catalogue boundary packages
@@ -252,9 +254,9 @@ python scripts/agent_tools.py list-bundles
 
 ## Verified At Handoff
 
-- Web/agent tests: 9 passed in `tests/test_agent_gis.py`, including a drawn
-  GeoJSON bundle, candidate-name extraction, job-history pruning, and the
-  low-zoom overlay tile path.
+- Web/agent tests: 10 passed in `tests/test_agent_gis.py`, including a drawn
+  GeoJSON bundle, candidate-name extraction, job-history pruning, bundle-output
+  retention, and the low-zoom overlay tile path.
 - Browser smoke: desktop/tablet/mobile, search, facets, inspector, dataset,
   `#/map`, map fallback, legacy routes, keyboard.
 - Sphinx `-W`: passed (recheck after documentation edits).

@@ -85,6 +85,30 @@ def main() -> int:
         help="Remove terminal bundle job records older than this; 0 disables.",
     )
     parser.add_argument(
+        "--bundle-history-limit",
+        type=int,
+        default=50,
+        help="Keep at most this many completed bundle directories/ZIPs.",
+    )
+    parser.add_argument(
+        "--bundle-history-max-age-days",
+        type=float,
+        default=30.0,
+        help="Remove completed bundle outputs older than this; 0 disables.",
+    )
+    parser.add_argument(
+        "--bundle-aoi-max-age-days",
+        type=float,
+        default=7.0,
+        help="Remove temporary drawn-AOI files older than this; 0 disables.",
+    )
+    parser.add_argument(
+        "--bundle-aoi-max-files",
+        type=int,
+        default=500,
+        help="Keep at most this many temporary drawn-AOI files.",
+    )
+    parser.add_argument(
         "--public-url",
         default=os.environ.get("FRESH_HECTARESBC_PUBLIC_URL"),
         help="Public origin used for bundle download links.",
@@ -109,6 +133,10 @@ def main() -> int:
         max_area_ha=args.max_area_ha,
         job_history_limit=args.job_history_limit,
         job_history_max_age_days=args.job_history_max_age_days,
+        bundle_history_limit=args.bundle_history_limit,
+        bundle_history_max_age_days=args.bundle_history_max_age_days,
+        bundle_aoi_max_age_days=args.bundle_aoi_max_age_days,
+        bundle_aoi_max_files=args.bundle_aoi_max_files,
         public_url=args.public_url,
     )
     scheme = "http"
