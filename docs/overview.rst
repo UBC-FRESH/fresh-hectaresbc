@@ -12,17 +12,21 @@ Current capabilities include:
 * a thin Typer CLI over the same API;
 * local path resolution, content-status checks, backend diagnostics, and dry-run
   retrieval planning;
-* a static browser catalog with stable detail and map-preview routes;
+* a responsive browser catalog with Browse, Dataset, and MapLibre map routes;
 * a DataLad-backed source-derived browser preview publication covering 2,183
   recovered catalog records, with 2,163 preview PNGs and 20 records marked
   ``not_previewable``;
-* a recovered administrative reference layer that can be used as map context
-  behind preview overlays.
+* an optional FastAPI service with on-demand 1-ha raster tiles, low-zoom overlay
+  and optional COG fast paths, tile-cache and usage statistics, the OpenCode
+  assistant, FEMIC boundary resolution, AOI area preflight, clipped raster
+  bundle jobs with progress/cancel/retry, and configurable output retention.
 
 Important current limits:
 
 * raw HectaresBC payloads live outside this repository in a DataLad submodule;
-* browser previews are static PNG overlays, not a tile service or full GIS
-  renderer;
-* custom AOI masking, tile selection, and download-request processing are future
-  service work, not implemented app behavior yet.
+* the map is a focused raster workspace, not a full general-purpose GIS editor;
+* the optional service is a demo-scale deployment with six-layer and area limits;
+* service authentication is delegated to a proxy such as Cloudflare Access/Zero
+  Trust; the app does not implement user accounts;
+* COG derivatives and 2048 px preview overrides are optional generated data, not
+  tracked repository content.

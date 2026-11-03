@@ -6,9 +6,9 @@ archived HectaresBC geospatial data collection after the original provincial
 platform was decommissioned.
 
 The project currently provides a Python API, Typer CLI, DataLad-backed data
-repository linkage, and a static browser catalog/map-preview app. These docs
-describe what exists now and keep future AOI/download service ideas separate
-from implemented behavior.
+repository linkage, a responsive browser catalog/map workspace, and an optional
+FastAPI GIS assistant with AOI clipping and bundle jobs. These docs describe
+implemented behavior; design notes for future work remain in ``planning/``.
 
 .. toctree::
    :maxdepth: 2
