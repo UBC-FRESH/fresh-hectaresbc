@@ -180,7 +180,9 @@ A **Side-by-side / Wipe / Flicker** toggle switches between split panes, an
 overlaid wipe comparison with a draggable vertical divider (``mode=wipe``), and
 auto-alternating flicker comparison (``mode=flicker``). Flicker includes pause/play
 and fast/normal/slow speed controls and respects reduced-motion preferences.
-Compare mode intentionally omits AOI/identify/Clip controls.
+Compare mode intentionally omits AOI/identify/Clip controls. **Download PNG**
+exports the current split, wipe, or active flicker frame with dataset labels,
+mode, date, and map attribution.
 
 Saved Searches And Favorites
 ----------------------------

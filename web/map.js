@@ -667,6 +667,7 @@
       minZoom: 1,
       maxZoom: 15,
       attributionControl: true,
+      preserveDrawingBuffer: true,
     });
 
     if (controls) {

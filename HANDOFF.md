@@ -98,7 +98,7 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 - The map Discover panel finds previewable layers intersecting the current view
   or AOI and adds results to the tray.
 - Browse saves named search views and favorite datasets in local browser storage.
-- `#/compare` provides synchronized side-by-side, draggable-wipe, and auto-flicker comparison for two map layers.
+- `#/compare` provides synchronized side-by-side, draggable-wipe, and auto-flicker comparison for two map layers, plus labeled PNG export.
 
 ### Agent Service And GIS Bundles (P20)
 

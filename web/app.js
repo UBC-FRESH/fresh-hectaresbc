@@ -2102,6 +2102,7 @@
           </div>
           <div class="compare-actions">
             <button class="secondary-button" type="button" data-compare-swap>Swap sides</button>
+            <button class="secondary-button" type="button" data-compare-download>Download PNG</button>
             <a class="secondary-button" href="#/dataset/${encodeURIComponent(leftLayer.dataset_id)}/map">Open left map</a>
             <a class="secondary-button" href="#/map">Back to map</a>
           </div>
@@ -2218,6 +2219,7 @@
       rightPane.style.opacity = activeLeft ? "0" : "1";
       leftPane.style.pointerEvents = activeLeft ? "auto" : "none";
       rightPane.style.pointerEvents = activeLeft ? "none" : "auto";
+      state.compareFlicker.activeLeft = activeLeft;
     };
     const stop = () => {
       if (state.compareFlicker.timer) {
@@ -2257,6 +2259,153 @@
     });
     apply();
     start();
+  }
+
+  async function downloadCompareImage() {
+    const handle = state.mapHandle;
+    if (!handle?.left?.__hbcReady || !handle?.right?.__hbcReady) {
+      showToast("The comparison maps are still loading.");
+      return;
+    }
+    const leftCanvas = document.querySelector("#compare-left .maplibregl-canvas");
+    const rightCanvas = document.querySelector("#compare-right .maplibregl-canvas");
+    if (!leftCanvas || !rightCanvas) {
+      showToast("Comparison map canvases are unavailable.");
+      return;
+    }
+    const mode = state.route.compareMode || "split";
+    const leftLabel = document.querySelector(
+      ".compare-pane.is-left .compare-label"
+    );
+    const rightLabel = document.querySelector(
+      ".compare-pane.is-right .compare-label"
+    );
+    const labelText = (node) => ({
+      title: node?.querySelector("strong")?.textContent?.trim() || "Layer",
+      id: node?.querySelector("span")?.textContent?.trim() || "",
+    });
+    const labels = {
+      left: labelText(leftLabel),
+      right: labelText(rightLabel),
+    };
+    const gap = 16;
+    const footer = 26;
+    let width;
+    let height;
+    if (mode === "split") {
+      width = leftCanvas.width + gap + rightCanvas.width;
+      height = Math.max(leftCanvas.height, rightCanvas.height) + footer;
+    } else {
+      width = Math.max(leftCanvas.width, rightCanvas.width);
+      height = Math.max(leftCanvas.height, rightCanvas.height) + footer;
+    }
+    const target = document.createElement("canvas");
+    target.width = width;
+    target.height = height;
+    const ctx = target.getContext("2d");
+    if (!ctx) {
+      showToast("PNG export is not supported in this browser.");
+      return;
+    }
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
+
+    const drawLabel = (label, x, y, maxWidth) => {
+      ctx.save();
+      ctx.font = "600 13px sans-serif";
+      let title = label.title;
+      while (title.length > 4 && ctx.measureText(title).width > maxWidth - 16) {
+        title = title.slice(0, -2);
+      }
+      ctx.fillStyle = "rgba(255,255,255,0.94)";
+      ctx.fillRect(x, y, Math.min(maxWidth, Math.max(140, ctx.measureText(title).width + 16)), 38);
+      ctx.fillStyle = "#1f2933";
+      ctx.fillText(title, x + 8, y + 16);
+      ctx.font = "10px monospace";
+      ctx.fillStyle = "#66727d";
+      ctx.fillText(label.id, x + 8, y + 30);
+      ctx.restore();
+    };
+
+    const drawFooter = (text) => {
+      ctx.save();
+      ctx.font = "10px sans-serif";
+      ctx.fillStyle = "#66727d";
+      ctx.fillText(text, 8, height - 9);
+      ctx.restore();
+    };
+
+    try {
+      const divider = document.querySelector(".compare-divider");
+      if (mode === "split") {
+        ctx.drawImage(leftCanvas, 0, 0);
+        ctx.drawImage(rightCanvas, leftCanvas.width + gap, 0);
+        drawLabel(labels.left, 8, 8, leftCanvas.width - 16);
+        drawLabel(
+          labels.right,
+          leftCanvas.width + gap + 8,
+          8,
+          rightCanvas.width - 16
+        );
+      } else if (mode === "wipe") {
+        ctx.drawImage(rightCanvas, 0, 0);
+        const percent = Math.min(
+          98,
+          Math.max(2, Number.parseFloat(divider?.style.left || "50"))
+        );
+        const clipWidth = (width * percent) / 100;
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, clipWidth, height);
+        ctx.clip();
+        ctx.drawImage(leftCanvas, 0, 0);
+        ctx.restore();
+        ctx.save();
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 3;
+        ctx.shadowColor = "rgba(0,0,0,0.4)";
+        ctx.shadowBlur = 2;
+        ctx.beginPath();
+        ctx.moveTo(clipWidth, 0);
+        ctx.lineTo(clipWidth, height - footer);
+        ctx.stroke();
+        ctx.restore();
+        drawLabel(labels.left, 8, 8, width * 0.48);
+        drawLabel(labels.right, width * 0.52, 8, width * 0.48);
+      } else {
+        const activeCanvas = state.compareFlicker.activeLeft
+          ? leftCanvas
+          : rightCanvas;
+        const activeLabel = state.compareFlicker.activeLeft
+          ? labels.left
+          : labels.right;
+        ctx.drawImage(activeCanvas, 0, 0);
+        drawLabel(activeLabel, 8, 8, width - 16);
+      }
+      drawFooter(
+        `HectaresBC · ${mode} · ${new Date().toLocaleDateString()} · Map data © OpenStreetMap contributors`
+      );
+      const blob = await new Promise((resolve, reject) => {
+        target.toBlob(
+          (value) =>
+            value ? resolve(value) : reject(new Error("PNG encoding failed")),
+          "image/png"
+        );
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `hectaresbc-compare-${mode}-${new Date()
+        .toISOString()
+        .slice(0, 10)}.png`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      showToast("Comparison PNG downloaded.");
+    } catch (error) {
+      showToast(`Could not export comparison: ${error.message}`);
+    }
   }
 
   function bindCompareWipe() {
@@ -2780,6 +2929,10 @@ python scripts/fetch_web_previews.py</pre>
     const target = event.target;
     if (target.closest("[data-compare-open]")) {
       openCompare();
+      return;
+    }
+    if (target.closest("[data-compare-download]")) {
+      void downloadCompareImage();
       return;
     }
     if (target.closest("[data-compare-swap]")) {

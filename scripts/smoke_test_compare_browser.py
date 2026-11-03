@@ -60,6 +60,13 @@ def main() -> int:
             assert page.locator(".compare-label").count() == 2
             assert page.locator("[data-compare-select]").count() == 2
 
+            with page.expect_download(timeout=15000) as download_info:
+                page.locator("[data-compare-download]").click()
+            download = download_info.value
+            assert download.suggested_filename.startswith(
+                "hectaresbc-compare-split-"
+            )
+
             page.locator("[data-compare-swap]").click()
             page.wait_for_timeout(800)
             hash_value = page.evaluate("location.hash")
