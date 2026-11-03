@@ -229,10 +229,10 @@ Service endpoints:
    GET  /api/aoi/search?q=
    POST /api/bundles
    POST /api/bundle-jobs
-+  GET  /api/bundle-jobs
+  GET  /api/bundle-jobs
    GET  /api/bundle-jobs/{job_id}
    POST /api/bundle-jobs/{job_id}/cancel
-+  POST /api/bundle-jobs/{job_id}/retry
+  POST /api/bundle-jobs/{job_id}/retry
    GET  /api/bundles
    GET  /api/bundles/{bundle_id}
    GET  /api/bundles/{bundle_id}/download
