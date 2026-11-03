@@ -2601,7 +2601,7 @@ python scripts/fetch_web_previews.py</pre>
       return;
     }
     const artifact = trayLayer(datasetId);
-    if (!artifact) {
+    if (state.previewIndex && !artifact) {
       showToast("Layer is not previewable.");
       return;
     }
