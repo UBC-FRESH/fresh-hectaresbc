@@ -3,8 +3,8 @@
 Date: 2026-11-03
 Status: P19/P20 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
-Latest feature merge: `12e33e4`
-Latest merged PR: #157 (Clip AOI browser coverage); feature merge: #155
+Latest feature merge: `dfb191a`
+Latest merged PR: #159 (optional COG derivatives); Clip AOI coverage: #157
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
@@ -75,7 +75,7 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   compressed, tiled GeoTIFF with overviews under `var/tile-cogs/`; the tile
   service prefers it when present (`source_raster` in metadata). A BCTS pilot
   is ~3.1 MB, takes ~32 s to build, and reduces the first z9 read from ~0.8 s to
-  ~0.06 s locally.
+  ~0.06 s locally (~0.12 s through the public host).
 
 ### Agent Service And GIS Bundles (P20)
 
@@ -270,7 +270,7 @@ python scripts/agent_tools.py list-bundles
 
 ## Verified At Handoff
 
-- Web/agent tests: 10 passed in `tests/test_agent_gis.py`, including a drawn
+- Web/agent tests: 11 passed in `tests/test_agent_gis.py`, including a drawn
   GeoJSON bundle, candidate-name extraction, job-history pruning, bundle-output
   retention, and the low-zoom overlay tile path.
 - Browser smoke: desktop/tablet/mobile, search, facets, inspector, dataset,
