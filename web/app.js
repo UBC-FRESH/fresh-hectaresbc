@@ -152,6 +152,7 @@
       tabBrowse: document.querySelector("#tab-browse"),
       tabMap: document.querySelector("#tab-map"),
       tabBundles: document.querySelector("#tab-bundles"),
+      tabAdmin: document.querySelector("#tab-admin"),
       filterRail: document.querySelector("#filter-rail"),
       facets: document.querySelector("#facets"),
       previewNote: document.querySelector("#preview-note"),
@@ -468,6 +469,8 @@
       void renderMap();
     } else if (route.view === "bundles") {
       void renderBundles();
+    } else if (route.view === "admin") {
+      void renderAdmin();
     } else {
       void renderDataset();
     }
@@ -1594,6 +1597,164 @@
     }
   }
 
+  /* ----------------------------------------------------------------- admin */
+
+  function adminMetric(label, value, detail = "") {
+    return `<article class="admin-metric">
+      <span>${Catalog.escapeHtml(label)}</span>
+      <strong>${Catalog.escapeHtml(String(value))}</strong>
+      ${detail ? `<small>${Catalog.escapeHtml(detail)}</small>` : ""}
+    </article>`;
+  }
+
+  function adminSourceTemplate(totals) {
+    const sources = totals?.sources || {};
+    const total = Object.values(sources).reduce(
+      (sum, value) => sum + Number(value || 0),
+      0
+    );
+    const labels = ["cache", "overlay", "cog", "zip", "error"];
+    return `<div class="admin-source-list">${labels
+      .map((label) => {
+        const count = Number(sources[label] || 0);
+        const percent = total ? (count / total) * 100 : 0;
+        return `<div class="admin-source-row">
+          <span>${label}</span>
+          <div class="admin-source-bar"><span style="width:${percent}%"></div>
+          <small>${Catalog.formatNumber(count)}</small>
+        </div>`;
+      })
+      .join("")}</div>`;
+  }
+
+  function adminCommand(datasetId) {
+    return `python scripts/build_tile_cog.py --dataset-id ${datasetId} --archive-root /path/to/hectaresbc --output-root var/tile-cogs`;
+  }
+
+  function renderAdminDashboard(stats, jobs) {
+    const tiles = stats?.tiles || {};
+    const totals = tiles.totals || {};
+    const top = tiles.top_datasets || [];
+    const cogs = new Set(stats?.cog_datasets || []);
+    const jobCounts = stats?.bundle_jobs || {};
+    const jobItems = jobs || [];
+    const hitRate = ((Number(totals.cache_hit_rate) || 0) * 100).toFixed(1);
+    const sourceRows = top
+      .map((item) => {
+        const sourceText = Object.entries(item.sources || {})
+          .map(([key, value]) => `${key}:${value}`)
+          .join(" ");
+        const cog = cogs.has(item.dataset_id);
+        return `<tr>
+          <td><span class="mono">${Catalog.escapeHtml(item.dataset_id)}</span></td>
+          <td>${Catalog.formatNumber(item.requests || 0)}</td>
+          <td>${((Number(item.cache_hit_rate) || 0) * 100).toFixed(1)}%</td>
+          <td>${Catalog.escapeHtml(item.avg_latency_ms ?? "—")} / ${Catalog.escapeHtml(item.latency_ms_max ?? "—")}</td>
+          <td class="admin-source-summary">${Catalog.escapeHtml(sourceText || "—")}</td>
+          <td>${cog ? '<span class="history-status ok">COG</span>' : `<button class="secondary-button admin-cog-button" type="button" data-copy="${Catalog.escapeHtml(adminCommand(item.dataset_id))}">Copy COG command</button>`}</td>
+        </tr>`;
+      })
+      .join("");
+    const jobsRows = jobItems
+      .slice(0, 8)
+      .map(
+        (job) => `<tr>
+          <td><span class="mono">${Catalog.escapeHtml(job.job_id || "")}</span></td>
+          <td><span class="history-status ${historyStatusTone(job.status)}">${Catalog.escapeHtml(job.status || "unknown")}</span></td>
+          <td>${Catalog.escapeHtml(job.aoi_name || "—")}</td>
+          <td>${Catalog.formatNumber((job.layer_ids || []).length)}</td>
+          <td>${Catalog.escapeHtml(job.message || "")}</td>
+        </tr>`
+      )
+      .join("");
+    els.content.innerHTML = `
+      <div class="admin-shell">
+        <header class="history-head">
+          <div>
+            <span class="dataset-eyebrow"><span class="badge badge-accent">Admin</span></span>
+            <h1 tabindex="-1">Service statistics</h1>
+            <p>Process-lifetime tile, cache, COG, and bundle-job health.</p>
+          </div>
+          <button class="secondary-button" type="button" data-admin-refresh>Refresh</button>
+        </header>
+        <div class="admin-metrics">
+          ${adminMetric("Requests", Catalog.formatNumber(totals.requests || 0), "since process start")}
+          ${adminMetric("Cache hit rate", `${hitRate}%`, `${Catalog.formatNumber(totals.cache_hits || 0)} hits`)}
+          ${adminMetric("Average latency", `${Catalog.escapeHtml(totals.avg_latency_ms ?? 0)} ms`, `max ${Catalog.escapeHtml(totals.latency_ms_max ?? 0)} ms`)}
+          ${adminMetric("Errors", Catalog.formatNumber(totals.errors || 0))}
+          ${adminMetric("COGs", Catalog.formatNumber(stats?.tile_cogs || 0), stats?.tile_cog_root || "")}
+        </div>
+        <div class="admin-grid">
+          <section class="admin-panel">
+            <h2>Source mix</h2>
+            ${adminSourceTemplate(totals)}
+          </section>
+          <section class="admin-panel">
+            <h2>Bundle jobs</h2>
+            <div class="admin-job-counts">
+              ${["queued", "running", "complete", "partial", "failed", "canceled"]
+                .map(
+                  (status) =>
+                    `<div><span>${status}</span><strong>${Catalog.formatNumber(jobCounts[status] || 0)}</strong></div>`
+                )
+                .join("")}
+            </div>
+          </section>
+        </div>
+        <section class="admin-panel admin-table-panel">
+          <h2>Top datasets</h2>
+          ${top.length
+            ? `<div class="admin-table-wrap"><table class="admin-table">
+                <thead><tr><th>Dataset</th><th>Requests</th><th>Hit rate</th><th>Avg / max ms</th><th>Sources</th><th>COG</th></tr></thead>
+                <tbody>${sourceRows}</tbody>
+              </table></div>`
+            : '<p class="history-empty">No tile requests recorded yet. Open a map layer to populate this table.</p>'}
+        </section>
+        <section class="admin-panel admin-table-panel">
+          <h2>Recent jobs</h2>
+          ${jobsRows
+            ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Job</th><th>Status</th><th>AOI</th><th>Layers</th><th>Message</th></tr></thead><tbody>${jobsRows}</tbody></table></div>`
+            : '<p class="history-empty">No bundle jobs recorded.</p>'}
+        </section>
+        <p class="admin-links"><a href="../api/stats?top=25" target="_blank" rel="noreferrer">Raw stats JSON</a> · <a href="../api/health" target="_blank" rel="noreferrer">Health JSON</a></p>
+      </div>`;
+    els.content.querySelector("h1")?.focus();
+  }
+
+  async function loadAdminDashboard(token) {
+    const [stats, jobsPayload] = await Promise.all([
+      fetchJson("../api/stats?top=25"),
+      fetchJson("../api/bundle-jobs?limit=20"),
+    ]);
+    if (token !== state.renderToken) {
+      return;
+    }
+    if (!stats) {
+      els.content.innerHTML = `<div class="admin-shell"><div class="history-warning">Statistics are unavailable. Start the optional service with <code>--allow-remote</code> and open this route through the protected origin.</div><a class="primary-button" href="#/catalog">Back to catalog</a></div>`;
+      return;
+    }
+    renderAdminDashboard(stats, jobsPayload?.jobs || []);
+  }
+
+  async function renderAdmin() {
+    const token = ++state.renderToken;
+    stopHistoryPolling();
+    window.HectaresBCMap?.destroy();
+    closeClipPanel();
+    closeTray();
+    resetIdentifyState();
+    document.body.dataset.view = "admin";
+    document.body.classList.remove("filters-open", "inspector-open");
+    els.content.innerHTML = loadingTemplate("Loading service statistics…");
+    updateHeader();
+    updateTabs();
+    document.title = "Service statistics · HectaresBC";
+    if (els.liveStatus) {
+      els.liveStatus.textContent = "Service statistics.";
+    }
+    await loadAdminDashboard(token);
+  }
+
   /* -------------------------------------------------------------- identify */
 
   function updateIdentifyButton() {
@@ -2201,6 +2362,10 @@ python scripts/fetch_web_previews.py</pre>
 
   function handleContentClick(event) {
     const target = event.target;
+    if (target.closest("[data-admin-refresh]")) {
+      void renderAdmin();
+      return;
+    }
     if (target.closest("[data-identify-toggle]")) {
       toggleIdentify();
       return;
@@ -2561,6 +2726,12 @@ python scripts/fetch_web_previews.py</pre>
         state.route.view === "bundles" ? "true" : "false"
       );
     }
+    if (els.tabAdmin) {
+      els.tabAdmin.setAttribute(
+        "aria-selected",
+        state.route.view === "admin" ? "true" : "false"
+      );
+    }
   }
 
   /* --------------------------------------------------------------- assistant */
@@ -2577,6 +2748,9 @@ python scripts/fetch_web_previews.py</pre>
     document.querySelectorAll("[data-open-clip]").forEach((button) => {
       button.hidden = !state.serviceAvailable;
     });
+    if (els.tabAdmin) {
+      els.tabAdmin.hidden = !state.serviceAvailable;
+    }
   }
 
   /* ---------------------------------------------------------------- tray */

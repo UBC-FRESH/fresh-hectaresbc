@@ -366,6 +366,9 @@ def create_app(config: ServiceConfig) -> FastAPI:
             "tiles": tile_usage_stats(top=top),
             "tile_cog_root": str(config.tile_cog_root),
             "tile_cogs": len(list(config.tile_cog_root.glob("*.tif"))),
+            "cog_datasets": sorted(
+                path.stem for path in config.tile_cog_root.glob("*.tif")
+            ),
             "bundle_jobs": job_manager.stats(),
         }
 

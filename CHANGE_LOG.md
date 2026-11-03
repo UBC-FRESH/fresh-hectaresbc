@@ -212,3 +212,4 @@
 - Completed P23.2/P23.3 with a local reusable AOI library, automatic recent AOIs, named saves, boundary-query and compact drawn restore, apply/delete actions, and browser coverage.
 - Completed and merged Phase 23 via PR #184: reusable named/recent AOI library, automatic recent AOIs, boundary and compact geometry restore, apply/delete actions, and browser coverage.
 - Activated Phase 24 protected admin statistics dashboard with parent issue #185, child issues #186-#189, and planning/admin_dashboard_plan.md.
+- Completed P24.2/P24.3 with COG dataset reporting in `/api/stats`, a protected `#/admin` dashboard, source/latency/cache/job metrics, top-dataset COG actions, and mocked browser coverage.
