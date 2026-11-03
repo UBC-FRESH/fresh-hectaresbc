@@ -11,8 +11,9 @@ catalog. Its primary surfaces are:
   overlay, layer visibility/opacity, legend, and an offline basemap fallback.
 - **Compare** — synchronized two-layer split, wipe, and flicker modes with PNG
   export.
-- **Series** — a two-to-six layer flicker sequence with play/pause, stepping,
-  speed control, and active-frame PNG export.
+- **Series** — a two-to-30 layer flicker sequence on one synchronized map, with
+  play/pause, stepping, speed control, in-place frame editing, year-sequence
+  suggestions, and active-frame PNG export.
 
 The app does not require a Node build step. `web/catalog.js`, `web/map.js`, and
 `web/app.js` are classic scripts; MapLibre is vendored under `web/vendor/` and

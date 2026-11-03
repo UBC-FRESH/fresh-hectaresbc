@@ -4,6 +4,7 @@
     "../external/fresh-hectaresbc-data/derived/web_map_previews/v1";
   const LocalPreviewRoot = "data/map_previews";
   const NarrowInspectorQuery = "(max-width: 1080px)";
+  const SeriesMax = 30;
 
   const METADATA_LABELS = {
     parent_layer_title: "Parent layer",
@@ -125,6 +126,8 @@
       speed: 1000,
       index: 0,
       count: 0,
+      layers: [],
+      sequences: [],
     },
     preflight: {
       busy: false,
@@ -2233,12 +2236,151 @@
     });
   }
 
+  function seriesRouteFor(layerIds, speed = state.series.speed) {
+    return {
+      ...Catalog.defaultState(),
+      view: "series",
+      seriesLayers: layerIds.slice(0, SeriesMax),
+      seriesSpeed: [500, 1000, 2000].includes(Number(speed)) ? Number(speed) : 1000,
+    };
+  }
+
+  function navigateSeries(layerIds) {
+    navigate(seriesRouteFor(layerIds, state.series.speed));
+  }
+
+  function seriesSequences() {
+    const groups = new Map();
+    for (const layer of compareLayerOptions()) {
+      const match = layer.dataset_id.match(
+        /^(.+?)[_-]?((?:19|20)\d{2})$/
+      );
+      if (!match) {
+        continue;
+      }
+      const prefix = match[1].replace(/[_-]+$/, "");
+      const year = Number(match[2]);
+      if (!prefix || year < 1900 || year > 2100) {
+        continue;
+      }
+      let group = groups.get(prefix);
+      if (!group) {
+        group = { prefix, items: [] };
+        groups.set(prefix, group);
+      }
+      group.items.push({ ...layer, year });
+    }
+    return [...groups.values()]
+      .map((group) => {
+        const byYear = new Map();
+        for (const item of group.items.sort((left, right) => left.year - right.year)) {
+          if (!byYear.has(item.year)) {
+            byYear.set(item.year, item);
+          }
+        }
+        const items = [...byYear.values()].sort(
+          (left, right) => left.year - right.year
+        );
+        if (items.length < 3 || items.length > SeriesMax) {
+          return null;
+        }
+        const first = items[0];
+        const baseTitle = String(first.title || "")
+          .replace(/\s*(?:[,;:(\-–—]\s*)?(?:19|20)\d{2}\b.*$/, "")
+          .trim();
+        const fallback = group.prefix
+          .split(/[_-]+/)
+          .filter(Boolean)
+          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+          .join(" ");
+        return {
+          prefix: group.prefix,
+          label: baseTitle || fallback || group.prefix,
+          years: items.map((item) => item.year),
+          layers: items.map((item) => item.dataset_id),
+        };
+      })
+      .filter(Boolean)
+      .sort((left, right) =>
+        left.label.localeCompare(right.label, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        })
+      );
+  }
+
+  function seriesSequencesTemplate(sequences, currentIds) {
+    if (!sequences.length) {
+      return "";
+    }
+    const current = currentIds.join(",");
+    return `<section class="series-sequences" aria-label="Year sequences">
+      <div class="series-sequences-head">
+        <strong>Year sequences</strong>
+        <span>Detected from dataset IDs ending in a year.</span>
+      </div>
+      <div class="series-sequence-list">
+        ${sequences
+          .map(
+            (sequence, index) => `<button type="button" class="${sequence.layers.join(",") === current ? "is-active" : ""}" data-series-sequence="${index}">
+              <strong>${Catalog.escapeHtml(sequence.label)}</strong>
+              <span>${sequence.years[0]}–${sequence.years[sequence.years.length - 1]} · ${sequence.layers.length} frames</span>
+            </button>`
+          )
+          .join("")}
+      </div>
+    </section>`;
+  }
+
+  function seriesEditorTemplate(loaded, options) {
+    const current = new Set(loaded.map((layer) => layer.dataset_id));
+    const available = options.filter((item) => !current.has(item.dataset_id));
+    return `<details class="series-editor">
+      <summary>Edit frames <span>${loaded.length} of ${SeriesMax}</span></summary>
+      <div class="series-editor-body">
+        <ol class="series-frame-list">
+          ${loaded
+            .map(
+              (layer, index) => `<li class="series-frame-chip${index === state.series.index ? " is-active" : ""}" data-series-chip="${index}">
+                <button type="button" class="series-frame-jump" data-series-jump="${index}" aria-label="Jump to frame ${index + 1}: ${Catalog.escapeHtml(layer.title)}">
+                  <span class="series-frame-number">${index + 1}</span>
+                  <span class="series-frame-text"><b>${Catalog.escapeHtml(layer.title)}</b><small>${Catalog.escapeHtml(layer.dataset_id)}</small></span>
+                </button>
+                <span class="series-frame-actions">
+                  <button type="button" data-series-move="${index}" data-direction="-1" aria-label="Move ${Catalog.escapeHtml(layer.title)} up" ${index === 0 ? "disabled" : ""}>↑</button>
+                  <button type="button" data-series-move="${index}" data-direction="1" aria-label="Move ${Catalog.escapeHtml(layer.title)} down" ${index === loaded.length - 1 ? "disabled" : ""}>↓</button>
+                  <button type="button" data-series-remove="${index}" aria-label="Remove ${Catalog.escapeHtml(layer.title)}" ${loaded.length <= 2 ? "disabled" : ""}>×</button>
+                </span>
+              </li>`
+            )
+            .join("")}
+        </ol>
+        ${loaded.length >= SeriesMax
+          ? `<p class="series-editor-note">Series is at the ${SeriesMax}-frame limit.</p>`
+          : `<div class="series-add">
+              <label>Add layer
+                <select data-series-add-select>
+                  ${available
+                    .map(
+                      (item) =>
+                        `<option value="${Catalog.escapeHtml(item.dataset_id)}">${Catalog.escapeHtml(item.title)}</option>`
+                    )
+                    .join("")}
+                </select>
+              </label>
+              <button class="secondary-button" type="button" data-series-add>Add</button>
+            </div>`}
+      </div>
+    </details>`;
+  }
+
   async function renderSeries() {
     const token = ++state.renderToken;
     stopHistoryPolling();
     clearCompareResize();
     closeDiscover();
     window.HectaresBCMap?.destroy();
+    state.mapHandle = null;
     closeClipPanel();
     closeTray();
     resetIdentifyState();
@@ -2256,7 +2398,7 @@
       : [];
     const fallback = state.tray.ids.slice(0, 6);
     const ids = [...new Set((requested.length ? requested : fallback).filter(Boolean))]
-      .slice(0, 6);
+      .slice(0, SeriesMax);
     if (ids.length < 2) {
       els.content.innerHTML = seriesMissingTemplate();
       els.content.querySelector("h1")?.focus();
@@ -2283,6 +2425,10 @@
     state.series.speed = speed;
     state.series.index = 0;
     state.series.count = loaded.length;
+    state.series.layers = loaded;
+    state.series.sequences = seriesSequences();
+    const options = compareLayerOptions();
+    const currentIds = loaded.map((layer) => layer.dataset_id);
     const fitBounds = loaded.reduce(
       (bounds, layer) => unionBounds(bounds, layer.bounds),
       null
@@ -2292,7 +2438,7 @@
       view: "dataset",
       datasetId: loaded[0].dataset_id,
       map: true,
-      layers: loaded.map((layer) => layer.dataset_id),
+      layers: loaded.slice(0, 6).map((layer) => layer.dataset_id),
     });
     els.content.innerHTML = `
       <div class="compare-shell series-shell">
@@ -2300,15 +2446,16 @@
           <div>
             <span class="dataset-eyebrow"><span class="badge badge-accent">Series</span></span>
             <h1 tabindex="-1">Layer flicker series</h1>
-            <p>Cycles through ${loaded.length} layers in tray order. Pan or zoom the active frame to synchronize every map.</p>
+            <p>Cycles through ${loaded.length} layers. One synchronized map switches the active frame; edits update the URL.</p>
           </div>
           <div class="compare-actions">
             <button class="secondary-button" type="button" data-series-download>Download PNG</button>
-            <a class="secondary-button" href="${mapHref}">Open map with series</a>
+            <a class="secondary-button" href="${mapHref}">Open map with first six</a>
             <a class="secondary-button" href="${seriesCompareHref(loaded)}">Compare first two</a>
             <a class="secondary-button" href="#/map">Back to map</a>
           </div>
         </header>
+        ${seriesSequencesTemplate(state.series.sequences, currentIds)}
         <div class="series-controls" role="group" aria-label="Series playback">
           <button class="secondary-button" type="button" data-series-prev aria-label="Previous frame">← Previous</button>
           <button class="secondary-button" type="button" data-series-toggle>Pause</button>
@@ -2322,33 +2469,29 @@
           </label>
           <span class="series-frame-status" data-series-frame aria-live="polite"></span>
         </div>
-        <div class="series-stage" role="group" aria-label="Layer flicker frames">
-          ${loaded
-            .map(
-              (layer, index) => `<section class="series-pane${index === 0 ? " is-active" : ""}" data-series-pane="${index}" aria-label="Frame ${index + 1}: ${Catalog.escapeHtml(layer.title)}" ${index === 0 ? "" : "inert"}>
-                <div id="series-map-${index}" class="series-map" aria-label="${Catalog.escapeHtml(layer.title)} map"></div>
-                <div class="series-label"><strong>${Catalog.escapeHtml(layer.title)}</strong><span>Frame ${index + 1} of ${loaded.length} · ${Catalog.escapeHtml(layer.dataset_id)}</span></div>
-              </section>`
-            )
-            .join("")}
+        <div class="series-stage" role="group" aria-label="Layer flicker frame">
+          <div id="series-map" class="series-map" aria-label="Layer series map"></div>
+          <div class="series-label" data-series-label><strong>${Catalog.escapeHtml(loaded[0].title)}</strong><span>Frame 1 of ${loaded.length} · ${Catalog.escapeHtml(loaded[0].dataset_id)}</span></div>
         </div>
-        <p class="clip-status">These maps use the same WGS84 extent and synchronized pan/zoom. Reorder the tray to change the sequence; layer styling controls are intentionally omitted in series mode.</p>
+        ${seriesEditorTemplate(loaded, options)}
+        <p class="clip-status">The active frame uses the same WGS84 extent as the other frames. Layer styling controls are intentionally omitted in series mode.</p>
       </div>`;
-    bindSeriesControls();
+    bindSeriesControls(loaded);
     els.content.querySelector("h1")?.focus();
     try {
       state.mapHandle = await window.HectaresBCMap.createSeries({
-        layers: loaded.map((layer, index) => ({
-          container: document.querySelector(`#series-map-${index}`),
+        container: document.querySelector("#series-map"),
+        layers: loaded.map((layer) => ({
           previewUrl: layer.tileUrl ? null : layer.previewUrl,
           tileUrl: layer.tileUrl,
           minzoom: layer.minzoom,
           maxzoom: layer.maxzoom,
           bounds: layer.bounds,
-          fitBounds,
           categorical: layer.categorical,
         })),
+        fitBounds,
       });
+      state.mapHandle.activate(state.series.index);
       const handle = state.mapHandle;
       const resize = () => handle?.resize?.();
       if (state.compareResizeHandler) {
@@ -2372,32 +2515,34 @@
     }
   }
 
-  function bindSeriesControls() {
-    const panes = [...document.querySelectorAll("[data-series-pane]")];
+  function bindSeriesControls(loaded) {
     const toggle = document.querySelector("[data-series-toggle]");
     const frameStatus = document.querySelector("[data-series-frame]");
     const speedSelect = document.querySelector("[data-series-speed]");
     const previous = document.querySelector("[data-series-prev]");
     const next = document.querySelector("[data-series-next]");
-    if (!panes.length) {
+    if (!loaded.length) {
       return;
     }
-    state.series.count = panes.length;
+    state.series.count = loaded.length;
     const apply = (index) => {
-      const active = ((index % panes.length) + panes.length) % panes.length;
+      const active = ((index % loaded.length) + loaded.length) % loaded.length;
       state.series.index = active;
-      panes.forEach((pane, paneIndex) => {
-        const selected = paneIndex === active;
-        pane.classList.toggle("is-active", selected);
-        pane.style.opacity = selected ? "1" : "0";
-        pane.style.pointerEvents = selected ? "auto" : "none";
-        pane.setAttribute("aria-hidden", selected ? "false" : "true");
-        pane.inert = !selected;
+      state.mapHandle?.activate?.(active);
+      const layer = loaded[active];
+      const label = document.querySelector("[data-series-label] strong");
+      const meta = document.querySelector("[data-series-label] span");
+      if (label) {
+        label.textContent = layer.title;
+      }
+      if (meta) {
+        meta.textContent = `Frame ${active + 1} of ${loaded.length} · ${layer.dataset_id}`;
+      }
+      document.querySelectorAll("[data-series-chip]").forEach((chip, chipIndex) => {
+        chip.classList.toggle("is-active", chipIndex === active);
       });
       if (frameStatus) {
-        const label = panes[active].querySelector(".series-label strong");
-        const id = panes[active].querySelector(".series-label span");
-        frameStatus.textContent = `Frame ${active + 1} of ${panes.length} · ${label?.textContent?.trim() || "Layer"}${id?.textContent?.includes(" · ") ? ` · ${id.textContent.split(" · ").pop()}` : ""}`;
+        frameStatus.textContent = `Frame ${active + 1} of ${loaded.length} · ${layer.title} · ${layer.dataset_id}`;
       }
     };
     const stop = () => {
@@ -2454,23 +2599,74 @@
         start();
       }
     });
+
+    const currentIds = () => loaded.map((layer) => layer.dataset_id);
+    document.querySelector("[data-series-add]")?.addEventListener("click", () => {
+      const select = document.querySelector("[data-series-add-select]");
+      const datasetId = select?.value;
+      if (!datasetId) {
+        return;
+      }
+      if (currentIds().includes(datasetId)) {
+        showToast("Layer is already in the series.");
+        return;
+      }
+      if (loaded.length >= SeriesMax) {
+        showToast(`Series holds at most ${SeriesMax} frames.`);
+        return;
+      }
+      navigateSeries([...currentIds(), datasetId]);
+    });
+    document.querySelectorAll("[data-series-remove]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (loaded.length <= 2) {
+          showToast("A series needs at least two frames.");
+          return;
+        }
+        const index = Number(button.dataset.seriesRemove);
+        navigateSeries(currentIds().filter((_, itemIndex) => itemIndex !== index));
+      });
+    });
+    document.querySelectorAll("[data-series-move]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const index = Number(button.dataset.seriesMove);
+        const direction = Number(button.dataset.direction);
+        const target = index + direction;
+        if (target < 0 || target >= loaded.length) {
+          return;
+        }
+        const ids = currentIds();
+        [ids[index], ids[target]] = [ids[target], ids[index]];
+        navigateSeries(ids);
+      });
+    });
+    document.querySelectorAll("[data-series-jump]").forEach((button) => {
+      button.addEventListener("click", () => {
+        setPaused(true);
+        apply(Number(button.dataset.seriesJump));
+      });
+    });
+    document.querySelectorAll("[data-series-sequence]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const sequence = state.series.sequences[Number(button.dataset.seriesSequence)];
+        if (sequence) {
+          navigateSeries(sequence.layers);
+        }
+      });
+    });
     start();
   }
 
   async function downloadSeriesImage() {
     const index = state.series.index;
-    const canvas = document.querySelector(
-      `#series-map-${index} .maplibregl-canvas`
-    );
-    const pane = document.querySelector(`[data-series-pane="${index}"]`);
-    if (!canvas || !pane) {
+    const canvas = document.querySelector("#series-map .maplibregl-canvas");
+    const layer = state.series.layers[index];
+    if (!canvas || !layer) {
       showToast("The active series frame is still loading.");
       return;
     }
-    const title =
-      pane.querySelector(".series-label strong")?.textContent?.trim() || "Layer";
-    const datasetId =
-      pane.querySelector(".series-label span")?.textContent?.trim() || "";
+    const title = layer.title || "Layer";
+    const datasetId = layer.dataset_id || "";
     const footer = 26;
     const target = document.createElement("canvas");
     target.width = canvas.width;

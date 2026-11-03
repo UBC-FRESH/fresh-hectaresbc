@@ -464,6 +464,21 @@ layers in tray order with synchronized maps and active-frame export.
 - [x] P29.3 Add Series UI, tray entry point, and browser coverage. Child issue: #226.
 - [x] P29.4 Verify and close Phase 29. Child issue: #227.
 
+## Phase 30: Series v2 Editor And Year-Sequence Discovery
+
+Status: implementation in progress on `feature/p30-series-v2`. Parent issue: #231. Planning: `planning/series_v2_plan.md`.
+
+Phase 30 refactors Series to one map with frame-layer switching, adds an in-place
+frame editor, and detects year-suffixed layer families for one-click playback.
+
+- [x] P30.1 Plan series v2 contract. Child issue: #232.
+- [x] P30.2 Refactor series to one map with frame layers. Child issue: #233.
+- [x] P30.3 Add series editor and year-sequence discovery. Child issue: #234.
+- [ ] P30.4 Verify and close Phase 30. Child issue: #235.
+
 ## Current Next Steps
 
-No active implementation phase. Optional follow-ups remain in the roadmap.
+1. Complete P30.1 planning contract and close child issue #232.
+2. Implement P30.2 single-map series.
+3. Implement P30.3 editor and year discovery.
+4. Open the Phase 30 PR, verify, merge, and close parent #231.

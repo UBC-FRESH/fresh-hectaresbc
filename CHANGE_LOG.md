@@ -233,3 +233,5 @@
 - Activated Phase 29 multi-layer flicker series with parent issue #223, child issues #224-#227, and planning/series_flicker_plan.md.
 - Completed P29.2/P29.3 with a synchronous multi-map series engine, `#/series` route state, full-width Series workspace, play/pause/step/speed controls, tray and compare entry points, active-frame PNG export, route/browser coverage, and docs.
 - Completed and merged Phase 29 via PR #228: ordered multi-layer flicker series route, synchronized MapLibre frames, playback and stepping controls, reduced-motion behavior, tray/compare entry points, active-frame PNG export, responsive full-width workspace, browser coverage, and docs.
+- Activated Phase 30 Series v2 with parent issue #231, child issues #232-#235, and planning/series_v2_plan.md.
+- Completed P30.2/P30.3 with a single-map series engine, 30-frame route limit, in-place frame editor, year-suffix sequence detection, one-click 17-year pine-beetle playback, updated export, browser coverage, and docs.

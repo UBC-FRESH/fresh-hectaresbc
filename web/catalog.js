@@ -505,7 +505,7 @@
     return allowed.includes(value) ? value : fallback;
   }
 
-  function parseLayerIds(params) {
+  function parseLayerIds(params, max = 6) {
     const raw = params.get("layers");
     if (!raw) {
       return [];
@@ -517,7 +517,7 @@
           .map((value) => safeDecode(value.trim()))
           .filter(Boolean)
       ),
-    ].slice(0, 6);
+    ].slice(0, max);
   }
 
   function parseRoute(hash) {
@@ -574,7 +574,7 @@
 
     if (path === "series") {
       state.view = "series";
-      state.seriesLayers = parseLayerIds(params);
+      state.seriesLayers = parseLayerIds(params, 30);
       state.seriesSpeed = [500, 1000, 2000].includes(
         Number(params.get("speed"))
       )
