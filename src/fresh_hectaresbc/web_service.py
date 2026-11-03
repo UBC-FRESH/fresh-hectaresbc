@@ -263,7 +263,7 @@ def create_app(config: ServiceConfig) -> FastAPI:
     config.tile_cache_root = Path(config.tile_cache_root).expanduser().resolve()
     config.tile_cache_root.mkdir(parents=True, exist_ok=True)
     from fresh_hectaresbc.jobs import BundleJobManager
-    from fresh_hectaresbc.tiles import prune_tile_cache
+    from fresh_hectaresbc.tiles import clear_source_cache, prune_tile_cache
 
     prune_tile_cache(
         config.tile_cache_root, max_bytes=config.tile_cache_max_bytes
@@ -286,6 +286,7 @@ def create_app(config: ServiceConfig) -> FastAPI:
     app.state.config = config
     app.state.bundle_jobs = job_manager
     app.router.on_shutdown.append(job_manager.close)
+    app.router.on_shutdown.append(clear_source_cache)
     app.add_middleware(GZipMiddleware, minimum_size=1024)
 
     @app.middleware("http")

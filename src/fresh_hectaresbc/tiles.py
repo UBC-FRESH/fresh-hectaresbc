@@ -8,7 +8,9 @@ zoom/pan instead of drawing one flattened preview image.
 At z0–8 the renderer serves tiles from the already-generated 2048 px EPSG:3857
 map overlay, which avoids reopening the multi-hundred-megabyte zip:// source
 for every low-zoom tile. At z9+ it reads and warps the source raster so the
-1-ha cells remain available at high zoom.
+1-ha cells remain available at high zoom. A bounded process cache keeps source
+dataset handles open and serializes reads per handle; metadata lookup opens the
+source once, after which high-zoom tile reads are typically tens of milliseconds.
 """
 
 from __future__ import annotations
@@ -114,6 +116,48 @@ def _source_paths(
     return str(zip_path), member, resolution
 
 
+_SOURCE_CACHE_MAX = 128
+_SOURCE_CACHE: dict[str, tuple[Any, threading.Lock]] = {}
+_SOURCE_CACHE_LOCK = threading.Lock()
+
+
+def _source_handle(vfs: str) -> tuple[Any, threading.Lock, bool]:
+    """Return an open source handle, a per-handle lock, and cache status.
+
+    Source handles are expensive to open from ``zip://``. Keeping a bounded
+    number of handles avoids reopening the ZIP for every tile. The per-handle
+    lock serializes rasterio reads because GDAL dataset objects are not safe to
+    use concurrently from multiple threads.
+    """
+
+    with _SOURCE_CACHE_LOCK:
+        cached = _SOURCE_CACHE.get(vfs)
+        if cached is not None:
+            return cached[0], cached[1], True
+
+    source = rasterio.open(vfs)
+    handle_lock = threading.Lock()
+    with _SOURCE_CACHE_LOCK:
+        existing = _SOURCE_CACHE.get(vfs)
+        if existing is not None:
+            source.close()
+            return existing[0], existing[1], True
+        if len(_SOURCE_CACHE) < _SOURCE_CACHE_MAX:
+            _SOURCE_CACHE[vfs] = (source, handle_lock)
+            return source, handle_lock, True
+    return source, handle_lock, False
+
+
+def clear_source_cache() -> None:
+    with _SOURCE_CACHE_LOCK:
+        for source, _handle_lock in _SOURCE_CACHE.values():
+            try:
+                source.close()
+            except Exception:  # noqa: BLE001 - best-effort cache cleanup
+                pass
+        _SOURCE_CACHE.clear()
+
+
 def _max_zoom(pixel_size_m: float) -> int:
     # 100 m source cells are fully resolved by z12/13; deeper zoom over-samples
     # the same 1-ha cells. MapLibre can overzoom the last tile.
@@ -143,13 +187,16 @@ def layer_metadata(
 
     record, zip_path, member, resolution, manifest = _source(dataset_id, archive_root)
     vfs = f"zip://{zip_path}!{member}"
+    source = None
+    cached = False
     try:
-        with rasterio.open(vfs) as src:
-            if src.crs is None:
+        source, source_lock, cached = _source_handle(vfs)
+        with source_lock:
+            if source.crs is None:
                 raise TileError(f"{dataset_id} source raster has no CRS.")
-            pixel_size = abs(float(src.transform.a))
+            pixel_size = abs(float(source.transform.a))
             bounds_wgs84 = transform_bounds(
-                src.crs, "EPSG:4326", *src.bounds, densify_pts=21
+                source.crs, "EPSG:4326", *source.bounds, densify_pts=21
             )
             max_zoom = _max_zoom(pixel_size)
             value_classes = manifest.get("value_classes") or []
@@ -159,7 +206,7 @@ def layer_metadata(
                 "title": record.title_candidate or record.source_stem,
                 "source_zip_path": record.source_zip_path,
                 "source_resolution": resolution,
-                "crs": str(src.crs),
+                "crs": str(source.crs),
                 "tile_crs": WEB_MERCATOR,
                 "tile_size": TILE_SIZE,
                 "minzoom": 0,
@@ -182,6 +229,9 @@ def layer_metadata(
             }
     except rasterio.errors.RasterioError as exc:
         raise TileError(f"Could not open source raster for {dataset_id}: {exc}") from exc
+    finally:
+        if source is not None and not cached:
+            source.close()
 
 
 def _stats_for(dataset_id: str, vfs: str) -> tuple[float, float]:
@@ -189,14 +239,19 @@ def _stats_for(dataset_id: str, vfs: str) -> tuple[float, float]:
         cached = _STATS.get(dataset_id)
     if cached is not None:
         return cached
-    with rasterio.open(vfs) as src:
-        sample = src.read(
-            1,
-            out_shape=(min(512, src.height), min(512, src.width)),
-            masked=True,
-            resampling=Resampling.nearest,
-        )
-        values = np.asarray(sample.compressed(), dtype=float)
+    source, source_lock, handle_cached = _source_handle(vfs)
+    try:
+        with source_lock:
+            sample = source.read(
+                1,
+                out_shape=(min(512, source.height), min(512, source.width)),
+                masked=True,
+                resampling=Resampling.nearest,
+            )
+            values = np.asarray(sample.compressed(), dtype=float)
+    finally:
+        if not handle_cached:
+            source.close()
     if values.size == 0:
         stats = (0.0, 1.0)
     else:
@@ -446,15 +501,18 @@ def render_tile(
     stats = (0.0, 1.0) if categorical else _stats_for(dataset_id, vfs)
     tile_bounds = mercantile.xy_bounds(x, y, z)
     nodata_value = None
+    source = None
+    handle_cached = False
     try:
-        with rasterio.open(vfs) as src:
-            nodata_value = src.nodata
+        source, source_lock, handle_cached = _source_handle(vfs)
+        with source_lock:
+            nodata_value = source.nodata
             with WarpedVRT(
-                src,
+                source,
                 crs=WEB_MERCATOR,
                 resampling=resampling,
-                src_nodata=src.nodata,
-                nodata=src.nodata,
+                src_nodata=source.nodata,
+                nodata=source.nodata,
                 boundless=True,
             ) as vrt:
                 window = rasterio.windows.from_bounds(
@@ -473,6 +531,9 @@ def render_tile(
                 )
     except (rasterio.errors.RasterioError, ValueError) as exc:
         raise TileError(f"Could not render tile {dataset_id}/{z}/{x}/{y}: {exc}") from exc
+    finally:
+        if source is not None and not handle_cached:
+            source.close()
 
     values = np.asarray(data.filled(nodata_value if nodata_value is not None else 0))
     mask = np.ma.getmaskarray(data)
