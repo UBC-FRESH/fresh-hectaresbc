@@ -348,6 +348,7 @@ service.
 - [x] P20.11 Add terminal job-history retention with count/age pruning and health stats.
 - [x] P20.12 Add bundle-output and temporary-AOI retention by count/age, including stale incomplete directories.
 - [x] P20.13 Add an automated Clip AOI browser smoke test with mocked API progress, partial failures, retry, and cancellation.
+- [x] P20.14 Add exact drawn-AOI area preflight, a live limit meter, and pre-submit rejection above the configured limit.
 - [x] P20.7 Verify and close the agent GIS assistant phase.
 
 ## Current Next Steps
