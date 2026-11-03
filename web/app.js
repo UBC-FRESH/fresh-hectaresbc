@@ -80,6 +80,10 @@
     },
     serviceAvailable: false,
     mapHandle: null,
+    tray: {
+      ids: [],
+      open: false,
+    },
     clip: {
       open: false,
       datasetId: null,
@@ -148,8 +152,14 @@
       clipPanel: document.querySelector("#clip-panel"),
       clipBody: document.querySelector("#clip-body"),
       clipClose: document.querySelector("#clip-close"),
+      trayButton: document.querySelector("#tray-button"),
+      trayCount: document.querySelector("#tray-count"),
+      trayPanel: document.querySelector("#tray-panel"),
+      trayBody: document.querySelector("#tray-body"),
+      trayClose: document.querySelector("#tray-close"),
     };
     bindEvents();
+    loadTray();
     const header = document.querySelector(".app-header");
     if (header && window.ResizeObserver) {
       new ResizeObserver(() => syncHeaderHeight()).observe(header);
@@ -344,6 +354,7 @@
       document: manifest,
     };
     updateHeader();
+    renderTray();
     if (state.ready) {
       renderCurrent();
     }
@@ -620,6 +631,7 @@
               <a href="${href}" data-result-link title="${Catalog.escapeHtml(Catalog.titleLabel(record))}">
                 ${Catalog.highlightText(Catalog.titleLabel(record), route.query)}
               </a>
+              <button class="tray-add" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}" aria-label="Add ${Catalog.escapeHtml(Catalog.titleLabel(record))} to tray">+</button>
               <span class="result-subtitle">${Catalog.escapeHtml(record.dataset_id)}</span>
               <span class="result-badges">${badgesTemplate(record, preview)}</span>
             </div>
@@ -636,21 +648,24 @@
     const preview = Catalog.previewStatus(record, state.previewIndex);
     const href = `#/dataset/${encodeURIComponent(record.dataset_id)}`;
     return `
-      <a class="result-card" href="${href}" data-dataset-id="${Catalog.escapeHtml(record.dataset_id)}">
-        <div class="result-card-head">
-          ${thumbnailTemplate(record, preview)}
-          <div style="min-width:0">
-            <div class="result-card-title">${Catalog.highlightText(Catalog.titleLabel(record), route.query)}</div>
-            <div class="result-subtitle">${Catalog.escapeHtml(record.dataset_id)}</div>
-            <div class="result-badges">${badgesTemplate(record, preview)}</div>
+      <div class="result-card-wrap">
+        <a class="result-card" href="${href}" data-dataset-id="${Catalog.escapeHtml(record.dataset_id)}">
+          <div class="result-card-head">
+            ${thumbnailTemplate(record, preview)}
+            <div style="min-width:0">
+              <div class="result-card-title">${Catalog.highlightText(Catalog.titleLabel(record), route.query)}</div>
+              <div class="result-subtitle">${Catalog.escapeHtml(record.dataset_id)}</div>
+              <div class="result-badges">${badgesTemplate(record, preview)}</div>
+            </div>
           </div>
-        </div>
-        <div class="result-card-meta">
-          <span>${Catalog.escapeHtml(Catalog.familyLabel(record.source_family))}</span>
-          <span>${Catalog.escapeHtml(Catalog.formatLabel(record))}</span>
-          <span>${Catalog.formatBytes(record.manifest_size_bytes)}</span>
-        </div>
-      </a>
+          <div class="result-card-meta">
+            <span>${Catalog.escapeHtml(Catalog.familyLabel(record.source_family))}</span>
+            <span>${Catalog.escapeHtml(Catalog.formatLabel(record))}</span>
+            <span>${Catalog.formatBytes(record.manifest_size_bytes)}</span>
+          </div>
+        </a>
+        <button class="tray-add result-card-tray" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}" aria-label="Add ${Catalog.escapeHtml(Catalog.titleLabel(record))} to tray">+</button>
+      </div>
     `;
   }
 
@@ -1005,6 +1020,7 @@
           </div>
           <div class="dataset-actions">
             <a class="primary-button" href="${mapHref}">Open map</a>
+            <button class="secondary-button" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}">Add to tray</button>
             <button class="secondary-button" type="button" data-copy="fresh-hectaresbc catalog show ${Catalog.escapeHtml(record.dataset_id)}">Copy CLI</button>
             <button class="secondary-button" type="button" data-download-json="${Catalog.escapeHtml(record.dataset_id)}">Download JSON</button>
           </div>
@@ -1292,6 +1308,67 @@
     return null;
   }
 
+  async function loadContextLayer(datasetId) {
+    const record = getRecordSync(datasetId);
+    if (!record) {
+      return null;
+    }
+    const artifact = await loadArtifactDetails(
+      Catalog.previewArtifact(record, state.previewIndex)
+    );
+    const preview = Catalog.previewStatus(record, state.previewIndex);
+    if (!artifact || preview.status !== "available") {
+      return null;
+    }
+    const tileMeta = await fetchJson(
+      `../api/tiles/${encodeURIComponent(datasetId)}/metadata`
+    );
+    const tileBounds = window.HectaresBCMap?.validBounds(tileMeta?.bounds_wgs84);
+    const staticBounds =
+      window.HectaresBCMap?.validBounds(artifact._map_bounds_wgs84) ||
+      window.HectaresBCMap?.validBounds(artifact.wgs84_bounds);
+    const bounds = tileBounds || staticBounds;
+    if (!bounds) {
+      return null;
+    }
+    let previewUrl = artifact._map_path
+      ? artifactUrl({ _base: artifact._map_base }, artifact._map_path)
+      : artifact.artifact_path
+        ? artifactUrl(artifact, artifact.artifact_path)
+        : null;
+    if (previewUrl && artifact._map_path && state.mapPreviewVersion) {
+      previewUrl += `${previewUrl.includes("?") ? "&" : "?"}v=${encodeURIComponent(state.mapPreviewVersion)}`;
+    }
+    const tileUrl =
+      tileMeta?.status === "ok" && tileBounds
+        ? `../api/tiles/${encodeURIComponent(datasetId)}/{z}/{x}/{y}.png`
+        : null;
+    if (!tileUrl && !previewUrl) {
+      return null;
+    }
+    return {
+      dataset_id: datasetId,
+      title: Catalog.titleLabel(record),
+      previewUrl: tileUrl ? null : previewUrl,
+      tileUrl,
+      bounds,
+      minzoom: tileMeta?.minzoom || 0,
+      maxzoom: tileMeta?.maxzoom || 14,
+      categorical: Boolean(
+        artifact.value_class_count || artifact.value_classes?.length
+      ),
+      opacity: 0.55,
+    };
+  }
+
+  function contextLayerIds(primaryId) {
+    const routeLayers = Array.isArray(state.route.layers) ? state.route.layers : [];
+    const trayLayers = state.tray.ids;
+    return [...new Set([...routeLayers, ...trayLayers])]
+      .filter((datasetId) => datasetId && datasetId !== primaryId)
+      .slice(0, 3);
+  }
+
   async function renderMap() {
     const token = ++state.renderToken;
     document.body.dataset.view = "map";
@@ -1376,12 +1453,20 @@
     const referenceUrl = reference?.artifact_path
       ? artifactUrl(reference, reference.artifact_path)
       : null;
+    const contextIds = contextLayerIds(datasetId);
+    const extraLayers = (
+      await Promise.all(contextIds.map((id) => loadContextLayer(id)))
+    ).filter(Boolean);
+    if (token !== state.renderToken) {
+      return;
+    }
     els.content.innerHTML = mapTemplate(
       record,
       preview,
       artifact,
       bounds,
-      tileMeta
+      tileMeta,
+      extraLayers
     );
     bindMapLayerSearch();
     updateHeader();
@@ -1407,6 +1492,7 @@
         ),
         panel: document.querySelector("#map-layer-panel"),
         loading: document.querySelector("#map-loading"),
+        extraLayers,
         onError: () => {
           const card = document.querySelector(".map-status-card p");
           if (card) {
@@ -1442,9 +1528,19 @@
     }
   }
 
-  function mapTemplate(record, preview, artifact, bounds, tileMeta = null) {
+  function mapTemplate(record, preview, artifact, bounds, tileMeta = null, extraLayers = []) {
     const datasetHref = `#/dataset/${encodeURIComponent(record.dataset_id)}`;
     const legend = mapLegendTemplate(artifact);
+    const contextLayers = extraLayers.length
+      ? extraLayers
+          .map(
+            (layer, index) => `<div class="map-context-layer">
+              <label class="layer-control"><input type="checkbox" data-context-visible="${index}" checked> ${Catalog.escapeHtml(layer.title)}</label>
+              <label class="layer-control">Opacity <input type="range" min="0" max="1" step="0.05" value="${layer.opacity}" data-context-opacity="${index}"></label>
+            </div>`
+          )
+          .join("")
+      : '<p class="muted" style="font-size:0.68rem">Add layers to the tray to show them as map context.</p>';
     return `
       <div class="map-view">
         <div id="map-canvas" class="map-canvas" aria-label="Map preview for ${Catalog.escapeHtml(Catalog.titleLabel(record))}"></div>
@@ -1461,6 +1557,7 @@
             <a class="secondary-button" href="${datasetHref}">Dataset</a>
             <a class="secondary-button" href="${state.lastBrowseHash || "#/catalog"}">Browse</a>
             <a class="secondary-button" href="#/catalog?preview=available">Preview layers</a>
+            <button class="secondary-button" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}">Add to tray</button>
             <button class="secondary-button" type="button" data-open-clip ${state.serviceAvailable ? "" : "hidden"}>Clip AOI</button>
             <button class="secondary-button" type="button" data-copy="${Catalog.escapeHtml(record.dataset_id)}">Copy ID</button>
           </div>
@@ -1477,6 +1574,8 @@
             </select>
           </label>
           <button id="map-fit-layer" class="secondary-button" type="button">Fit layer</button>
+          <h2>Context layers</h2>
+          <div class="map-context-layers" id="map-context-layers">${contextLayers}</div>
           <h2>Change layer</h2>
           <label class="layer-control map-layer-search-label">
             <input id="map-layer-search" type="search" placeholder="Find a previewable layer…" autocomplete="off">
@@ -1707,6 +1806,12 @@ python scripts/fetch_web_previews.py</pre>
 
   function handleContentClick(event) {
     const target = event.target;
+    const trayAdd = target.closest("[data-tray-add]");
+    if (trayAdd) {
+      event.preventDefault();
+      addToTray(trayAdd.dataset.trayAdd);
+      return;
+    }
     const openClip = target.closest("[data-open-clip]");
     if (openClip) {
       void openClipPanel();
@@ -1867,6 +1972,9 @@ python scripts/fetch_web_previews.py</pre>
       document.body.classList.remove("filters-open", "inspector-open");
       if (els.helpDialog.open) {
         els.helpDialog.close();
+      }
+      if (els.trayPanel && !els.trayPanel.hidden) {
+        closeTray();
       }
       if (els.clipPanel && !els.clipPanel.hidden) {
         closeClipPanel();
@@ -2047,6 +2155,179 @@ python scripts/fetch_web_previews.py</pre>
     });
   }
 
+  /* ---------------------------------------------------------------- tray */
+
+  const TrayStorageKey = "fresh-hectaresbc.layer-tray.v1";
+
+  function loadTray() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(TrayStorageKey) || "[]");
+      if (Array.isArray(stored)) {
+        state.tray.ids = [
+          ...new Set(stored.filter((value) => typeof value === "string")),
+        ].slice(0, 6);
+      }
+    } catch (error) {
+      state.tray.ids = [];
+    }
+    syncTrayButton();
+  }
+
+  function saveTray() {
+    try {
+      localStorage.setItem(TrayStorageKey, JSON.stringify(state.tray.ids));
+    } catch (error) {
+      // Private browsing or a full storage quota is non-fatal.
+    }
+    syncTrayButton();
+  }
+
+  function syncTrayButton() {
+    if (els?.trayCount) {
+      els.trayCount.textContent = String(state.tray.ids.length);
+    }
+    els?.trayButton?.setAttribute(
+      "aria-expanded",
+      state.tray.open ? "true" : "false"
+    );
+  }
+
+  function trayLayer(artifactId) {
+    return state.previewIndex?.get(artifactId) || null;
+  }
+
+  function addToTray(datasetId) {
+    if (!datasetId) {
+      return;
+    }
+    if (state.tray.ids.includes(datasetId)) {
+      showToast("Layer is already in the tray.");
+      return;
+    }
+    if (state.tray.ids.length >= 6) {
+      showToast("The tray holds at most 6 layers.");
+      return;
+    }
+    const artifact = trayLayer(datasetId);
+    if (!artifact) {
+      showToast("Layer is not previewable.");
+      return;
+    }
+    state.tray.ids.push(datasetId);
+    saveTray();
+    renderTray();
+    showToast("Layer added to tray.");
+  }
+
+  function removeFromTray(datasetId) {
+    state.tray.ids = state.tray.ids.filter((value) => value !== datasetId);
+    saveTray();
+    renderTray();
+  }
+
+  function moveTray(datasetId, delta) {
+    const index = state.tray.ids.indexOf(datasetId);
+    if (index < 0) {
+      return;
+    }
+    const next = index + delta;
+    if (next < 0 || next >= state.tray.ids.length) {
+      return;
+    }
+    const ids = [...state.tray.ids];
+    [ids[index], ids[next]] = [ids[next], ids[index]];
+    state.tray.ids = ids;
+    saveTray();
+    renderTray();
+  }
+
+  function clearTray() {
+    state.tray.ids = [];
+    saveTray();
+    renderTray();
+  }
+
+  function trayMapHref() {
+    if (!state.tray.ids.length) {
+      return "#/map";
+    }
+    return Catalog.buildRoute({
+      ...Catalog.defaultState(),
+      view: "dataset",
+      datasetId: state.tray.ids[0],
+      map: true,
+      layers: [...state.tray.ids],
+    });
+  }
+
+  function renderTray() {
+    if (!els?.trayBody) {
+      return;
+    }
+    syncTrayButton();
+    if (!state.tray.ids.length) {
+      els.trayBody.innerHTML = `
+        <div class="tray-empty">
+          <p>No layers in the tray.</p>
+          <p>Use the + buttons in Browse, Dataset, or Map to collect layers.</p>
+          <a class="secondary-button" href="#/catalog?preview=available">Browse previewable layers</a>
+        </div>`;
+      return;
+    }
+    els.trayBody.innerHTML = `
+      <div class="tray-list">
+        ${state.tray.ids
+          .map((datasetId, index) => {
+            const artifact = trayLayer(datasetId);
+            const title = artifact?.title || datasetId;
+            return `<div class="tray-layer" data-tray-id="${Catalog.escapeHtml(datasetId)}">
+              <div>
+                <b>${Catalog.escapeHtml(title)}</b>
+                <small>${Catalog.escapeHtml(datasetId)}</small>
+              </div>
+              <div class="tray-layer-actions">
+                <button type="button" data-tray-move="${Catalog.escapeHtml(datasetId)}" data-direction="-1" aria-label="Move ${Catalog.escapeHtml(title)} up" ${index === 0 ? "disabled" : ""}>↑</button>
+                <button type="button" data-tray-move="${Catalog.escapeHtml(datasetId)}" data-direction="1" aria-label="Move ${Catalog.escapeHtml(title)} down" ${index === state.tray.ids.length - 1 ? "disabled" : ""}>↓</button>
+                <button type="button" data-tray-remove="${Catalog.escapeHtml(datasetId)}" aria-label="Remove ${Catalog.escapeHtml(title)}">×</button>
+              </div>
+            </div>`;
+          })
+          .join("")}
+      </div>
+      <div class="tray-actions">
+        <a class="primary-button" href="${trayMapHref()}" data-tray-open-map>Open map with tray</a>
+        <button class="secondary-button" type="button" data-tray-clear>Clear tray</button>
+      </div>
+      <p class="clip-status">The first tray layer becomes the primary map layer. Up to three additional tray layers render as context overlays.</p>`;
+  }
+
+  function openTray() {
+    closeAssistant();
+    if (els.clipPanel && !els.clipPanel.hidden) {
+      closeClipPanel();
+    }
+    state.tray.open = true;
+    els.trayPanel.hidden = false;
+    renderTray();
+    syncTrayButton();
+  }
+
+  function closeTray() {
+    state.tray.open = false;
+    if (els.trayPanel) {
+      els.trayPanel.hidden = true;
+    }
+    syncTrayButton();
+  }
+
+  function toggleTray() {
+    if (state.tray.open) {
+      closeTray();
+    } else {
+      openTray();
+    }
+  }
+
   async function loadAssistantInfo() {
     const info = await fetchJson("../api/agent");
     if (!info || !info.enabled) {
@@ -2097,6 +2378,7 @@ python scripts/fetch_web_previews.py</pre>
     if (els.clipPanel && !els.clipPanel.hidden) {
       closeClipPanel();
     }
+    closeTray();
     els.assistantPanel.hidden = false;
     els.assistantButton.setAttribute("aria-expanded", "true");
     els.assistantInput.focus();
@@ -2489,6 +2771,7 @@ python scripts/fetch_web_previews.py</pre>
       return;
     }
     closeAssistant();
+    closeTray();
     const datasetId = currentMapDatasetId();
     if (state.clip.datasetId && datasetId && state.clip.datasetId !== datasetId) {
       resetClipState();
@@ -2951,6 +3234,30 @@ python scripts/fetch_web_previews.py</pre>
     }
   }
 
+  function handleTrayClick(event) {
+    const target = event.target;
+    if (target.closest("[data-tray-open-map]")) {
+      closeTray();
+      return;
+    }
+    const remove = target.closest("[data-tray-remove]");
+    if (remove) {
+      removeFromTray(remove.dataset.trayRemove);
+      return;
+    }
+    const move = target.closest("[data-tray-move]");
+    if (move) {
+      const direction = Number.parseInt(move.dataset.direction || "0", 10);
+      if (Number.isFinite(direction)) {
+        moveTray(move.dataset.trayMove, direction);
+      }
+      return;
+    }
+    if (target.closest("[data-tray-clear]")) {
+      clearTray();
+    }
+  }
+
   function handleClipClick(event) {
     const target = event.target;
     const close = target.closest("[data-clip-close]");
@@ -3101,6 +3408,10 @@ python scripts/fetch_web_previews.py</pre>
     els.clipPanel?.addEventListener("click", handleClipClick);
     els.clipPanel?.addEventListener("input", handleClipInput);
     els.clipPanel?.addEventListener("change", handleClipChange);
+
+    els.trayButton?.addEventListener("click", toggleTray);
+    els.trayClose?.addEventListener("click", closeTray);
+    els.trayPanel?.addEventListener("click", handleTrayClick);
 
     document.addEventListener("keydown", handleGlobalKeydown);
     window.addEventListener("hashchange", scheduleSync);

@@ -15,6 +15,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    node scripts/smoke_test_web_catalog_ui.js web/data/catalog.json
    python scripts/smoke_test_web_ui_browser.py
    python scripts/smoke_test_clip_aoi_browser.py
+   python scripts/smoke_test_tray_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -129,6 +130,26 @@ configured separately.
 ``GET /api/stats`` reports process-lifetime tile requests, cache hit rate,
 source mix (``cache``, ``overlay``, ``cog``, ``zip``), latency, and top
 datasets without recording client identifiers.
+
+Layer Tray And Map Context
+--------------------------
+
+The header tray collects previewable layers across Browse, Dataset, and Map.
+The tray is stored in browser-local storage and holds at most six layers.
+Rows, cards, dataset actions, and map actions expose an add control. The tray
+drawer supports removal, reordering, clearing, and opening the map.
+
+The first tray layer becomes the primary map layer. Up to three additional tray
+layers render as context overlays with independent visibility and opacity
+controls. Map routes encode the context list in the URL:
+
+.. code-block:: text
+
+   #/map?layers=dataset_id_1,dataset_id_2
+   #/dataset/<dataset_id>/map?layers=dataset_id_1,dataset_id_2
+
+Context layers use the same raster tile source when the service is available
+and fall back to the static EPSG:3857 overlay otherwise.
 
 Optional Service, Assistant, And Clip AOI
 -----------------------------------------

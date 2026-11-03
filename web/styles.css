@@ -894,6 +894,20 @@ body[data-view="map"] .inspector {
   text-decoration: none;
 }
 
+.result-card-wrap {
+  position: relative;
+}
+
+.result-card-wrap .result-card {
+  padding-right: 2.3rem;
+}
+
+.result-card-tray {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+}
+
 .result-card:hover {
   border-color: var(--accent);
   color: var(--ink);
@@ -1767,6 +1781,191 @@ kbd {
   transform: translateX(-50%);
 }
 
+/* -------------------------------------------------------------- tray panel */
+
+.tray-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.tray-button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.tray-count {
+  display: inline-grid;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.64rem;
+}
+
+.tray-panel {
+  position: fixed;
+  top: calc(var(--header-h) + 1rem);
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 74;
+  display: flex;
+  flex-direction: column;
+  width: min(24rem, calc(100vw - 2rem));
+  border: 1px solid var(--line-strong);
+  border-radius: 0.6rem;
+  background: var(--panel);
+  box-shadow: 0 18px 50px rgba(31, 41, 51, 0.2);
+}
+
+.tray-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.8rem 0.55rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.tray-head strong {
+  display: block;
+  font-size: 0.84rem;
+}
+
+.tray-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0.75rem 0.8rem 1rem;
+}
+
+.tray-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.tray-layer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-soft);
+}
+
+.tray-layer b {
+  display: block;
+  overflow: hidden;
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tray-layer small {
+  display: block;
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tray-layer-actions {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.tray-layer-actions button {
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  padding: 0.1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 0.7rem;
+}
+
+.tray-layer-actions button:hover {
+  border-color: var(--accent);
+}
+
+.tray-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.7rem 0;
+}
+
+.tray-empty {
+  padding: 1rem 0.5rem;
+  color: var(--muted);
+  font-size: 0.74rem;
+  text-align: center;
+}
+
+.tray-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.45rem;
+  min-height: 1.45rem;
+  margin-left: 0.3rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+  vertical-align: middle;
+}
+
+.tray-add:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.map-context-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.map-context-layer {
+  padding: 0.3rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel-soft);
+}
+
+.map-context-layer .layer-control {
+  padding: 0.1rem 0;
+  font-size: 0.68rem;
+}
+
+.map-context-layer input[type="range"] {
+  width: 100%;
+}
+
 /* -------------------------------------------------------------- clip panel */
 
 .clip-panel {
@@ -2606,7 +2805,8 @@ kbd {
   }
 
   .assistant-panel,
-  .clip-panel {
+  .clip-panel,
+  .tray-panel {
     inset: 0;
     width: 100%;
     height: 100%;

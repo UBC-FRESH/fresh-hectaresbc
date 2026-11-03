@@ -77,6 +77,7 @@
     referenceBounds,
     bounds,
     categorical,
+    extraLayers = [],
   }) {
     const sources = {
       osm: {
@@ -131,6 +132,47 @@
       });
     }
 
+    extraLayers.forEach((layer, index) => {
+      const sourceId = `context-${index}`;
+      if (!layer?.bounds) {
+        return;
+      }
+      if (layer.tileUrl) {
+        sources[sourceId] = {
+          type: "raster",
+          tiles: [layer.tileUrl],
+          tileSize: layer.tileSize || 256,
+          minzoom: layer.minzoom || 0,
+          maxzoom: layer.maxzoom || 14,
+          bounds: [
+            layer.bounds[0],
+            layer.bounds[1],
+            layer.bounds[2],
+            layer.bounds[3],
+          ],
+        };
+      } else if (layer.previewUrl) {
+        sources[sourceId] = {
+          type: "image",
+          url: layer.previewUrl,
+          coordinates: imageCoordinates(layer.bounds),
+        };
+      } else {
+        return;
+      }
+      layers.push({
+        id: sourceId,
+        type: "raster",
+        source: sourceId,
+        paint: {
+          "raster-opacity": layer.opacity ?? 0.55,
+          "raster-resampling":
+            layer.tileUrl || layer.categorical ? "nearest" : "linear",
+          "raster-fade-duration": 0,
+        },
+      });
+    });
+
     layers.push({
       id: "preview",
       type: "raster",
@@ -145,7 +187,7 @@
     return { version: 8, sources, layers };
   }
 
-  function bindPanel(map, panel, bounds) {
+  function bindPanel(map, panel, bounds, _extraLayers = []) {
     if (!panel) {
       return;
     }
@@ -190,6 +232,29 @@
         ],
         { padding: 48, duration: 400 }
       );
+    });
+
+    panel.querySelectorAll("[data-context-visible]").forEach((input) => {
+      input.addEventListener("change", () => {
+        const layerId = `context-${input.dataset.contextVisible}`;
+        if (map.getLayer(layerId)) {
+          map.setLayoutProperty(
+            layerId,
+            "visibility",
+            input.checked ? "visible" : "none"
+          );
+        }
+      });
+    });
+
+    panel.querySelectorAll("[data-context-opacity]").forEach((input) => {
+      input.addEventListener("input", () => {
+        const layerId = `context-${input.dataset.contextOpacity}`;
+        const value = Math.min(1, Math.max(0, Number(input.value)));
+        if (map.getLayer(layerId)) {
+          map.setPaintProperty(layerId, "raster-opacity", value);
+        }
+      });
     });
   }
 
@@ -465,6 +530,7 @@
       loading = null,
       onError = null,
       categorical = false,
+      extraLayers = [],
     } = options;
 
     const parsed = validBounds(bounds);
@@ -490,6 +556,7 @@
         referenceBounds: validBounds(referenceBounds),
         bounds: parsed,
         categorical,
+        extraLayers,
       }),
       bounds: [
         [parsed[0], parsed[1]],
@@ -525,7 +592,7 @@
       }
     });
 
-    bindPanel(map, panel, parsed);
+    bindPanel(map, panel, parsed, extraLayers);
     map.__hbc = {
       setAoi: (geometry, options) => setAoi(map, geometry, options),
       clearAoi: () => clearAoi(map),
