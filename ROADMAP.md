@@ -428,9 +428,22 @@ and exposes them in the Browse rail and result/detail controls.
 - [x] P26.3 Add saved rail UI and browser coverage. Child issue: #200.
 - [x] P26.4 Verify and close Phase 26. Child issue: #201.
 
+## Phase 27: Compare Map Workspace
+
+Status: implementation in progress on `feature/p27-compare-map`.
+Parent issue: #203. Planning: `planning/compare_map_plan.md`.
+
+Phase 27 adds synchronized side-by-side comparison for two previewable layers,
+with tray/map entry points and selectors.
+
+- [ ] P27.1 Plan compare route and sync contract. Child issue: #204.
+- [ ] P27.2 Add multi-map compare support. Child issue: #205.
+- [ ] P27.3 Add compare UI and browser coverage. Child issue: #206.
+- [ ] P27.4 Verify and close Phase 27. Child issue: #207.
+
 ## Current Next Steps
 
-1. Complete P26.1 planning contract and close child issue #198.
-2. Implement P26.2 persistence and favorite controls.
-3. Implement P26.3 saved rail UI and browser coverage.
-4. Open the Phase 26 PR, verify, merge, and close parent #197.
+1. Complete P27.1 planning contract and close child issue #204.
+2. Implement P27.2 multi-map support.
+3. Implement P27.3 compare UI and browser coverage.
+4. Open the Phase 27 PR, verify, merge, and close parent #203.

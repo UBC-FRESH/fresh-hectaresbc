@@ -220,3 +220,4 @@
 - Activated Phase 26 saved Browse searches and favorites with parent issue #197, child issues #198-#201, and planning/saved_browse_plan.md.
 - Completed P26.2/P26.3 with local saved Browse searches, favorite dataset toggles on rows/cards/detail, a saved rail, delete/open actions, and mocked browser coverage.
 - Completed and merged Phase 26 via PR #202: local saved Browse searches, favorite dataset toggles, saved rail, and browser coverage.
+- Activated Phase 27 compare map workspace with parent issue #203, child issues #204-#207, and planning/compare_map_plan.md.
