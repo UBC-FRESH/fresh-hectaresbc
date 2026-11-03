@@ -297,7 +297,8 @@ These are planned but not active requirements yet.
 
 ## Phase 19: Browser UI Upgrade
 
-Status: completed and merged to `main` via PR #140. Planning:
+Status: completed and merged to `main` via PR #140, with tile-performance
+hardening in PRs #151 and #155. Planning:
 `planning/web_ui_upgrade_plan.md`.
 
 Phase 19 replaces the document-style catalog page with an application shell:
@@ -324,9 +325,8 @@ hosted workers, a database, or a frontend build pipeline.
 
 ## Phase 20: Agent GIS Assistant And AOI Bundles
 
-Status: implementation in progress on `main`; foundation merged via PR #140 and
-the Clip AOI drawer merged via PR #142. Planning:
-`planning/agent_gis_bundles.md`.
+Status: completed and merged to `main` via PRs #140, #142, #145, #147, #149,
+#153, and #155. Planning: `planning/agent_gis_bundles.md`.
 
 Phase 20 adds an optional FastAPI service and browser assistant that can explain
 the UI, search the recovered raster catalog, resolve FEMIC/BC Data Catalogue
@@ -345,13 +345,14 @@ service.
 - [x] P20.10 Add per-layer failure details and failed-layer retry for partial/failed bundles.
 - [x] P20.11 Add terminal job-history retention with count/age pruning and health stats.
 - [x] P20.12 Add bundle-output and temporary-AOI retention by count/age, including stale incomplete directories.
-- [ ] P20.7 Verify and close the agent GIS assistant phase.
+- [x] P20.7 Verify and close the agent GIS assistant phase.
 
 ## Current Next Steps
 
-1. Verify bundle-output retention, job retention, Clip AOI, and assistant through
-   the protected public demo.
-2. Optionally harden high-zoom source-tile latency with overviews/COGs for the
+No active implementation phase. Optional follow-ups:
+
+1. Evaluate source overviews/COGs for the first high-zoom source open on the
    most-viewed layers.
-3. Close the Phase 19/20 GitHub issue tree or create a follow-up issue for
-   remaining hardening.
+2. Add automated browser coverage for Clip AOI job progress, cancellation,
+   partial failures, and retry.
+3. Add tile/job usage and cache statistics if operational tuning becomes useful.

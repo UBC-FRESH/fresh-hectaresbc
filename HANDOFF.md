@@ -1,6 +1,7 @@
 # Agent Handoff
 
-Date: 2026-11-02
+Date: 2026-11-03
+Status: P19/P20 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
 Latest feature merge: `12e33e4`
 Latest merged PR: #155 (source-handle cache); Clip AOI drawer: #142
@@ -280,13 +281,22 @@ The full Python suite still has environment-dependent failures unrelated to
 this work, mainly missing raw DataLad/archive payloads for older preview and
 resolution tests. Use the web/agent test command above for this feature set.
 
-## Next Steps
+## Final Closeout
+
+- P19 and P20 are complete; no active implementation branch remains.
+- No open GitHub issues or pull requests at closeout.
+- Final protected public verification and browser smoke checks passed.
+- Remaining items below are optional follow-ups, not blockers.
+
+## Optional Follow-Ups
 
 1. Keep the Cloudflare Access/Globus OAuth policy restricted to UBC CWL.
-2. If high-zoom cold latency matters, evaluate source overviews/COG conversion
-   for the most-viewed layers; z9+ still opens the zip:// source.
-3. If more layers should be sharp, continue generating 2048 px overrides with
+2. Evaluate source overviews/COG conversion for the first high-zoom source open
+   on the most-viewed layers; repeated z9+ tiles are already fast.
+3. Add automated browser coverage for Clip AOI job progress, cancellation,
+   partial failures, and retry.
+4. If more layers should be sharp, continue generating 2048 px overrides with
    `scripts/generate_highres_web_previews.py --family data_layer ...` and
    `--reindex-only` after interrupted runs.
-4. If the demo clone is recreated, re-materialize previews and high-res
+5. If the demo clone is recreated, re-materialize previews and high-res
    overrides; they are generated/ignored data, not tracked.
