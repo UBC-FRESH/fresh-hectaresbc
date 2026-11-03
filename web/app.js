@@ -84,6 +84,12 @@
       ids: [],
       open: false,
     },
+    history: {
+      jobs: [],
+      bundles: [],
+      timer: null,
+      loading: false,
+    },
     clip: {
       open: false,
       datasetId: null,
@@ -127,6 +133,7 @@
       searchInput: document.querySelector("#search-input"),
       tabBrowse: document.querySelector("#tab-browse"),
       tabMap: document.querySelector("#tab-map"),
+      tabBundles: document.querySelector("#tab-bundles"),
       filterRail: document.querySelector("#filter-rail"),
       facets: document.querySelector("#facets"),
       previewNote: document.querySelector("#preview-note"),
@@ -439,6 +446,8 @@
     }
     if (route.view === "map" || route.map) {
       void renderMap();
+    } else if (route.view === "bundles") {
+      void renderBundles();
     } else {
       void renderDataset();
     }
@@ -454,6 +463,7 @@
   /* ----------------------------------------------------------------- browse */
 
   function renderBrowse() {
+    stopHistoryPolling();
     window.HectaresBCMap?.destroy();
     closeClipPanel();
     document.body.dataset.view = "catalog";
@@ -955,6 +965,7 @@
 
   async function renderDataset() {
     const token = ++state.renderToken;
+    stopHistoryPolling();
     window.HectaresBCMap?.destroy();
     closeClipPanel();
     document.body.dataset.view = "dataset";
@@ -1369,8 +1380,201 @@
       .slice(0, 3);
   }
 
+  /* --------------------------------------------------------------- bundles */
+
+  function stopHistoryPolling() {
+    if (state.history.timer) {
+      clearTimeout(state.history.timer);
+      state.history.timer = null;
+    }
+  }
+
+  function historyStatusTone(status) {
+    if (status === "complete") return "ok";
+    if (status === "partial") return "warn";
+    if (status === "failed" || status === "interrupted") return "error";
+    if (status === "canceled") return "muted";
+    return "active";
+  }
+
+  function historyProgress(job) {
+    const progress = Math.max(0, Math.min(100, Number(job.progress || 0)));
+    return `<div class="clip-progress" role="progressbar" aria-label="Bundle job progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(progress)}"><div class="clip-progress-bar" style="width:${progress}%"></div></div>`;
+  }
+
+  function historyJobTemplate(job) {
+    const status = String(job.status || "unknown");
+    const result = job.result || {};
+    const failures = Array.isArray(result.failures) ? result.failures : [];
+    const active = ["queued", "running", "canceling"].includes(status);
+    const tone = historyStatusTone(status);
+    return `<article class="history-card">
+      <header class="history-card-head">
+        <span class="history-status ${tone}">${Catalog.escapeHtml(status)}</span>
+        <strong>${Catalog.escapeHtml(job.aoi_name || "Bundle job")}</strong>
+        <span class="history-date">${Catalog.formatDate(job.created_utc)}</span>
+      </header>
+      <p class="history-message">${Catalog.escapeHtml(job.message || "")}</p>
+      ${active ? historyProgress(job) : ""}
+      <div class="history-meta">
+        <span>${Catalog.formatNumber((job.layer_ids || []).length)} layers</span>
+        <span>${Catalog.escapeHtml(job.job_id || "")}</span>
+        ${job.failed_layers ? `<span>${Catalog.formatNumber(job.failed_layers)} failed</span>` : ""}
+      </div>
+      <div class="history-actions">
+        ${result.download_url ? `<a class="secondary-button" href="${Catalog.escapeHtml(result.download_url)}" target="_blank" rel="noreferrer">Download ZIP</a>` : ""}
+        ${active ? `<button class="secondary-button" type="button" data-history-cancel="${Catalog.escapeHtml(job.job_id)}">Cancel</button>` : ""}
+        ${failures.length ? `<button class="secondary-button" type="button" data-history-retry="${Catalog.escapeHtml(job.job_id)}">Retry failed layers</button>` : ""}
+      </div>
+    </article>`;
+  }
+
+  function historyBundleTemplate(bundle) {
+    const status = String(bundle.status || "unknown");
+    const tone = historyStatusTone(status);
+    const aoi = bundle.aoi || {};
+    return `<article class="history-card">
+      <header class="history-card-head">
+        <span class="history-status ${tone}">${Catalog.escapeHtml(status)}</span>
+        <strong>${Catalog.escapeHtml(aoi.name || bundle.bundle_id || "Bundle")}</strong>
+        <span class="history-date">${Catalog.formatDate(bundle.generated_utc)}</span>
+      </header>
+      <div class="history-meta">
+        <span>${Catalog.formatNumber(bundle.layer_count || 0)} layers</span>
+        ${aoi.area_ha ? `<span>${Catalog.formatNumber(aoi.area_ha)} ha</span>` : ""}
+        ${bundle.failures ? `<span>${Catalog.formatNumber(bundle.failures)} failures</span>` : ""}
+      </div>
+      <div class="history-actions">
+        ${bundle.download_url ? `<a class="secondary-button" href="${Catalog.escapeHtml(bundle.download_url)}" target="_blank" rel="noreferrer">Download ZIP</a>` : ""}
+        ${bundle.manifest_url ? `<a class="secondary-button" href="${Catalog.escapeHtml(bundle.manifest_url)}" target="_blank" rel="noreferrer">Manifest</a>` : ""}
+      </div>
+    </article>`;
+  }
+
+  function renderBundleHistory() {
+    const jobs = state.history.jobs || [];
+    const bundles = state.history.bundles || [];
+    const active = jobs.filter((job) =>
+      ["queued", "running", "canceling"].includes(String(job.status))
+    );
+    const recentJobs = jobs.filter(
+      (job) => !["queued", "running", "canceling"].includes(String(job.status))
+    );
+    const body = jobs.length || bundles.length
+      ? `<section class="history-section">
+          <h2>Jobs</h2>
+          ${active.length ? active.map(historyJobTemplate).join("") : '<p class="history-empty">No active jobs.</p>'}
+          ${recentJobs.slice(0, 8).map(historyJobTemplate).join("")}
+        </section>
+        <section class="history-section">
+          <h2>Completed bundles</h2>
+          ${bundles.length ? bundles.map(historyBundleTemplate).join("") : '<p class="history-empty">No completed bundles yet.</p>'}
+        </section>`
+      : `<div class="history-empty">
+          <p>No bundle jobs or downloads yet.</p>
+          <p>Open a map, choose an AOI, and prepare a bundle.</p>
+          <a class="primary-button" href="#/map">Open map</a>
+        </div>`;
+    els.content.innerHTML = `
+      <div class="history-shell">
+        <header class="history-head">
+          <div>
+            <span class="dataset-eyebrow"><span class="badge badge-accent">Workspace</span></span>
+            <h1 tabindex="-1">Bundle history</h1>
+            <p>Active jobs, recent runs, failed-layer retries, and downloadable bundles.</p>
+          </div>
+          <button class="secondary-button" type="button" data-history-refresh>Refresh</button>
+        </header>
+        ${state.serviceAvailable ? "" : '<div class="history-warning">The bundle service is offline. Start the optional FastAPI service to create or refresh jobs.</div>'}
+        ${body}
+      </div>`;
+    els.content.querySelector("h1")?.focus();
+    if (active.length && !state.history.timer && state.route.view === "bundles") {
+      state.history.timer = setTimeout(() => {
+        state.history.timer = null;
+        if (state.route.view === "bundles") {
+          void loadBundleHistory(++state.renderToken);
+        }
+      }, 5000);
+    }
+  }
+
+  async function loadBundleHistory(token) {
+    state.history.loading = true;
+    const [bundlePayload, jobPayload] = await Promise.all([
+      fetchJson("../api/bundles"),
+      fetchJson("../api/bundle-jobs?limit=50"),
+    ]);
+    if (token !== state.renderToken) {
+      return;
+    }
+    state.history.loading = false;
+    state.history.bundles = bundlePayload?.bundles || [];
+    state.history.jobs = jobPayload?.jobs || [];
+    state.serviceAvailable = Boolean(bundlePayload || jobPayload);
+    renderBundleHistory();
+  }
+
+  async function renderBundles() {
+    const token = ++state.renderToken;
+    stopHistoryPolling();
+    window.HectaresBCMap?.destroy();
+    closeClipPanel();
+    closeTray();
+    document.body.dataset.view = "bundles";
+    document.body.classList.remove("filters-open", "inspector-open");
+    els.content.innerHTML = loadingTemplate("Loading bundle history…");
+    updateHeader();
+    updateTabs();
+    if (els.liveStatus) {
+      els.liveStatus.textContent = "Bundle history.";
+    }
+    document.title = "Bundle history · HectaresBC";
+    await loadBundleHistory(token);
+  }
+
+  async function refreshBundleHistory() {
+    stopHistoryPolling();
+    await loadBundleHistory(++state.renderToken);
+  }
+
+  async function cancelHistoryJob(jobId) {
+    try {
+      const response = await fetch(
+        `../api/bundle-jobs/${encodeURIComponent(jobId)}/cancel`,
+        { method: "POST" }
+      );
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.detail || `cancel failed (${response.status})`);
+      }
+      showToast("Bundle job canceled.");
+      await refreshBundleHistory();
+    } catch (error) {
+      showToast(`Could not cancel job: ${error.message}`);
+    }
+  }
+
+  async function retryHistoryJob(jobId) {
+    try {
+      const response = await fetch(
+        `../api/bundle-jobs/${encodeURIComponent(jobId)}/retry`,
+        { method: "POST" }
+      );
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.detail || `retry failed (${response.status})`);
+      }
+      showToast("Failed layers queued for retry.");
+      await refreshBundleHistory();
+    } catch (error) {
+      showToast(`Could not retry job: ${error.message}`);
+    }
+  }
+
   async function renderMap() {
     const token = ++state.renderToken;
+    stopHistoryPolling();
     document.body.dataset.view = "map";
     document.body.classList.remove("filters-open", "inspector-open");
     els.content.innerHTML = loadingTemplate("Loading map preview…");
@@ -1806,6 +2010,20 @@ python scripts/fetch_web_previews.py</pre>
 
   function handleContentClick(event) {
     const target = event.target;
+    if (target.closest("[data-history-refresh]")) {
+      void refreshBundleHistory();
+      return;
+    }
+    const cancelJob = target.closest("[data-history-cancel]");
+    if (cancelJob) {
+      void cancelHistoryJob(cancelJob.dataset.historyCancel);
+      return;
+    }
+    const retryJob = target.closest("[data-history-retry]");
+    if (retryJob) {
+      void retryHistoryJob(retryJob.dataset.historyRetry);
+      return;
+    }
     const trayAdd = target.closest("[data-tray-add]");
     if (trayAdd) {
       event.preventDefault();
@@ -2137,6 +2355,12 @@ python scripts/fetch_web_previews.py</pre>
         ? "true"
         : "false"
     );
+    if (els.tabBundles) {
+      els.tabBundles.setAttribute(
+        "aria-selected",
+        state.route.view === "bundles" ? "true" : "false"
+      );
+    }
   }
 
   /* --------------------------------------------------------------- assistant */

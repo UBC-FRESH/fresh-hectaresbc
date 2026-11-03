@@ -520,6 +520,9 @@ def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
     assert job["progress"] == 100
     assert job["result"]["layers"][0]["dataset_id"] == "dl_adminunits_bcts"
     assert job["result"]["download_url"].endswith(f"/api/bundles/{job['result']['bundle_id']}/download")
+    job_list = client.get("/api/bundle-jobs")
+    assert job_list.status_code == 200
+    assert any(item["job_id"] == job_id for item in job_list.json()["jobs"])
 
     bad_job = client.post(
         "/api/bundle-jobs",

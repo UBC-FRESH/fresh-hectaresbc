@@ -1781,6 +1781,148 @@ kbd {
   transform: translateX(-50%);
 }
 
+/* --------------------------------------------------------------- history */
+
+.history-shell {
+  width: min(68rem, 100%);
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem 2.5rem;
+}
+
+.history-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.history-head h1 {
+  margin: 0.25rem 0 0.2rem;
+  font-size: 1.35rem;
+}
+
+.history-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.history-warning {
+  margin-bottom: 0.8rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #e7d3a4;
+  border-radius: var(--radius-sm);
+  background: #fff8e7;
+  color: #7a5610;
+  font-size: 0.76rem;
+}
+
+.history-section {
+  margin-top: 1rem;
+}
+
+.history-section h2 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.history-card {
+  margin-bottom: 0.55rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+
+.history-card-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.history-card-head strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-date {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+.history-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--line);
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.history-status.ok {
+  background: var(--ok-soft);
+  color: #24663f;
+}
+
+.history-status.warn {
+  background: #fff8e7;
+  color: #7a5610;
+}
+
+.history-status.error {
+  background: var(--danger-soft);
+  color: #8f1d1d;
+}
+
+.history-status.active {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.history-message {
+  margin: 0.35rem 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.history-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.7rem;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.history-empty {
+  padding: 1.2rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.history-empty p {
+  margin: 0 0 0.5rem;
+}
+
 /* -------------------------------------------------------------- tray panel */
 
 .tray-button {

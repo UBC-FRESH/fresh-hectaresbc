@@ -554,6 +554,11 @@
       return state;
     }
 
+    if (path === "bundles") {
+      state.view = "bundles";
+      return state;
+    }
+
     if (path === "catalog" || path === "") {
       const rows = firstValue(params, "rows", "50");
       state.query = firstValue(params, "q", "");
@@ -605,6 +610,9 @@
     const layerQuery = state.layers?.length
       ? `layers=${encodeURIComponent(state.layers.join(","))}`
       : "";
+    if (state.view === "bundles") {
+      return "#/bundles";
+    }
     if (state.view === "dataset" && state.datasetId) {
       const suffix = state.map ? "/map" : "";
       const query = state.map && layerQuery ? `?${layerQuery}` : "";

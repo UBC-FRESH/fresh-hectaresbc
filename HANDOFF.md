@@ -85,6 +85,8 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 - A persistent header layer tray collects previewable layers across routes.
   The first tray layer becomes the primary map layer; up to three additional
   layers render as context overlays with visibility/opacity controls.
+- `#/bundles` lists active/recent jobs and completed bundles with progress,
+  cancellation, failed-layer retry, downloads, manifests, and refresh.
 
 ### Agent Service And GIS Bundles (P20)
 

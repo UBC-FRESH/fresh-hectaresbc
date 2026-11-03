@@ -96,3 +96,16 @@ def test_web_catalog_ui_smoke_checks_representative_behavior(tmp_path: Path) -> 
         env=_env(),
     )
     assert "validated tray browser flow" in result.stdout or "skipped" in result.stdout
+
+    result = subprocess.run(
+        [sys.executable, "scripts/smoke_test_bundles_browser.py"],
+        check=True,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=_env(),
+    )
+    assert (
+        "validated bundle history browser flow" in result.stdout
+        or "skipped" in result.stdout
+    )

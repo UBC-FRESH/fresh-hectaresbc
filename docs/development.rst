@@ -23,6 +23,7 @@ Run the browser checks that document-facing changes should keep passing:
    python scripts/smoke_test_web_ui_browser.py
    python scripts/smoke_test_clip_aoi_browser.py
    python scripts/smoke_test_tray_browser.py
+   python scripts/smoke_test_bundles_browser.py
 
 Generated Sphinx output under ``docs/_build/`` is ignored.
 

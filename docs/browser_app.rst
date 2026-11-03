@@ -16,6 +16,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_web_ui_browser.py
    python scripts/smoke_test_clip_aoi_browser.py
    python scripts/smoke_test_tray_browser.py
+   python scripts/smoke_test_bundles_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -36,6 +37,7 @@ Routes
    /web/#/dataset/dl_adminunits_bcts
    /web/#/dataset/dl_adminunits_bcts/map
    /web/#/map
+   /web/#/bundles
 
 Legacy hashes redirect automatically:
 
@@ -151,6 +153,15 @@ controls. Map routes encode the context list in the URL:
 Context layers use the same raster tile source when the service is available
 and fall back to the static EPSG:3857 overlay otherwise.
 
+Bundle History
+--------------
+
+The `#/bundles` route lists active and recent bundle jobs plus completed bundle
+downloads. It shows job status/progress, AOI names and areas, layer counts,
+failure counts, timestamps, download links, manifest links, cancellation, and
+failed-layer retry. It refreshes active jobs while the route is open and
+provides an explicit Refresh action.
+
 Optional Service, Assistant, And Clip AOI
 -----------------------------------------
 
@@ -201,8 +212,10 @@ Service endpoints:
    GET  /api/aoi/search?q=
    POST /api/bundles
    POST /api/bundle-jobs
++  GET  /api/bundle-jobs
    GET  /api/bundle-jobs/{job_id}
    POST /api/bundle-jobs/{job_id}/cancel
++  POST /api/bundle-jobs/{job_id}/retry
    GET  /api/bundles
    GET  /api/bundles/{bundle_id}
    GET  /api/bundles/{bundle_id}/download
