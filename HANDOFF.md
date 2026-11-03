@@ -2,8 +2,8 @@
 
 Date: 2026-11-02
 Branch: `main`
-Latest feature merge: `5912056`
-Latest merged PR: #149 (job retention); Clip AOI drawer: #142
+Latest feature merge: `1851aed`
+Latest merged PR: #151 (tile fast path); Clip AOI drawer: #142
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
@@ -63,7 +63,8 @@ Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
   2048 px EPSG:3857 map overlays; z9+ still reads/warps the source raster.
   Catalog/manifest/source-path lookups are process-cached. Cold BCTS tile
   timings improved from ~8.7 s at z6 to ~0.13 s, ~3.2 s at z7 to ~0.06 s, and
-  ~1.7 s at z8 to ~0.05 s; warm tiles are ~3 ms.
+  ~1.7 s at z8 to ~0.05 s; warm tiles are ~3 ms. Through the protected public
+  host, cold z6/z7/z8 were ~0.21/0.12/0.11 s.
 
 ### Agent Service And GIS Bundles (P20)
 
