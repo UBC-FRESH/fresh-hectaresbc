@@ -236,3 +236,4 @@
 - Activated Phase 30 Series v2 with parent issue #231, child issues #232-#235, and planning/series_v2_plan.md.
 - Completed P30.2/P30.3 with a single-map series engine, 30-frame route limit, in-place frame editor, year-suffix sequence detection, one-click 17-year pine-beetle playback, updated export, browser coverage, and docs.
 - Completed and merged Phase 30 via PR #236: single-map 30-frame series, in-place add/remove/reorder/jump editor, year-suffix sequence detection, one-click 17-year pine-beetle playback, updated PNG export, responsive UI, browser coverage, and docs.
+- Activated Phase 31 accessibility and mobile QA with parent issue #237, child issues #238-#241, and planning/accessibility_mobile_plan.md.
