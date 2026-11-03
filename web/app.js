@@ -488,6 +488,8 @@
       void renderBundles();
     } else if (route.view === "admin") {
       void renderAdmin();
+    } else if (route.view === "compare") {
+      void renderCompare();
     } else {
       void renderDataset();
     }
@@ -504,6 +506,7 @@
 
   function renderBrowse() {
     stopHistoryPolling();
+    clearCompareResize();
     closeDiscover();
     resetIdentifyState();
     window.HectaresBCMap?.destroy();
@@ -1011,6 +1014,7 @@
   async function renderDataset() {
     const token = ++state.renderToken;
     stopHistoryPolling();
+    clearCompareResize();
     closeDiscover();
     resetIdentifyState();
     window.HectaresBCMap?.destroy();
@@ -1566,6 +1570,7 @@
   async function renderBundles() {
     const token = ++state.renderToken;
     stopHistoryPolling();
+    clearCompareResize();
     closeDiscover();
     window.HectaresBCMap?.destroy();
     closeClipPanel();
@@ -1763,6 +1768,7 @@
   async function renderAdmin() {
     const token = ++state.renderToken;
     stopHistoryPolling();
+    clearCompareResize();
     closeDiscover();
     window.HectaresBCMap?.destroy();
     closeClipPanel();
@@ -1925,7 +1931,259 @@
     }
   }
 
+  function contextLayerIds(primaryId) {
+    const routeLayers = Array.isArray(state.route.layers) ? state.route.layers : [];
+    const trayLayers = state.tray.ids;
+    return [...new Set([...routeLayers, ...trayLayers])]
+      .filter((datasetId) => datasetId && datasetId !== primaryId)
+      .slice(0, 3);
+  }
+
+  function compareLayerOptions() {
+    if (!state.previewIndex) {
+      return [];
+    }
+    return [...state.previewIndex.values()]
+      .filter((artifact) =>
+        ["source_derived_preview", "already_present"].includes(
+          artifact.artifact_status || artifact.status
+        )
+      )
+      .map((artifact) => ({
+        dataset_id: artifact.dataset_id,
+        title: artifact.title || artifact.dataset_id,
+      }))
+      .sort((left, right) =>
+        left.title.localeCompare(right.title, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        })
+      );
+  }
+
+  function unionBounds(left, right) {
+    if (!left) return right;
+    if (!right) return left;
+    return [
+      Math.min(left[0], right[0]),
+      Math.min(left[1], right[1]),
+      Math.max(left[2], right[2]),
+      Math.max(left[3], right[3]),
+    ];
+  }
+
+  function alternatePreviewId(exclude) {
+    if (!state.previewIndex) {
+      return null;
+    }
+    for (const artifact of state.previewIndex.values()) {
+      if (
+        artifact.dataset_id !== exclude &&
+        ["source_derived_preview", "already_present"].includes(
+          artifact.artifact_status || artifact.status
+        )
+      ) {
+        return artifact.dataset_id;
+      }
+    }
+    return null;
+  }
+
+  function compareSelectTemplate(side, selected, options) {
+    return `<label class="compare-select-label">${side === "left" ? "Left" : "Right"} layer
+      <select data-compare-select="${side}">
+        ${options
+          .map(
+            (item) =>
+              `<option value="${Catalog.escapeHtml(item.dataset_id)}" ${item.dataset_id === selected ? "selected" : ""}>${Catalog.escapeHtml(item.title)}</option>`
+          )
+          .join("")}
+      </select>
+    </label>`;
+  }
+
+  function compareMissingTemplate() {
+    return `<div class="compare-shell">
+      <header class="history-head">
+        <div><span class="badge badge-accent">Compare</span><h1>Layer comparison</h1></div>
+        <a class="secondary-button" href="#/map">Back to map</a>
+      </header>
+      <div class="history-empty"><p>Two previewable layers are needed for comparison.</p><a class="primary-button" href="#/catalog?preview=available">Browse previewable layers</a></div>
+    </div>`;
+  }
+
+  function clearCompareResize() {
+    if (state.compareResizeHandler) {
+      window.removeEventListener("resize", state.compareResizeHandler);
+      state.compareResizeHandler = null;
+    }
+  }
+
+  async function renderCompare() {
+    const token = ++state.renderToken;
+    stopHistoryPolling();
+    clearCompareResize();
+    closeDiscover();
+    window.HectaresBCMap?.destroy();
+    closeClipPanel();
+    closeTray();
+    resetIdentifyState();
+    document.body.dataset.view = "compare";
+    document.body.classList.remove("filters-open", "inspector-open");
+    els.content.innerHTML = loadingTemplate("Loading comparison…");
+    updateHeader();
+    updateTabs();
+    document.title = "Layer comparison · HectaresBC";
+    if (els.liveStatus) {
+      els.liveStatus.textContent = "Layer comparison.";
+    }
+    let leftId =
+      state.route.compareLeft ||
+      currentMapDatasetId() ||
+      state.tray.ids[0] ||
+      defaultPreviewDatasetId();
+    let rightId =
+      state.route.compareRight ||
+      state.tray.ids.find((id) => id !== leftId) ||
+      alternatePreviewId(leftId);
+    if (!leftId || !rightId) {
+      els.content.innerHTML = compareMissingTemplate();
+      els.content.querySelector("h1")?.focus();
+      return;
+    }
+    if (leftId === rightId) {
+      rightId = alternatePreviewId(leftId);
+    }
+    if (!rightId) {
+      els.content.innerHTML = compareMissingTemplate();
+      els.content.querySelector("h1")?.focus();
+      return;
+    }
+    const [leftLayer, rightLayer] = await Promise.all([
+      loadContextLayer(leftId),
+      loadContextLayer(rightId),
+    ]);
+    if (token !== state.renderToken) {
+      return;
+    }
+    if (!leftLayer || !rightLayer) {
+      els.content.innerHTML = compareMissingTemplate();
+      els.content.querySelector("h1")?.focus();
+      return;
+    }
+    const options = compareLayerOptions();
+    const fitBounds = unionBounds(leftLayer.bounds, rightLayer.bounds);
+    els.content.innerHTML = `
+      <div class="compare-shell">
+        <header class="compare-head">
+          <div>
+            <span class="dataset-eyebrow"><span class="badge badge-accent">Compare</span></span>
+            <h1 tabindex="-1">Layer comparison</h1>
+            <p>Pan or zoom either pane to synchronize both maps.</p>
+          </div>
+          <div class="compare-actions">
+            <button class="secondary-button" type="button" data-compare-swap>Swap sides</button>
+            <a class="secondary-button" href="#/dataset/${encodeURIComponent(leftLayer.dataset_id)}/map">Open left map</a>
+            <a class="secondary-button" href="#/map">Back to map</a>
+          </div>
+        </header>
+        <div class="compare-selects">
+          ${compareSelectTemplate("left", leftLayer.dataset_id, options)}
+          ${compareSelectTemplate("right", rightLayer.dataset_id, options)}
+        </div>
+        <div class="compare-stage">
+          <section class="compare-pane">
+            <div id="compare-left" class="compare-map" aria-label="Left comparison map"></div>
+            <div class="compare-label"><strong>${Catalog.escapeHtml(leftLayer.title)}</strong><span>${Catalog.escapeHtml(leftLayer.dataset_id)}</span></div>
+          </section>
+          <div class="compare-divider" aria-hidden="true"></div>
+          <section class="compare-pane">
+            <div id="compare-right" class="compare-map" aria-label="Right comparison map"></div>
+            <div class="compare-label"><strong>${Catalog.escapeHtml(rightLayer.title)}</strong><span>${Catalog.escapeHtml(rightLayer.dataset_id)}</span></div>
+          </section>
+        </div>
+        <p class="clip-status">Both maps use the same WGS84 extent. Pan/zoom is synchronized; layer styling controls are intentionally omitted in compare mode.</p>
+      </div>`;
+    bindCompareControls();
+    els.content.querySelector("h1")?.focus();
+    try {
+      state.mapHandle = await window.HectaresBCMap.createCompare({
+        left: {
+          container: document.querySelector("#compare-left"),
+          previewUrl: leftLayer.tileUrl ? null : leftLayer.previewUrl,
+          tileUrl: leftLayer.tileUrl,
+          minzoom: leftLayer.minzoom,
+          maxzoom: leftLayer.maxzoom,
+          bounds: leftLayer.bounds,
+          fitBounds,
+          categorical: leftLayer.categorical,
+        },
+        right: {
+          container: document.querySelector("#compare-right"),
+          previewUrl: rightLayer.tileUrl ? null : rightLayer.previewUrl,
+          tileUrl: rightLayer.tileUrl,
+          minzoom: rightLayer.minzoom,
+          maxzoom: rightLayer.maxzoom,
+          bounds: rightLayer.bounds,
+          fitBounds,
+          categorical: rightLayer.categorical,
+        },
+      });
+      const handle = state.mapHandle;
+      const resize = () => handle?.resize?.();
+      if (state.compareResizeHandler) {
+        window.removeEventListener("resize", state.compareResizeHandler);
+      }
+      state.compareResizeHandler = resize;
+      window.addEventListener("resize", resize);
+      requestAnimationFrame(() => resize());
+    } catch (error) {
+      els.content.innerHTML = mapFallbackTemplate(
+        getRecordSync(leftLayer.dataset_id),
+        Catalog.previewStatus(getRecordSync(leftLayer.dataset_id), state.previewIndex),
+        null,
+        leftLayer.previewUrl,
+        error.message
+      );
+    }
+  }
+
+  function bindCompareControls() {
+    document.querySelectorAll("[data-compare-select]").forEach((select) => {
+      select.addEventListener("change", () => {
+        const left = document.querySelector('[data-compare-select="left"]');
+        const right = document.querySelector('[data-compare-select="right"]');
+        navigate({
+          ...Catalog.defaultState(),
+          view: "compare",
+          compareLeft: left?.value || null,
+          compareRight: right?.value || null,
+        });
+      });
+    });
+  }
+
+  function openCompare() {
+    const left =
+      currentMapDatasetId() ||
+      state.tray.ids[0] ||
+      defaultPreviewDatasetId();
+    const right =
+      state.tray.ids.find((id) => id !== left) || alternatePreviewId(left);
+    if (!left || !right) {
+      showToast("Add two previewable layers to compare.");
+      return;
+    }
+    navigate({
+      ...Catalog.defaultState(),
+      view: "compare",
+      compareLeft: left,
+      compareRight: right,
+    });
+  }
+
   async function renderMap() {
+
     const token = ++state.renderToken;
     stopHistoryPolling();
     closeDiscover();
@@ -2139,6 +2397,7 @@
             <a class="secondary-button" href="#/catalog?preview=available">Preview layers</a>
             <button class="secondary-button" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}">Add to tray</button>
             <button class="secondary-button" type="button" data-discover-open>Discover</button>
+            <button class="secondary-button" type="button" data-compare-open>Compare</button>
             <button class="secondary-button" type="button" data-identify-toggle ${state.serviceAvailable ? "" : "hidden"}>Identify</button>
             <button class="secondary-button" type="button" data-open-clip ${state.serviceAvailable ? "" : "hidden"}>Clip AOI</button>
             <button class="secondary-button" type="button" data-copy="${Catalog.escapeHtml(record.dataset_id)}">Copy ID</button>
@@ -2389,6 +2648,21 @@ python scripts/fetch_web_previews.py</pre>
 
   function handleContentClick(event) {
     const target = event.target;
+    if (target.closest("[data-compare-open]")) {
+      openCompare();
+      return;
+    }
+    if (target.closest("[data-compare-swap]")) {
+      const left = state.route.compareLeft;
+      const right = state.route.compareRight;
+      navigate({
+        ...Catalog.defaultState(),
+        view: "compare",
+        compareLeft: right,
+        compareRight: left,
+      });
+      return;
+    }
     const favoriteToggle = target.closest("[data-favorite-toggle]");
     if (favoriteToggle) {
       toggleFavorite(favoriteToggle.dataset.favoriteToggle);
@@ -2755,6 +3029,7 @@ python scripts/fetch_web_previews.py</pre>
     els.tabMap.setAttribute(
       "aria-selected",
       state.route.view === "map" ||
+        state.route.view === "compare" ||
         (state.route.view === "dataset" && state.route.map)
         ? "true"
         : "false"
@@ -3085,6 +3360,18 @@ python scripts/fetch_web_previews.py</pre>
     });
   }
 
+  function trayCompareHref() {
+    if (state.tray.ids.length < 2) {
+      return "#/compare";
+    }
+    return Catalog.buildRoute({
+      ...Catalog.defaultState(),
+      view: "compare",
+      compareLeft: state.tray.ids[0],
+      compareRight: state.tray.ids[1],
+    });
+  }
+
   function renderTray() {
     if (!els?.trayBody) {
       return;
@@ -3127,6 +3414,7 @@ python scripts/fetch_web_previews.py</pre>
       </div>
       <div class="tray-actions">
         <a class="primary-button" href="${trayMapHref()}" data-tray-open-map>Open map with tray</a>
+        <a class="secondary-button" href="${trayCompareHref()}">Compare first two</a>
         <button class="secondary-button" type="button" data-tray-clear>Clear tray</button>
         <button class="secondary-button" type="button" data-workspace-save>Save workspace</button>
         <button class="secondary-button" type="button" data-workspace-share>Copy share link</button>

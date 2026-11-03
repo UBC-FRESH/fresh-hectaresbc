@@ -23,6 +23,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_admin_browser.py
    python scripts/smoke_test_discover_browser.py
    python scripts/smoke_test_saved_browse_browser.py
+   python scripts/smoke_test_compare_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -167,6 +168,15 @@ downloads. It shows job status/progress, AOI names and areas, layer counts,
 failure counts, timestamps, download links, manifest links, cancellation, and
 failed-layer retry. It refreshes active jobs while the route is open and
 provides an explicit Refresh action.
+
+Compare Map Workspace
+---------------------
+
+The `#/compare?left=<dataset_id>&right=<dataset_id>` route provides synchronized
+side-by-side MapLibre panes for two previewable layers. Panning or zooming either
+pane updates the other. The workspace includes left/right selectors, a swap
+action, shared extent fitting, dataset labels, and a responsive stacked layout at
+narrow widths. Compare mode intentionally omits AOI/identify/Clip controls.
 
 Saved Searches And Favorites
 ----------------------------
