@@ -574,7 +574,9 @@
       state.view = "compare";
       state.compareLeft = params.get("left") || null;
       state.compareRight = params.get("right") || null;
-      state.compareMode = params.get("mode") === "wipe" ? "wipe" : "split";
+      state.compareMode = ["wipe", "flicker"].includes(params.get("mode"))
+        ? params.get("mode")
+        : "split";
       return state;
     }
 
@@ -645,6 +647,7 @@
       if (state.compareLeft) params.set("left", state.compareLeft);
       if (state.compareRight) params.set("right", state.compareRight);
       if (state.compareMode === "wipe") params.set("mode", "wipe");
+      if (state.compareMode === "flicker") params.set("mode", "flicker");
       const query = params.toString();
       return `#/compare${query ? `?${query}` : ""}`;
     }

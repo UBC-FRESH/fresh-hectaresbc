@@ -113,6 +113,12 @@
       aoi: null,
       aoiApplied: false,
     },
+    compareFlicker: {
+      timer: null,
+      paused: false,
+      speed: 1000,
+      activeLeft: true,
+    },
     identify: {
       enabled: false,
       busy: false,
@@ -2012,11 +2018,21 @@
     </div>`;
   }
 
+  function clearCompareFlicker() {
+    if (state.compareFlicker.timer) {
+      clearInterval(state.compareFlicker.timer);
+      state.compareFlicker.timer = null;
+    }
+    state.compareFlicker.paused = false;
+    state.compareFlicker.activeLeft = true;
+  }
+
   function clearCompareResize() {
     if (state.compareResizeHandler) {
       window.removeEventListener("resize", state.compareResizeHandler);
       state.compareResizeHandler = null;
     }
+    clearCompareFlicker();
   }
 
   async function renderCompare() {
@@ -2072,7 +2088,9 @@
       return;
     }
     const options = compareLayerOptions();
-    const compareMode = state.route.compareMode === "wipe" ? "wipe" : "split";
+    const compareMode = ["wipe", "flicker"].includes(state.route.compareMode)
+      ? state.route.compareMode
+      : "split";
     const fitBounds = unionBounds(leftLayer.bounds, rightLayer.bounds);
     els.content.innerHTML = `
       <div class="compare-shell">
@@ -2091,12 +2109,23 @@
         <div class="compare-mode-bar" role="group" aria-label="Comparison layout">
           <button type="button" data-compare-mode="split" class="${compareMode === "split" ? "is-active" : ""}">Side-by-side</button>
           <button type="button" data-compare-mode="wipe" class="${compareMode === "wipe" ? "is-active" : ""}">Wipe</button>
+          <button type="button" data-compare-mode="flicker" class="${compareMode === "flicker" ? "is-active" : ""}">Flicker</button>
         </div>
+        ${compareMode === "flicker" ? `<div class="compare-flicker-controls">
+          <button class="secondary-button" type="button" data-flicker-toggle>Pause</button>
+          <label>Speed
+            <select data-flicker-speed>
+              <option value="500" ${state.compareFlicker.speed === 500 ? "selected" : ""}>Fast</option>
+              <option value="1000" ${state.compareFlicker.speed === 1000 ? "selected" : ""}>Normal</option>
+              <option value="2000" ${state.compareFlicker.speed === 2000 ? "selected" : ""}>Slow</option>
+            </select>
+          </label>
+        </div>` : ""}
         <div class="compare-selects">
           ${compareSelectTemplate("left", leftLayer.dataset_id, options)}
           ${compareSelectTemplate("right", rightLayer.dataset_id, options)}
         </div>
-        <div class="compare-stage${compareMode === "wipe" ? " is-wipe" : ""}">
+        <div class="compare-stage${compareMode !== "split" ? ` is-${compareMode}` : ""}">
           <section class="compare-pane is-left">
             <div id="compare-left" class="compare-map" aria-label="Left comparison map"></div>
             <div class="compare-label"><strong>${Catalog.escapeHtml(leftLayer.title)}</strong><span>${Catalog.escapeHtml(leftLayer.dataset_id)}</span></div>
@@ -2112,6 +2141,8 @@
     bindCompareControls();
     if (compareMode === "wipe") {
       bindCompareWipe();
+    } else if (compareMode === "flicker") {
+      bindCompareFlicker();
     }
     els.content.querySelector("h1")?.focus();
     try {
@@ -2170,6 +2201,62 @@
         });
       });
     });
+  }
+
+  function bindCompareFlicker() {
+    const stage = document.querySelector(".compare-stage.is-flicker");
+    const leftPane = stage?.querySelector(".compare-pane.is-left");
+    const rightPane = stage?.querySelector(".compare-pane.is-right");
+    const toggle = document.querySelector("[data-flicker-toggle]");
+    const speedSelect = document.querySelector("[data-flicker-speed]");
+    if (!stage || !leftPane || !rightPane) {
+      return;
+    }
+    let activeLeft = true;
+    const apply = () => {
+      leftPane.style.opacity = activeLeft ? "1" : "0";
+      rightPane.style.opacity = activeLeft ? "0" : "1";
+      leftPane.style.pointerEvents = activeLeft ? "auto" : "none";
+      rightPane.style.pointerEvents = activeLeft ? "none" : "auto";
+    };
+    const stop = () => {
+      if (state.compareFlicker.timer) {
+        clearInterval(state.compareFlicker.timer);
+        state.compareFlicker.timer = null;
+      }
+    };
+    const start = () => {
+      stop();
+      if (state.compareFlicker.paused) {
+        return;
+      }
+      state.compareFlicker.timer = setInterval(() => {
+        activeLeft = !activeLeft;
+        apply();
+      }, state.compareFlicker.speed);
+    };
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    state.compareFlicker.paused = reducedMotion;
+    if (toggle) {
+      toggle.textContent = reducedMotion ? "Play" : "Pause";
+      toggle.addEventListener("click", () => {
+        state.compareFlicker.paused = !state.compareFlicker.paused;
+        toggle.textContent = state.compareFlicker.paused ? "Play" : "Pause";
+        if (state.compareFlicker.paused) {
+          stop();
+        } else {
+          start();
+        }
+      });
+    }
+    speedSelect?.addEventListener("change", () => {
+      state.compareFlicker.speed = Number(speedSelect.value) || 1000;
+      start();
+    });
+    apply();
+    start();
   }
 
   function bindCompareWipe() {

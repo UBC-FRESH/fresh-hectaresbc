@@ -2212,6 +2212,53 @@ kbd {
   left: auto;
 }
 
+.compare-flicker-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.compare-flicker-controls label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.compare-flicker-controls select {
+  min-height: 1.8rem;
+  padding: 0.15rem 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.68rem;
+}
+
+.compare-stage.is-flicker {
+  position: relative;
+  display: block;
+}
+
+.compare-stage.is-flicker .compare-pane {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.08s linear;
+}
+
+.compare-stage.is-flicker .compare-divider {
+  display: none;
+}
+
+.compare-stage.is-flicker .compare-pane.is-right .compare-label {
+  right: auto;
+  left: 0.5rem;
+}
+
 .compare-select-label {
   display: grid;
   gap: 0.2rem;
