@@ -256,3 +256,4 @@
 - Completed and merged Phase 36 via PR #272: performance/payload audit, lazy Series frame sources, cached compare/year-sequence options, asset and browser budgets, docs, and asset bump to p52.
 - Activated Phase 37 Series contact-sheet export with parent issue #273, child issues #274-#277, and planning/series_contact_sheet_plan.md.
 - Completed P37.2/P37.3 with all-frame Series contact-sheet PNG composition, responsive grid labels, export-busy state, dimension/signature browser coverage, docs, and asset bump to p53.
+- Completed and merged Phase 37 via PR #278: Series contact-sheet PNG export, responsive labeled grid, export-busy state, dimension/signature coverage, docs, and asset bump to p53.
