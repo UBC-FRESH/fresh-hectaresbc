@@ -130,6 +130,9 @@
       layers: [],
       sequences: [],
       mapReady: false,
+      recording: false,
+      setFrame: null,
+      setPaused: null,
     },
     preflight: {
       busy: false,
@@ -2231,6 +2234,9 @@
     state.series.index = 0;
     state.series.count = 0;
     state.series.mapReady = false;
+    state.series.recording = false;
+    state.series.setFrame = null;
+    state.series.setPaused = null;
   }
 
   function seriesCompareHref(layers) {
@@ -2679,6 +2685,7 @@
           </div>
           <div class="compare-actions">
             <button class="secondary-button" type="button" data-series-download>Download PNG</button>
+            <button class="secondary-button" type="button" data-series-video ${state.series.recording ? "disabled" : ""}>${state.series.recording ? "Recording…" : "Export video"}</button>
             <a class="secondary-button" href="${mapHref}">Open map with first six</a>
             <a class="secondary-button" href="${seriesCompareHref(loaded)}">Compare first two</a>
             <a class="secondary-button" href="#/map">Back to map</a>
@@ -2887,7 +2894,190 @@
         }
       });
     });
+    state.series.setFrame = apply;
+    state.series.setPaused = setPaused;
     start();
+  }
+
+  function seriesVideoMimeType() {
+    if (typeof window.MediaRecorder !== "function") {
+      return null;
+    }
+    const candidates = [
+      "video/webm;codecs=vp9",
+      "video/webm;codecs=vp8",
+      "video/webm",
+    ];
+    return (
+      candidates.find((type) => {
+        try {
+          return window.MediaRecorder.isTypeSupported(type);
+        } catch (error) {
+          return false;
+        }
+      }) || "video/webm"
+    );
+  }
+
+  async function waitForSeriesFrameReady(index, timeout = 1800) {
+    const started = performance.now();
+    while (performance.now() - started < timeout) {
+      if (state.mapHandle?.isFrameReady?.(index)) {
+        return true;
+      }
+      await new Promise((resolve) => window.setTimeout(resolve, 50));
+    }
+    return false;
+  }
+
+  async function downloadSeriesVideo() {
+    if (state.series.recording) {
+      return;
+    }
+    const layers = state.series.layers;
+    const canvas = document.querySelector("#series-map .maplibregl-canvas");
+    if (
+      layers.length < 2 ||
+      !canvas ||
+      !state.series.mapReady
+    ) {
+      showToast("The Series map is still loading.");
+      return;
+    }
+    const mimeType = seriesVideoMimeType();
+    if (!mimeType || typeof canvas.captureStream !== "function") {
+      showToast("Video export is not supported in this browser.");
+      return;
+    }
+
+    const maxWidth = 1280;
+    const scale = Math.min(1, maxWidth / canvas.width);
+    const mapWidth = Math.max(2, Math.round(canvas.width * scale));
+    const mapHeight = Math.max(2, Math.round(canvas.height * scale));
+    const padding = 12;
+    const headerHeight = 64;
+    const footerHeight = 26;
+    const target = document.createElement("canvas");
+    target.width = mapWidth;
+    target.height = headerHeight + mapHeight + footerHeight;
+    const ctx = target.getContext("2d");
+    if (!ctx) {
+      showToast("Video export is not supported in this browser.");
+      return;
+    }
+    const drawFrame = (index) => {
+      const layer = layers[index];
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, target.width, target.height);
+      ctx.fillStyle = "#66727d";
+      ctx.font = "600 10px sans-serif";
+      ctx.fillText("HectaresBC · Series", padding, 16);
+      ctx.fillStyle = "#1f2933";
+      ctx.font = "600 18px sans-serif";
+      ctx.fillText(
+        ellipsizeCanvasText(ctx, layer.title, target.width - padding * 2),
+        padding,
+        37
+      );
+      ctx.fillStyle = "#66727d";
+      ctx.font = "10px monospace";
+      ctx.fillText(
+        ellipsizeCanvasText(
+          ctx,
+          `Frame ${index + 1} of ${layers.length} · ${layer.dataset_id}`,
+          target.width - padding * 2
+        ),
+        padding,
+        53
+      );
+      ctx.drawImage(canvas, 0, headerHeight, mapWidth, mapHeight);
+      ctx.fillStyle = "#66727d";
+      ctx.font = "10px sans-serif";
+      ctx.fillText(
+        `HectaresBC · series · ${new Date().toLocaleDateString()} · Map data © OpenStreetMap contributors`,
+        padding,
+        target.height - 9
+      );
+    };
+
+    const button = document.querySelector("[data-series-video]");
+    const previousIndex = state.series.index;
+    const wasPaused = state.series.paused;
+    const frameHold = Math.max(500, state.series.speed || 1000);
+    let recorder = null;
+    let stream = null;
+    let blob = null;
+    state.series.recording = true;
+    state.series.setPaused?.(true);
+    if (button) {
+      button.disabled = true;
+      button.textContent = "Recording…";
+    }
+    try {
+      stream = target.captureStream(30);
+      const stopped = new Promise((resolve, reject) => {
+        recorder = new window.MediaRecorder(stream, {
+          mimeType,
+          videoBitsPerSecond: 4_000_000,
+        });
+        recorder.ondataavailable = (event) => {
+          if (event.data?.size) {
+            chunks.push(event.data);
+          }
+        };
+        recorder.onstop = () => resolve();
+        recorder.onerror = (event) =>
+          reject(event.error || new Error("Video recording failed."));
+      });
+      const chunks = [];
+      recorder.start(250);
+      for (let index = 0; index < layers.length; index += 1) {
+        state.series.setFrame?.(index);
+        await waitForSeriesFrameReady(index);
+        const started = performance.now();
+        while (performance.now() - started < frameHold) {
+          drawFrame(index);
+          await new Promise((resolve) =>
+            window.requestAnimationFrame(resolve)
+          );
+        }
+      }
+      recorder.stop();
+      await stopped;
+      blob = new Blob(chunks, { type: mimeType.split(";")[0] });
+      if (!blob.size) {
+        throw new Error("The recording was empty.");
+      }
+    } catch (error) {
+      showToast(`Could not export Series video: ${error.message}`);
+    } finally {
+      stream?.getTracks?.().forEach((track) => track.stop());
+      state.series.recording = false;
+      if (button) {
+        button.disabled = false;
+        button.textContent = "Export video";
+      }
+      state.series.setFrame?.(previousIndex);
+      state.series.setPaused?.(wasPaused);
+    }
+    if (!blob) {
+      return;
+    }
+    try {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `hectaresbc-series-${layers[0].dataset_id.replace(/[^a-z0-9_-]+/gi, "-")}-${new Date()
+        .toISOString()
+        .slice(0, 10)}.webm`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      showToast("Series WebM downloaded.");
+    } catch (error) {
+      showToast(`Could not download Series video: ${error.message}`);
+    }
   }
 
   async function downloadSeriesImage() {
@@ -3944,6 +4134,10 @@ python scripts/fetch_web_previews.py</pre>
     }
     if (target.closest("[data-series-download]")) {
       void downloadSeriesImage();
+      return;
+    }
+    if (target.closest("[data-series-video]")) {
+      void downloadSeriesVideo();
       return;
     }
     if (target.closest("[data-map-export]")) {

@@ -249,3 +249,4 @@
 - Completed P34.2/P34.3 with hidden zero-opacity next-frame prefetch, source-readiness reporting, active-frame loading feedback, local tile-request verification, browser coverage, docs, and asset bump to p50.
 - Completed and merged Phase 34 via PR #260: next-frame Series prefetch at zero opacity, frame readiness/fallback reporting, loading feedback, local/public tile-request verification, docs, and asset bump to p50.
 - Activated Phase 35 animated Series WebM export with parent issue #261, child issues #262-#265, and planning/series_video_plan.md.
+- Completed P35.2/P35.3 with browser-native Series WebM recording, composed title/frame/footer canvas, current-speed frame sequencing, recording-state UI, WebM download coverage, docs, and asset bump to p51.
