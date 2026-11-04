@@ -5,6 +5,8 @@
   const LocalPreviewRoot = "data/map_previews";
   const NarrowInspectorQuery = "(max-width: 1080px)";
   const SeriesMax = 30;
+  let compareOptionsCache = null;
+  let seriesSequencesCache = null;
 
   const METADATA_LABELS = {
     parent_layer_title: "Parent layer",
@@ -1974,7 +1976,10 @@
     if (!state.previewIndex) {
       return [];
     }
-    return [...state.previewIndex.values()]
+    if (compareOptionsCache?.source === state.previewIndex) {
+      return compareOptionsCache.options;
+    }
+    const options = [...state.previewIndex.values()]
       .filter((artifact) =>
         ["source_derived_preview", "already_present"].includes(
           artifact.artifact_status || artifact.status
@@ -1990,6 +1995,8 @@
           sensitivity: "base",
         })
       );
+    compareOptionsCache = { source: state.previewIndex, options };
+    return options;
   }
 
   function unionBounds(left, right) {
@@ -2485,6 +2492,9 @@
   }
 
   function seriesSequences() {
+    if (seriesSequencesCache?.source === state.previewIndex) {
+      return seriesSequencesCache.sequences;
+    }
     const groups = new Map();
     for (const layer of compareLayerOptions()) {
       const match = layer.dataset_id.match(
@@ -2505,7 +2515,7 @@
       }
       group.items.push({ ...layer, year });
     }
-    return [...groups.values()]
+    const sequences = [...groups.values()]
       .map((group) => {
         const byYear = new Map();
         for (const item of group.items.sort((left, right) => left.year - right.year)) {
@@ -2542,6 +2552,8 @@
           sensitivity: "base",
         })
       );
+    seriesSequencesCache = { source: state.previewIndex, sequences };
+    return sequences;
   }
 
   function seriesSequencesTemplate(sequences, currentIds) {

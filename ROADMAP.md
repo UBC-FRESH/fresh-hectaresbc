@@ -544,8 +544,8 @@ Phase 36 measures browser payload/runtime cost, lazy-loads Series sources, cache
 catalog option lists, and adds asset/browser performance budgets.
 
 - [x] P36.1 Plan performance audit and budgets. Child issue: #268.
-- [ ] P36.2 Lazy-load Series sources and cache catalog options. Child issue: #269.
-- [ ] P36.3 Add performance budgets and browser coverage. Child issue: #270.
+- [x] P36.2 Lazy-load Series sources and cache catalog options. Child issue: #269.
+- [x] P36.3 Add performance budgets and browser coverage. Child issue: #270.
 - [ ] P36.4 Verify and close Phase 36. Child issue: #271.
 
 ## Current Next Steps

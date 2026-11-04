@@ -54,6 +54,15 @@ full preview-layer option list and/or year-group list on every render.
 
 **Fix:** cache both by `state.previewIndex` identity.
 
+## Post-Fix Measurements
+
+On the static localhost harness after lazy sources and caching:
+
+- 17-frame Series: **2 high-resolution preview requests** (active + prefetched
+  next), **~17.4 MB** JS heap after pausing;
+- catalog ready: **~0.3–0.5 s** in headless Chromium;
+- all asset gzip budgets pass.
+
 ## Budgets
 
 Asset budgets:
