@@ -132,7 +132,7 @@
       layers: [],
       sequences: [],
       mapReady: false,
-      recording: false,
+      exporting: false,
       setFrame: null,
       setPaused: null,
     },
@@ -2241,7 +2241,7 @@
     state.series.index = 0;
     state.series.count = 0;
     state.series.mapReady = false;
-    state.series.recording = false;
+    state.series.exporting = false;
     state.series.setFrame = null;
     state.series.setPaused = null;
   }
@@ -2697,7 +2697,8 @@
           </div>
           <div class="compare-actions">
             <button class="secondary-button" type="button" data-series-download>Download PNG</button>
-            <button class="secondary-button" type="button" data-series-video ${state.series.recording ? "disabled" : ""}>${state.series.recording ? "Recording…" : "Export video"}</button>
+            <button class="secondary-button" type="button" data-series-video ${state.series.exporting ? "disabled" : ""}>${state.series.exporting ? "Recording…" : "Export video"}</button>
+            <button class="secondary-button" type="button" data-series-contact ${state.series.exporting ? "disabled" : ""}>Contact sheet</button>
             <a class="secondary-button" href="${mapHref}">Open map with first six</a>
             <a class="secondary-button" href="${seriesCompareHref(loaded)}">Compare first two</a>
             <a class="secondary-button" href="#/map">Back to map</a>
@@ -2942,8 +2943,166 @@
     return false;
   }
 
+  async function downloadSeriesContactSheet() {
+    if (state.series.exporting) {
+      return;
+    }
+    const layers = state.series.layers;
+    const canvas = document.querySelector("#series-map .maplibregl-canvas");
+    if (layers.length < 2 || !canvas || !state.series.mapReady) {
+      showToast("The Series map is still loading.");
+      return;
+    }
+    const previousIndex = state.series.index;
+    const wasPaused = state.series.paused;
+    const buttons = [
+      ...document.querySelectorAll(
+        "[data-series-download], [data-series-video], [data-series-contact]"
+      ),
+    ];
+    const button = document.querySelector("[data-series-contact]");
+    state.series.exporting = true;
+    state.series.setPaused?.(true);
+    buttons.forEach((exportButton) => {
+      exportButton.disabled = true;
+    });
+    if (button) {
+      button.textContent = "Exporting…";
+    }
+    let blob = null;
+    try {
+      const columns = Math.min(layers.length, 4);
+      const gap = 12;
+      const padding = 14;
+      const headerHeight = 52;
+      const footerHeight = 26;
+      const labelHeight = 34;
+      const sheetWidth = Math.min(
+        1600,
+        Math.max(900, canvas.clientWidth || canvas.width)
+      );
+      const cellWidth = Math.floor(
+        (sheetWidth - padding * 2 - gap * (columns - 1)) / columns
+      );
+      const mapHeight = Math.round(
+        (cellWidth * canvas.height) / Math.max(1, canvas.width)
+      );
+      const cellHeight = mapHeight + labelHeight;
+      const rows = Math.ceil(layers.length / columns);
+      const targetWidth =
+        padding * 2 + columns * cellWidth + gap * (columns - 1);
+      const targetHeight =
+        headerHeight +
+        padding +
+        rows * cellHeight +
+        gap * (rows - 1) +
+        footerHeight;
+      const target = document.createElement("canvas");
+      target.width = targetWidth;
+      target.height = targetHeight;
+      const ctx = target.getContext("2d");
+      if (!ctx) {
+        throw new Error("PNG composition is not supported.");
+      }
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, targetWidth, targetHeight);
+      ctx.fillStyle = "#1f2933";
+      ctx.font = "600 18px sans-serif";
+      ctx.fillText("HectaresBC · Series contact sheet", padding, 28);
+      ctx.fillStyle = "#66727d";
+      ctx.font = "10px monospace";
+      ctx.fillText(
+        `${layers.length} frames · ${new Date().toLocaleDateString()}`,
+        padding,
+        43
+      );
+      for (let index = 0; index < layers.length; index += 1) {
+        state.series.setFrame?.(index);
+        await waitForSeriesFrameReady(index);
+        await new Promise((resolve) =>
+          window.requestAnimationFrame(() =>
+            window.requestAnimationFrame(resolve)
+          )
+        );
+        const column = index % columns;
+        const row = Math.floor(index / columns);
+        const x = padding + column * (cellWidth + gap);
+        const y = headerHeight + padding + row * (cellHeight + gap);
+        ctx.drawImage(canvas, x, y, cellWidth, mapHeight);
+        ctx.strokeStyle = "#c4d0dc";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 0.5, y + 0.5, cellWidth - 1, cellHeight - 1);
+        ctx.fillStyle = "#fbfcfd";
+        ctx.fillRect(x, y + mapHeight, cellWidth, labelHeight);
+        const layer = layers[index];
+        ctx.fillStyle = "#1f2933";
+        ctx.font = "600 9px sans-serif";
+        ctx.fillText(
+          ellipsizeCanvasText(ctx, layer.title, cellWidth - 12),
+          x + 6,
+          y + mapHeight + 14
+        );
+        ctx.fillStyle = "#66727d";
+        ctx.font = "7px monospace";
+        ctx.fillText(
+          ellipsizeCanvasText(
+            ctx,
+            `Frame ${index + 1} · ${layer.dataset_id}`,
+            cellWidth - 12
+          ),
+          x + 6,
+          y + mapHeight + 27
+        );
+      }
+      ctx.fillStyle = "#66727d";
+      ctx.font = "10px sans-serif";
+      ctx.fillText(
+        `HectaresBC · series contact sheet · ${new Date().toLocaleDateString()} · Map data © OpenStreetMap contributors`,
+        padding,
+        targetHeight - 9
+      );
+      blob = await new Promise((resolve, reject) => {
+        target.toBlob(
+          (value) =>
+            value ? resolve(value) : reject(new Error("PNG encoding failed.")),
+          "image/png"
+        );
+      });
+    } catch (error) {
+      showToast(`Could not export contact sheet: ${error.message}`);
+    } finally {
+      state.series.exporting = false;
+      buttons.forEach((exportButton) => {
+        exportButton.disabled = false;
+      });
+      if (button) {
+        button.textContent = "Contact sheet";
+      }
+      state.series.setFrame?.(previousIndex);
+      state.series.setPaused?.(wasPaused);
+    }
+    if (!blob) {
+      return;
+    }
+    try {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `hectaresbc-series-contact-sheet-${layers[0].dataset_id.replace(/[^a-z0-9_-]+/gi, "-")}-${new Date()
+        .toISOString()
+        .slice(0, 10)}.png`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      showToast("Series contact sheet downloaded.");
+    } catch (error) {
+      showToast(`Could not download contact sheet: ${error.message}`);
+    }
+  }
+
   async function downloadSeriesVideo() {
-    if (state.series.recording) {
+    if (state.series.exporting) {
       return;
     }
     const layers = state.series.layers;
@@ -3019,7 +3178,7 @@
     let recorder = null;
     let stream = null;
     let blob = null;
-    state.series.recording = true;
+    state.series.exporting = true;
     state.series.setPaused?.(true);
     if (button) {
       button.disabled = true;
@@ -3064,9 +3223,13 @@
       showToast(`Could not export Series video: ${error.message}`);
     } finally {
       stream?.getTracks?.().forEach((track) => track.stop());
-      state.series.recording = false;
+      state.series.exporting = false;
+      document
+        .querySelectorAll("[data-series-download], [data-series-video], [data-series-contact]")
+        .forEach((exportButton) => {
+          exportButton.disabled = false;
+        });
       if (button) {
-        button.disabled = false;
         button.textContent = "Export video";
       }
       state.series.setFrame?.(previousIndex);
@@ -4150,6 +4313,10 @@ python scripts/fetch_web_previews.py</pre>
     }
     if (target.closest("[data-series-video]")) {
       void downloadSeriesVideo();
+      return;
+    }
+    if (target.closest("[data-series-contact]")) {
+      void downloadSeriesContactSheet();
       return;
     }
     if (target.closest("[data-map-export]")) {

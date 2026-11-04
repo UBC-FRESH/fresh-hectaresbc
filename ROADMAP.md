@@ -556,8 +556,8 @@ Phase 37 exports all Series frames as one labeled contact-sheet PNG with title,
 frame labels, date, and attribution.
 
 - [x] P37.1 Plan contact-sheet export. Child issue: #274.
-- [ ] P37.2 Implement contact-sheet composition. Child issue: #275.
-- [ ] P37.3 Add contact-sheet UI and browser coverage. Child issue: #276.
+- [x] P37.2 Implement contact-sheet composition. Child issue: #275.
+- [x] P37.3 Add contact-sheet UI and browser coverage. Child issue: #276.
 - [ ] P37.4 Verify and close Phase 37. Child issue: #277.
 
 ## Current Next Steps
