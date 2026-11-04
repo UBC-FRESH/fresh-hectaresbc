@@ -1,10 +1,10 @@
 # Agent Handoff
 
 Date: 2026-11-03
-Status: P19/P20/P21/P22/P23/P24/P25/P26/P27/P28/P29/P30/P31/P32 complete; no active implementation branch or open issues/PRs.
+Status: P19/P20/P21/P22/P23/P24/P25/P26/P27/P28/P29/P30/P31/P32/P33 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
-Latest feature merge: `4bbfc54`
-Latest merged PR: #248 (Map PNG export); compare export: #216
+Latest feature merge: `8664e0f`
+Latest merged PR: #254 (curated tours); compare export: #216
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
@@ -320,7 +320,7 @@ resolution tests. Use the web/agent test command above for this feature set.
 
 ## Final Closeout
 
-- P19, P20, P21, P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, and P32 are complete; no active implementation branch remains.
+- P19, P20, P21, P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32, and P33 are complete; no active implementation branch remains.
 - No open GitHub issues or pull requests at closeout.
 - Final protected public verification and browser smoke checks passed.
 - Sphinx sources refreshed for tiles, COGs, stats, Clip AOI preflight, jobs, and retention.
@@ -337,6 +337,7 @@ resolution tests. Use the web/agent test command above for this feature set.
 - Phase 30 refactored Series to one synchronized map with frame-layer switching, raised the series limit to 30 frames, added an in-place frame editor, and added year-sequence detection for the two real 17-year pine-beetle families.
 - Phase 31 added route-safe skip focus, `aria-current` workspace navigation, panel dialog focus handoff/restore, shortcut isolation, mobile filter focus, 24 px touch targets, tray-count contrast, reduced-motion map fits, and an accessibility browser smoke test.
 - Phase 32 added labeled Map workspace PNG export with title, dataset ID, visible context layers, legend, date, and attribution.
+- Phase 33 added the `#/tours` guided workspace, five curated tours, prefilled Clip and auto-open Discovery deep links, and a responsive five-tab header.
 - Remaining items below are optional follow-ups, not blockers.
 
 ## Optional Follow-Ups

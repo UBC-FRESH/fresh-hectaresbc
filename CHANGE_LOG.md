@@ -244,3 +244,4 @@
 - Completed and merged Phase 32 via PR #248: labeled Map workspace PNG export with title/context/legend composition, high-DPI text, long-label and legend caps, download coverage, docs, and asset bump to p48.
 - Activated Phase 33 curated demo tours with parent issue #249, child issues #250-#253, and planning/demo_tours_plan.md.
 - Completed P33.2/P33.3 with the #/tours workspace, five guided cards, header entry, prefilled Clip and auto-open Discovery deep links, mobile header overflow fix, browser coverage, docs, and asset bump to p49.
+- Completed and merged Phase 33 via PR #254: curated Tours workspace, five guided cards, header tab, prefilled Clip and auto-open Discovery deep links, mobile header nav scrolling, browser coverage, docs, and asset bump to p49.
