@@ -47,9 +47,25 @@ def assert_no_small_targets(page, surface: str) -> None:
 
 
 def assert_no_overflow(page, surface: str) -> None:
-    assert not page.evaluate(
-        "document.documentElement.scrollWidth > document.documentElement.clientWidth"
-    ), f"{surface} overflows horizontally"
+    dimensions = page.evaluate(
+        """() => ({
+          scroll: document.documentElement.scrollWidth,
+          client: document.documentElement.clientWidth,
+          view: document.body.dataset.view,
+          wide: [...document.querySelectorAll('*')].filter((element) => {
+            const rect = element.getBoundingClientRect();
+            return rect.right > document.documentElement.clientWidth + 0.5;
+          }).slice(0, 8).map((element) => ({
+            tag: element.tagName,
+            id: element.id,
+            cls: String(element.className || '').slice(0, 60),
+            right: Math.round(element.getBoundingClientRect().right),
+          })),
+        })"""
+    )
+    assert dimensions["scroll"] <= dimensions["client"], (
+        f"{surface} overflows horizontally: {dimensions}"
+    )
 
 
 def main() -> int:

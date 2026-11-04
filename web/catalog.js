@@ -485,6 +485,9 @@
       compareMode: "split",
       seriesLayers: [],
       seriesSpeed: 1000,
+      clipQuery: null,
+      clipName: null,
+      discover: null,
     };
   }
 
@@ -549,6 +552,9 @@
       if (state.map) {
         state.layers = parseLayerIds(params);
         state.workspace = params.get("w") || null;
+        state.clipQuery = params.get("clip") || null;
+        state.clipName = params.get("clipName") || null;
+        state.discover = params.get("discover") || null;
       }
       return state;
     }
@@ -559,6 +565,9 @@
       state.datasetId = params.get("id") || null;
       state.layers = parseLayerIds(params);
       state.workspace = params.get("w") || null;
+      state.clipQuery = params.get("clip") || null;
+      state.clipName = params.get("clipName") || null;
+      state.discover = params.get("discover") || null;
       return state;
     }
 
@@ -569,6 +578,11 @@
 
     if (path === "admin") {
       state.view = "admin";
+      return state;
+    }
+
+    if (path === "tours") {
+      state.view = "tours";
       return state;
     }
 
@@ -648,7 +662,19 @@
     if (state.workspace) {
       mapParams.set("w", state.workspace);
     }
+    if (state.clipQuery) {
+      mapParams.set("clip", state.clipQuery);
+    }
+    if (state.clipName) {
+      mapParams.set("clipName", state.clipName);
+    }
+    if (state.discover) {
+      mapParams.set("discover", state.discover);
+    }
     const mapQuery = mapParams.toString();
+    if (state.view === "tours") {
+      return "#/tours";
+    }
     if (state.view === "bundles") {
       return "#/bundles";
     }
