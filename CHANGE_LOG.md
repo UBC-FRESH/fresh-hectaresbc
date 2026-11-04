@@ -241,3 +241,4 @@
 - Completed and merged Phase 31 via PR #242: accessibility/mobile QA with skip-link routing fix, current-page nav semantics, panel focus management, overlay shortcut isolation, mobile filter focus, larger touch targets, contrast fixes, reduced-motion map fits, docs, and browser coverage.
 - Activated Phase 32 single-map PNG export with parent issue #243, child issues #244-#247, and planning/map_export_plan.md.
 - Completed P32.2/P32.3 with labeled Map workspace PNG export, title/context/legend composition, hidden-layer and long-label handling, download coverage, docs, and asset bump to p48.
+- Completed and merged Phase 32 via PR #248: labeled Map workspace PNG export with title/context/legend composition, high-DPI text, long-label and legend caps, download coverage, docs, and asset bump to p48.
