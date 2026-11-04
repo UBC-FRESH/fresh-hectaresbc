@@ -181,6 +181,20 @@ const malformedSeriesSpeed = browser.parseRoute(
   "#/series?layers=dl_adminunits_bcts&speed=bogus"
 );
 assert.strictEqual(malformedSeriesSpeed.seriesSpeed, 1000);
+const toursRoute = browser.parseRoute("#/tours");
+assert.strictEqual(toursRoute.view, "tours");
+assert.strictEqual(browser.buildRoute(toursRoute), "#/tours");
+const tourMapRoute = browser.parseRoute(
+  "#/dataset/dl_adminunits_bcts/map?clip=timber+supply+area&clipName=TSA+27&discover=view"
+);
+assert.strictEqual(tourMapRoute.clipQuery, "timber supply area");
+assert.strictEqual(tourMapRoute.clipName, "TSA 27");
+assert.strictEqual(tourMapRoute.discover, "view");
+assert.strictEqual(
+  browser.buildRoute(tourMapRoute),
+  "#/dataset/dl_adminunits_bcts/map?clip=timber+supply+area&clipName=TSA+27&discover=view"
+);
+
 const longSeries = browser.parseRoute(
   "#/series?layers=" +
     Array.from({ length: 17 }, (_, index) => `layer_${index}`).join(",")

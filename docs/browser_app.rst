@@ -27,6 +27,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_series_browser.py
    python scripts/smoke_test_accessibility_browser.py
    python scripts/smoke_test_map_export_browser.py
+   python scripts/smoke_test_tours_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -47,6 +48,7 @@ Routes
    /web/#/dataset/dl_adminunits_bcts
    /web/#/dataset/dl_adminunits_bcts/map
    /web/#/map
+   /web/#/tours
    /web/#/compare?left=<dataset_id>&right=<dataset_id>
    /web/#/series?layers=<dataset_id_1>,<dataset_id_2>,<dataset_id_3>&speed=1000
    /web/#/bundles
@@ -192,6 +194,26 @@ downloads. It shows job status/progress, AOI names and areas, layer counts,
 failure counts, timestamps, download links, manifest links, cancellation, and
 failed-layer retry. It refreshes active jobs while the route is open and
 provides an explicit Refresh action.
+
+Guided Tours
+------------
+
+The `#/tours` route provides five short, actionable examples: Browse/search,
+Compare side-by-side/wipe/flicker, the 17-year pine-beetle Series, Clip with a
+prefilled TSA 27 query, and spatial Discovery. Each card lists steps and links
+directly into the relevant workspace.
+
+Tour deep links use ordinary route state:
+
+.. code-block:: text
+
+   #/dataset/dl_adminunits_bcts/map?clip=timber+supply+area&clipName=TSA+27
+   #/map?discover=view
+
+The Clip link waits for the map, opens the drawer, and prefills the query and AOI
+name without running the FEMIC lookup automatically. The Discovery link waits for
+the map, opens Discover, and runs a current-view search. Both links remain
+shareable; no server-side tour state is stored.
 
 Compare Map Workspace
 ---------------------

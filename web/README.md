@@ -10,6 +10,7 @@ catalog. Its primary surfaces are:
 - **Map** — a MapLibre workspace with live 1-ha tiles or the published preview
   overlay, layer visibility/opacity, legend, an offline basemap fallback, and
   labeled PNG export.
+- **Tours** — guided routes for search, Compare, Series, Clip, and Discovery.
 - **Compare** — synchronized two-layer split, wipe, and flicker modes with PNG
   export.
 - **Series** — a two-to-30 layer flicker sequence on one synchronized map, with
@@ -73,6 +74,7 @@ touch targets of at least 24×24 CSS pixels.
 #/catalog
 #/catalog?q=bull+trout&family=virtual_layer&preview=available&sort=title&page=1
 #/map
+#/tours
 #/dataset/dl_adminunits_bcts
 #/dataset/dl_adminunits_bcts/map
 #/compare?left=<dataset_id>&right=<dataset_id>&mode=wipe

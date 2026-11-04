@@ -183,6 +183,7 @@
       searchForm: document.querySelector("#search-form"),
       searchInput: document.querySelector("#search-input"),
       tabBrowse: document.querySelector("#tab-browse"),
+      tabTours: document.querySelector("#tab-tours"),
       tabMap: document.querySelector("#tab-map"),
       tabBundles: document.querySelector("#tab-bundles"),
       tabAdmin: document.querySelector("#tab-admin"),
@@ -506,6 +507,8 @@
     }
     if (route.view === "map" || route.map) {
       void renderMap();
+    } else if (route.view === "tours") {
+      void renderTours();
     } else if (route.view === "bundles") {
       void renderBundles();
     } else if (route.view === "admin") {
@@ -2237,6 +2240,216 @@
     });
   }
 
+  function tourCards() {
+    const sequence = seriesSequences().find(
+      (item) => item.prefix === "dl_pinebeetle_allkill"
+    );
+    const seriesHref = sequence
+      ? Catalog.buildRoute(seriesRouteFor(sequence.layers, 1000))
+      : "#/series";
+    const compareBase = {
+      ...Catalog.defaultState(),
+      view: "compare",
+      compareLeft: "dl_adminunits_bcts",
+      compareRight: "dl_adminunits_coaltenure",
+    };
+    const clipHref = Catalog.buildRoute({
+      ...Catalog.defaultState(),
+      view: "dataset",
+      datasetId: "dl_adminunits_bcts",
+      map: true,
+      clipQuery: "timber supply area",
+      clipName: "TSA 27",
+    });
+    const discoverHref = Catalog.buildRoute({
+      ...Catalog.defaultState(),
+      view: "map",
+      map: true,
+      discover: "view",
+    });
+    return [
+      {
+        id: "browse",
+        badge: "Search",
+        title: "Find recovered layers",
+        description:
+          "Start with search and facets, then inspect the metadata and provenance behind a result.",
+        steps: [
+          "Search for a topic such as “old growth”.",
+          "Filter to previewable layers.",
+          "Open a result to inspect metadata and provenance.",
+          "Add layers to the tray for map or series work.",
+        ],
+        actions: [
+          {
+            label: "Browse old-growth layers",
+            href: "#/catalog?q=old+growth&preview=available",
+            primary: true,
+          },
+          { label: "Browse all previews", href: "#/catalog?preview=available" },
+        ],
+      },
+      {
+        id: "compare",
+        badge: "Compare",
+        title: "Compare two thematic layers",
+        description:
+          "Put BCTS operating areas beside coal tenures and try split, wipe, and flicker views.",
+        steps: [
+          "Open the two previewable layers.",
+          "Pan or zoom one pane; the other follows.",
+          "Try Wipe and drag the divider.",
+          "Try Flicker and change the speed.",
+        ],
+        actions: [
+          {
+            label: "Compare side-by-side",
+            href: Catalog.buildRoute(compareBase),
+            primary: true,
+          },
+          {
+            label: "Open wipe",
+            href: Catalog.buildRoute({ ...compareBase, compareMode: "wipe" }),
+          },
+          {
+            label: "Open flicker",
+            href: Catalog.buildRoute({ ...compareBase, compareMode: "flicker" }),
+          },
+        ],
+      },
+      {
+        id: "series",
+        badge: "Series",
+        title: "Play 17 years of pine-beetle data",
+        description: sequence
+          ? "Cycle the real 1999–2015 cumulative forest-killed sequence on one synchronized map."
+          : "Open the Series workspace and choose a year family from the preview index.",
+        steps: [
+          "Open the pine-beetle family.",
+          "Pause and step through frames.",
+          "Use Year sequences to switch families.",
+          "Download the active frame.",
+        ],
+        actions: [
+          {
+            label: sequence ? "Play 17-year series" : "Open Series",
+            href: seriesHref,
+            primary: true,
+          },
+        ],
+        note: sequence ? "" : "The pine-beetle family is not in this checkout's preview index.",
+      },
+      {
+        id: "clip",
+        badge: "Bundle",
+        title: "Clip BCTS to TSA 27",
+        description:
+          "Open the Clip drawer with the TSA boundary query prefilled, then estimate and prepare a bundle.",
+        steps: [
+          "Open BCTS on the map.",
+          "Click Find boundary to resolve TSA 27.",
+          "Select layers and run Estimate.",
+          "Prepare the bundle and download it from Bundles.",
+        ],
+        actions: [
+          {
+            label: state.serviceAvailable ? "Open prefilled Clip" : "Open BCTS map",
+            href: clipHref,
+            primary: true,
+          },
+          { label: "Open bundle history", href: "#/bundles" },
+        ],
+        note: state.serviceAvailable
+          ? "The query is prefilled; review it before resolving the boundary."
+          : "Clip requires the optional map service.",
+      },
+      {
+        id: "discover",
+        badge: "Discover",
+        title: "Find layers in the current view",
+        description:
+          "Open a map and let spatial discovery find previewable layers whose bounds intersect the view.",
+        steps: [
+          "Open the map.",
+          "Discover opens against the current view.",
+          "Filter results by family or text.",
+          "Add results to the tray and open Compare or Series.",
+        ],
+        actions: [
+          { label: "Open Discovery tour", href: discoverHref, primary: true },
+          { label: "Open map", href: "#/map" },
+        ],
+      },
+    ];
+  }
+
+  function tourCardTemplate(tour) {
+    return `<article class="tour-card" id="tour-${Catalog.escapeHtml(tour.id)}">
+      <div class="tour-card-head">
+        <span class="badge badge-accent">${Catalog.escapeHtml(tour.badge)}</span>
+        <h2>${Catalog.escapeHtml(tour.title)}</h2>
+      </div>
+      <p>${Catalog.escapeHtml(tour.description)}</p>
+      <ol class="tour-steps">
+        ${tour.steps.map((step) => `<li>${Catalog.escapeHtml(step)}</li>`).join("")}
+      </ol>
+      ${tour.note ? `<p class="tour-note">${Catalog.escapeHtml(tour.note)}</p>` : ""}
+      <div class="tour-actions">
+        ${tour.actions
+          .map(
+            (action) =>
+              `<a class="${action.primary ? "primary-button" : "secondary-button"}" href="${Catalog.escapeHtml(action.href)}">${Catalog.escapeHtml(action.label)}</a>`
+          )
+          .join("")}
+      </div>
+    </article>`;
+  }
+
+  function renderTours() {
+    const token = ++state.renderToken;
+    stopHistoryPolling();
+    clearCompareResize();
+    closeDiscover();
+    closeAssistant();
+    closeClipPanel();
+    closeTray();
+    window.HectaresBCMap?.destroy();
+    resetIdentifyState();
+    document.body.dataset.view = "tours";
+    document.body.classList.remove("filters-open", "inspector-open");
+    els.content.innerHTML = loadingTemplate("Loading tours…");
+    updateHeader();
+    updateTabs();
+    document.title = "Guided tours · HectaresBC";
+    if (!state.ready) {
+      renderLoading();
+      return;
+    }
+    if (token !== state.renderToken) {
+      return;
+    }
+    const cards = tourCards();
+    els.content.innerHTML = `
+      <div class="tours-shell">
+        <header class="tours-head">
+          <div>
+            <span class="dataset-eyebrow"><span class="badge badge-accent">Tours</span></span>
+            <h1 tabindex="-1">Guided tours</h1>
+            <p>Five short paths through the recovered catalog. Each tour links straight into the workspace it describes.</p>
+          </div>
+          <a class="secondary-button" href="#/catalog">Back to Browse</a>
+        </header>
+        <div class="tours-grid">
+          ${cards.map(tourCardTemplate).join("")}
+        </div>
+        <p class="clip-status">Tours are ordinary shareable routes; they do not create accounts, server-side progress, or saved user state.</p>
+      </div>`;
+    els.content.querySelector("h1")?.focus();
+    if (els.liveStatus) {
+      els.liveStatus.textContent = "Guided tours.";
+    }
+  }
+
   function seriesRouteFor(layerIds, speed = state.series.speed) {
     return {
       ...Catalog.defaultState(),
@@ -3385,6 +3598,22 @@
       }
       state.identify.datasetId = datasetId;
       updateIdentifyButton();
+      if (state.route.discover === "view") {
+        void waitForMapReady(state.mapHandle).then((ready) => {
+          if (ready && token === state.renderToken) {
+            openDiscover();
+          }
+        });
+      }
+      if (state.route.clipQuery) {
+        state.clip.query = state.route.clipQuery;
+        state.clip.name = state.route.clipName || "";
+        if (state.serviceAvailable) {
+          void openClipPanel();
+        } else {
+          showToast("Clip requires the optional map service.");
+        }
+      }
       void restoreWorkspaceAoi();
     } catch (error) {
       state.mapHandle = null;
@@ -4183,6 +4412,7 @@ python scripts/fetch_web_previews.py</pre>
         state.route.view === "series" ||
         (state.route.view === "dataset" && state.route.map)
     );
+    setCurrent(els.tabTours, state.route.view === "tours");
     setCurrent(els.tabBundles, state.route.view === "bundles");
     setCurrent(els.tabAdmin, state.route.view === "admin");
   }
@@ -5565,6 +5795,25 @@ python scripts/fetch_web_previews.py</pre>
 
   function currentMapDatasetId() {
     return state.route.datasetId || state.selectedId || null;
+  }
+
+  function waitForMapReady(handle, timeout = 15000) {
+    if (handle?.__hbcReady) {
+      return Promise.resolve(true);
+    }
+    return new Promise((resolve) => {
+      const started = Date.now();
+      const check = () => {
+        if (handle?.__hbcReady) {
+          resolve(true);
+        } else if (Date.now() - started >= timeout) {
+          resolve(false);
+        } else {
+          window.setTimeout(check, 100);
+        }
+      };
+      check();
+    });
   }
 
   function resetClipState() {
