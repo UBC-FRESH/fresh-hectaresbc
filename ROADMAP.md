@@ -568,8 +568,8 @@ Phase 38 validates missing catalog, preview index, preview image, and service
 states and adds cold-checkout browser coverage.
 
 - [x] P38.1 Plan cold-checkout QA. Child issue: #280.
-- [ ] P38.2 Fix cold-checkout fallbacks. Child issue: #281.
-- [ ] P38.3 Add cold-checkout browser coverage and docs. Child issue: #282.
+- [x] P38.2 Fix cold-checkout fallbacks. Child issue: #281.
+- [x] P38.3 Add cold-checkout browser coverage and docs. Child issue: #282.
 - [ ] P38.4 Verify and close Phase 38. Child issue: #283.
 
 ## Current Next Steps
