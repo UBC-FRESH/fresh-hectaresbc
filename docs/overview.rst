@@ -12,7 +12,13 @@ Current capabilities include:
 * a thin Typer CLI over the same API;
 * local path resolution, content-status checks, backend diagnostics, and dry-run
   retrieval planning;
-* a responsive browser catalog with Browse, Dataset, and MapLibre map routes;
+* a responsive browser catalog with Browse, Dataset, MapLibre Map, Compare,
+  Series, Tours, Bundles, and protected Admin routes;
+* synchronized Compare (split/wipe/flicker) and Series (2–30 frames with lazy
+  sources, prefetch, year discovery, PNG/contact-sheet/WebM export);
+* guided Tours with prefilled Clip and auto-open Discovery deep links;
+* labeled Map PNG export and accessible focus/shortcut/mobile behavior;
+* protected admin storage usage, retention settings, and manual pruning;
 * a DataLad-backed source-derived browser preview publication covering 2,183
   recovered catalog records, with 2,163 preview PNGs and 20 records marked
   ``not_previewable``;

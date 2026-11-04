@@ -31,3 +31,4 @@ implemented behavior; design notes for future work remain in ``planning/``.
    :caption: Project
 
    development
+   release_readiness
