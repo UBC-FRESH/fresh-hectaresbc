@@ -579,7 +579,7 @@ Status: implementation in progress on `feature/p39-admin-retention`. Parent issu
 Phase 39 exposes tile/COG/bundle/AOI storage usage and retention settings in the
 admin dashboard and adds a manual prune action.
 
-- [ ] P39.1 Plan storage and retention admin contract. Child issue: #286.
+- [x] P39.1 Plan storage and retention admin contract. Child issue: #286.
 - [ ] P39.2 Add storage stats and prune endpoint. Child issue: #287.
 - [ ] P39.3 Add admin storage UI and browser coverage. Child issue: #288.
 - [ ] P39.4 Verify and close Phase 39. Child issue: #289.
