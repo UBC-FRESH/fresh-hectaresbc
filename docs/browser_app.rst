@@ -188,19 +188,26 @@ The renderer has two fast paths:
   open source dataset handles and serializes reads per handle.
 
 Optional COG derivatives can remove the first high-zoom source-open cost.
-Generate them per layer:
+Generate them per layer or use the core-admin preset:
 
 .. code-block:: bash
 
    python scripts/build_tile_cog.py \
-     --dataset-id dl_adminunits_bcts \
+     --preset core-admin \
      --archive-root /path/to/hectaresbc \
      --output-root var/tile-cogs
 
-The service prefers ``var/tile-cogs/<dataset_id>.tif`` when present and
-reports the active source in tile metadata as ``source_raster: "cog"`` or
-``"zip"``. The BCTS pilot COG is roughly 3.1 MB and reduces the first z9 tile
-from roughly 0.8 s to 0.06 s locally. The tile cache is pruned by
+   # Inspect the resolved plan without opening the archive:
+   python scripts/build_tile_cog.py --preset core-admin --dry-run \
+     --output-root var/tile-cogs
+
+The core-admin preset covers coal tenures, fire zones, forest districts, health
+units, ILMB regions, and municipalities. The service prefers
+``var/tile-cogs/<dataset_id>.tif`` when present and reports the active source in
+tile metadata as ``source_raster: "cog"`` or ``"zip"``. The demo now has seven
+COGs (BCTS plus six core-admin layers). The six new derivatives are roughly
+2.1–3.0 MB each; a representative forest-district z9 tile improved from roughly
+0.95 s from the ZIP to 0.31 s from its COG locally. The tile cache is pruned by
 ``FRESH_HECTARESBC_TILE_CACHE_MAX_BYTES``; job and bundle retention are
 configured separately.
 
