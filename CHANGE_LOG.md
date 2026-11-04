@@ -250,3 +250,4 @@
 - Completed and merged Phase 34 via PR #260: next-frame Series prefetch at zero opacity, frame readiness/fallback reporting, loading feedback, local/public tile-request verification, docs, and asset bump to p50.
 - Activated Phase 35 animated Series WebM export with parent issue #261, child issues #262-#265, and planning/series_video_plan.md.
 - Completed P35.2/P35.3 with browser-native Series WebM recording, composed title/frame/footer canvas, current-speed frame sequencing, recording-state UI, WebM download coverage, docs, and asset bump to p51.
+- Completed and merged Phase 35 via PR #266: full-cycle Series WebM export using canvas capture and MediaRecorder, recorded labels/footer, readiness-aware sequencing, recording-state UI, WebM download coverage, docs, and asset bump to p51.

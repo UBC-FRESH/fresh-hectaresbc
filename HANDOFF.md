@@ -1,10 +1,10 @@
 # Agent Handoff
 
 Date: 2026-11-03
-Status: P19/P20/P21/P22/P23/P24/P25/P26/P27/P28/P29/P30/P31/P32/P33/P34 complete; no active implementation branch or open issues/PRs.
+Status: P19/P20/P21/P22/P23/P24/P25/P26/P27/P28/P29/P30/P31/P32/P33/P34/P35 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
-Latest feature merge: `ca4a9d5`
-Latest merged PR: #260 (Series prefetch); compare export: #216
+Latest feature merge: `4099403`
+Latest merged PR: #266 (Series WebM export); compare export: #216
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
@@ -320,7 +320,7 @@ resolution tests. Use the web/agent test command above for this feature set.
 
 ## Final Closeout
 
-- P19, P20, P21, P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32, P33, and P34 are complete; no active implementation branch remains.
+- P19, P20, P21, P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32, P33, P34, and P35 are complete; no active implementation branch remains.
 - No open GitHub issues or pull requests at closeout.
 - Final protected public verification and browser smoke checks passed.
 - Sphinx sources refreshed for tiles, COGs, stats, Clip AOI preflight, jobs, and retention.
@@ -339,6 +339,7 @@ resolution tests. Use the web/agent test command above for this feature set.
 - Phase 32 added labeled Map workspace PNG export with title, dataset ID, visible context layers, legend, date, and attribution.
 - Phase 33 added the `#/tours` guided workspace, five curated tours, prefilled Clip and auto-open Discovery deep links, and a responsive five-tab header.
 - Phase 34 added hidden zero-opacity next-frame prefetch, source-readiness reporting, and active-frame loading feedback to Series.
+- Phase 35 added full-cycle Series WebM recording with composed labels, readiness-aware frame sequencing, and browser-native MediaRecorder export.
 - Remaining items below are optional follow-ups, not blockers.
 
 ## Optional Follow-Ups
