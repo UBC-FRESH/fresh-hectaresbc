@@ -1693,6 +1693,62 @@
     return `python scripts/build_tile_cog.py --dataset-id ${datasetId} --archive-root /path/to/hectaresbc --output-root var/tile-cogs`;
   }
 
+  function adminStorageTemplate(storage, retention) {
+    const cache = storage?.tile_cache || {};
+    const cogs = storage?.tile_cogs || {};
+    const bundles = storage?.bundles || {};
+    const aoi = storage?.aoi || {};
+    const cachePercent = cache.max_bytes
+      ? Math.min(100, (Number(cache.bytes || 0) / Number(cache.max_bytes)) * 100)
+      : 0;
+    const row = (label, value, detail) => `<div class="admin-storage-row">
+      <span>${Catalog.escapeHtml(label)}</span>
+      <strong>${Catalog.formatBytes(Number(value || 0))}</strong>
+      <small>${Catalog.escapeHtml(detail || "")}</small>
+    </div>`;
+    return `<section class="admin-panel admin-storage-panel">
+      <div class="admin-panel-head">
+        <h2>Storage &amp; retention</h2>
+        <button class="secondary-button" type="button" data-admin-prune>Prune expired outputs</button>
+      </div>
+      <div class="admin-storage-meter" aria-hidden="true"><span style="width:${cachePercent.toFixed(1)}%"></span></div>
+      <div class="admin-storage-list">
+        ${row("Tile cache", cache.bytes, `${Catalog.formatNumber(cache.files || 0)} files · max ${Catalog.formatBytes(Number(cache.max_bytes || 0))}`)}
+        ${row("COG derivatives", cogs.bytes, `${Catalog.formatNumber(cogs.files || 0)} files`)}
+        ${row("Bundles", bundles.bytes, `${Catalog.formatNumber(bundles.bundles || 0)} bundles · ${Catalog.formatNumber(bundles.zips || 0)} ZIPs · ${Catalog.formatNumber(bundles.files || 0)} files`)}
+        ${row("Temporary AOI", aoi.bytes, `${Catalog.formatNumber(aoi.files || 0)} files`)}
+      </div>
+      <p class="admin-links">Retention: jobs ${Catalog.formatNumber(retention?.job_history_limit ?? "—")} / ${Catalog.escapeHtml(retention?.job_history_max_age_days ?? "—")} days · bundles ${Catalog.formatNumber(retention?.bundle_history_limit ?? "—")} / ${Catalog.escapeHtml(retention?.bundle_history_max_age_days ?? "—")} days · AOI ${Catalog.escapeHtml(retention?.bundle_aoi_max_age_days ?? "—")} days / ${Catalog.formatNumber(retention?.bundle_aoi_max_files ?? "—")} files</p>
+    </section>`;
+  }
+
+  async function pruneAdminStorage(button) {
+    if (!state.serviceAvailable) {
+      showToast("Bundle service unavailable.");
+      return;
+    }
+    const original = button.textContent;
+    button.disabled = true;
+    button.textContent = "Pruning…";
+    try {
+      const response = await fetch("../api/admin/prune", { method: "POST" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.detail || `prune failed (${response.status})`);
+      }
+      const jobs = payload.jobs || {};
+      const outputs = payload.outputs || {};
+      showToast(
+        `Pruned ${Catalog.formatNumber(jobs.removed || 0)} jobs, ${Catalog.formatNumber(outputs.removed_bundles || 0)} bundles, ${Catalog.formatNumber(outputs.removed_zips || 0)} ZIPs, ${Catalog.formatNumber(outputs.removed_aoi || 0)} AOI files.`
+      );
+      await loadAdminDashboard(state.renderToken);
+    } catch (error) {
+      showToast(`Could not prune storage: ${error.message}`);
+      button.disabled = false;
+      button.textContent = original;
+    }
+  }
+
   function renderAdminDashboard(stats, jobs) {
     const tiles = stats?.tiles || {};
     const totals = tiles.totals || {};
@@ -1701,6 +1757,10 @@
     const jobCounts = stats?.bundle_jobs || {};
     const jobItems = jobs || [];
     const hitRate = ((Number(totals.cache_hit_rate) || 0) * 100).toFixed(1);
+    const storage = stats?.storage || {};
+    const retention = stats?.retention || {};
+    const cache = storage.tile_cache || {};
+    const bundles = storage.bundles || {};
     const sourceRows = top
       .map((item) => {
         const sourceText = Object.entries(item.sources || {})
@@ -1745,6 +1805,8 @@
           ${adminMetric("Average latency", `${Catalog.escapeHtml(totals.avg_latency_ms ?? 0)} ms`, `max ${Catalog.escapeHtml(totals.latency_ms_max ?? 0)} ms`)}
           ${adminMetric("Errors", Catalog.formatNumber(totals.errors || 0))}
           ${adminMetric("COGs", Catalog.formatNumber(stats?.tile_cogs || 0), stats?.tile_cog_root || "")}
+          ${adminMetric("Bundle storage", Catalog.formatBytes(Number(bundles.bytes || 0)), `${Catalog.formatNumber(bundles.bundles || 0)} bundles · ${Catalog.formatNumber(bundles.zips || 0)} ZIPs`)}
+          ${adminMetric("Tile cache", Catalog.formatBytes(Number(cache.bytes || 0)), `${Catalog.formatNumber(cache.files || 0)} files · max ${Catalog.formatBytes(Number(cache.max_bytes || 0))}`)}
         </div>
         <div class="admin-grid">
           <section class="admin-panel">
@@ -1763,6 +1825,7 @@
             </div>
           </section>
         </div>
+        ${adminStorageTemplate(storage, retention)}
         <section class="admin-panel admin-table-panel">
           <h2>Top datasets</h2>
           ${top.length
@@ -4354,6 +4417,10 @@ python scripts/fetch_web_previews.py</pre>
     const discoverOpen = target.closest("[data-discover-open]");
     if (discoverOpen) {
       openDiscover(discoverOpen);
+      return;
+    }
+    if (target.closest("[data-admin-prune]")) {
+      void pruneAdminStorage(target.closest("[data-admin-prune]"));
       return;
     }
     if (target.closest("[data-admin-refresh]")) {

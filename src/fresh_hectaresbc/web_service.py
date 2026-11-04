@@ -263,6 +263,27 @@ def _parse_agent_events(stdout: str) -> tuple[str, str | None, list[dict[str, st
     return "\n\n".join(texts).strip(), session_id, actions[-12:], errors
 
 
+def _directory_usage(root: Path) -> dict[str, int]:
+    """Return file count and total bytes for a directory tree."""
+
+    files = 0
+    total_bytes = 0
+    if not root.is_dir():
+        return {"files": 0, "bytes": 0}
+    try:
+        paths = root.rglob("*")
+        for path in paths:
+            try:
+                if path.is_file():
+                    files += 1
+                    total_bytes += path.stat().st_size
+            except OSError:
+                continue
+    except OSError:
+        pass
+    return {"files": files, "bytes": total_bytes}
+
+
 def create_app(config: ServiceConfig) -> FastAPI:
     """Create the FastAPI application."""
 
@@ -361,15 +382,58 @@ def create_app(config: ServiceConfig) -> FastAPI:
 
     @app.get("/api/stats")
     def stats(top: int = Query(default=20, ge=0, le=100)) -> dict[str, Any]:
+        cog_paths = list(config.tile_cog_root.glob("*.tif"))
+        aoi_root = config.bundle_root / "aoi"
+        bundle_usage = _directory_usage(config.bundle_root)
+        storage = {
+            "tile_cache": {
+                "root": str(config.tile_cache_root),
+                **_directory_usage(config.tile_cache_root),
+                "max_bytes": config.tile_cache_max_bytes,
+            },
+            "tile_cogs": {
+                "root": str(config.tile_cog_root),
+                "files": len(cog_paths),
+                "bytes": sum(path.stat().st_size for path in cog_paths),
+            },
+            "bundles": {
+                "root": str(config.bundle_root),
+                **bundle_usage,
+                "bundles": len(list(config.bundle_root.glob("*/manifest.json"))),
+                "zips": len(
+                    list(config.bundle_root.glob("hectaresbc-bundle-*.zip"))
+                ),
+            },
+            "aoi": {
+                "root": str(aoi_root),
+                **_directory_usage(aoi_root),
+            },
+        }
+        retention = {
+            "job_history_limit": job_manager.job_history_limit,
+            "job_history_max_age_days": job_manager.job_history_max_age_days,
+            "bundle_history_limit": job_manager.bundle_history_limit,
+            "bundle_history_max_age_days": job_manager.bundle_history_max_age_days,
+            "bundle_aoi_max_age_days": job_manager.bundle_aoi_max_age_days,
+            "bundle_aoi_max_files": job_manager.bundle_aoi_max_files,
+        }
         return {
             "status": "ok",
             "tiles": tile_usage_stats(top=top),
             "tile_cog_root": str(config.tile_cog_root),
-            "tile_cogs": len(list(config.tile_cog_root.glob("*.tif"))),
-            "cog_datasets": sorted(
-                path.stem for path in config.tile_cog_root.glob("*.tif")
-            ),
+            "tile_cogs": len(cog_paths),
+            "cog_datasets": sorted(path.stem for path in cog_paths),
             "bundle_jobs": job_manager.stats(),
+            "storage": storage,
+            "retention": retention,
+        }
+
+    @app.post("/api/admin/prune")
+    def admin_prune() -> dict[str, Any]:
+        return {
+            "status": "ok",
+            "jobs": job_manager.prune_jobs(),
+            "outputs": job_manager.prune_outputs(),
         }
 
     @app.get("/api/agent")

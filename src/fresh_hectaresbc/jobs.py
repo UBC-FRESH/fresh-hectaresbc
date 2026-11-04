@@ -204,7 +204,9 @@ class BundleJobManager:
             counts["total"] = len(self._jobs)
             return counts
 
-    def _prune_outputs(self) -> dict[str, int]:
+    def prune_outputs(self) -> dict[str, int]:
+        """Prune expired bundle outputs and temporary AOI files."""
+
         return prune_bundle_outputs(
             self.output_root,
             max_bundles=self.bundle_history_limit,
@@ -212,6 +214,9 @@ class BundleJobManager:
             aoi_max_age_days=self.bundle_aoi_max_age_days,
             aoi_max_files=self.bundle_aoi_max_files,
         )
+
+    def _prune_outputs(self) -> dict[str, int]:
+        return self.prune_outputs()
 
     def _update(self, job_id: str, **changes: Any) -> dict[str, Any] | None:
         with self._lock:

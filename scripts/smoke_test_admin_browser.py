@@ -42,9 +42,10 @@ def main() -> int:
     thread.start()
     base_url = f"http://127.0.0.1:{server.server_address[1]}/web/"
     stats_hits = 0
+    prune_hits = 0
 
     def api(route, request):  # noqa: ANN001, ANN202
-        nonlocal stats_hits
+        nonlocal stats_hits, prune_hits
         path = urlparse(request.url).path
         if path == "/api/health":
             route.fulfill(
@@ -93,6 +94,58 @@ def main() -> int:
                         "tile_cogs": 1,
                         "cog_datasets": ["dl_adminunits_bcts"],
                         "bundle_jobs": {"complete": 3, "failed": 1, "total": 4},
+                        "storage": {
+                            "tile_cache": {
+                                "root": "/tmp/tiles",
+                                "files": 12,
+                                "bytes": 1234567,
+                                "max_bytes": 4294967296,
+                            },
+                            "tile_cogs": {
+                                "root": "/tmp/cogs",
+                                "files": 1,
+                                "bytes": 2345678,
+                            },
+                            "bundles": {
+                                "root": "/tmp/bundles",
+                                "files": 8,
+                                "bytes": 3456789,
+                                "bundles": 2,
+                                "zips": 2,
+                            },
+                            "aoi": {
+                                "root": "/tmp/bundles/aoi",
+                                "files": 3,
+                                "bytes": 4567,
+                            },
+                        },
+                        "retention": {
+                            "job_history_limit": 100,
+                            "job_history_max_age_days": 30,
+                            "bundle_history_limit": 50,
+                            "bundle_history_max_age_days": 30,
+                            "bundle_aoi_max_age_days": 7,
+                            "bundle_aoi_max_files": 500,
+                        },
+                    }
+                ),
+            )
+            return
+        if path == "/api/admin/prune" and request.method == "POST":
+            prune_hits += 1
+            route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=json.dumps(
+                    {
+                        "status": "ok",
+                        "jobs": {"removed": 0, "kept": 4},
+                        "outputs": {
+                            "removed_bundles": 1,
+                            "removed_zips": 1,
+                            "removed_aoi": 2,
+                            "kept_bundles": 2,
+                        },
                     }
                 ),
             )
@@ -133,14 +186,21 @@ def main() -> int:
             page.wait_for_selector(".admin-shell", timeout=30000)
             assert page.locator("#tab-admin").is_visible()
             page.wait_for_selector(".admin-metric", timeout=10000)
-            assert page.locator(".admin-metric").count() == 5
+            assert page.locator(".admin-metric").count() == 7
             assert "71.4%" in page.locator(".admin-metrics").inner_text()
+            assert "bundle storage" in page.locator(".admin-metrics").inner_text().lower()
+            assert "Storage & retention" in page.locator(".admin-storage-panel").inner_text()
+            assert "Retention: jobs 100" in page.locator(".admin-storage-panel").inner_text()
             assert "dl_adminunits_bcts" in page.locator(".admin-table").first.inner_text()
             assert page.locator(".history-status.ok").count() >= 1
             assert page.locator("[data-admin-refresh]").count() == 1
             page.locator("[data-admin-refresh]").click()
             page.wait_for_timeout(500)
             assert stats_hits >= 2
+            page.locator("[data-admin-prune]").click()
+            page.wait_for_timeout(500)
+            assert prune_hits == 1
+            assert stats_hits >= 3
             browser.close()
     finally:
         server.shutdown()

@@ -379,10 +379,14 @@ The `#/admin` route (shown when the optional service is available) turns
 - bundle-job status counts and recent-job table;
 - top-dataset table with request counts, hit rates, latency, source mix, and COG
   status;
-- a copyable `scripts/build_tile_cog.py` command for datasets without a COG.
+- a copyable `scripts/build_tile_cog.py` command for datasets without a COG;
+- tile-cache, COG, bundle/ZIP, and temporary-AOI storage usage;
+- current job/bundle/AOI retention limits and ages;
+- a **Prune expired outputs** action backed by `POST /api/admin/prune`.
 
 The route is protected by the same Cloudflare Access policy as the app. The
-dashboard does not execute builds or add user-specific analytics.
+dashboard does not execute COG builds or add user-specific analytics. Pruning
+uses the existing configured retention rules and never removes active jobs.
 
 Optional Service, Assistant, And Clip AOI
 -----------------------------------------

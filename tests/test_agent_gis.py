@@ -456,6 +456,26 @@ def test_web_service_exposes_catalog_and_agent_info(tmp_path: Path) -> None:
     assert stats.json()["tiles"]["totals"]["requests"] >= 1
     assert stats.json()["tile_cogs"] == 0
     assert stats.json()["cog_datasets"] == []
+    assert set(stats.json()["storage"]) == {
+        "tile_cache",
+        "tile_cogs",
+        "bundles",
+        "aoi",
+    }
+    assert stats.json()["storage"]["tile_cache"]["max_bytes"] > 0
+    assert set(stats.json()["retention"]) == {
+        "job_history_limit",
+        "job_history_max_age_days",
+        "bundle_history_limit",
+        "bundle_history_max_age_days",
+        "bundle_aoi_max_age_days",
+        "bundle_aoi_max_files",
+    }
+    prune = client.post("/api/admin/prune")
+    assert prune.status_code == 200
+    assert prune.json()["status"] == "ok"
+    assert "removed" in prune.json()["jobs"]
+    assert "removed_bundles" in prune.json()["outputs"]
 
     from pyproj import Transformer
     from shapely.geometry import box, mapping
