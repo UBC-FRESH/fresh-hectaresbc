@@ -28,6 +28,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_accessibility_browser.py
    python scripts/smoke_test_map_export_browser.py
    python scripts/smoke_test_tours_browser.py
+   python scripts/smoke_test_series_video_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -244,8 +245,11 @@ Controls include play/pause, previous/next frame, and fast/normal/slow speeds
 opacity while the current frame is displayed, and the frame status shows
 ``loading…`` until the active source is ready. Reduced-motion preferences start
 the series paused. **Download PNG** exports the active frame with its label,
-dataset ID, frame number, date, and map attribution. A missing-series state is
-shown when fewer than two layers can be loaded.
+dataset ID, frame number, date, and map attribution. **Export video** records one
+complete playback cycle as a WebM with browser-native `canvas.captureStream` and
+`MediaRecorder`; frames are held at the current Series speed, output width is
+capped at 1280 px, and unsupported browsers receive a clear message. A
+missing-series state is shown when fewer than two layers can be loaded.
 
 The **Edit frames** disclosure adds, removes, reorders, and jumps between frames.
 Every edit rewrites the `#/series` URL and restarts playback from frame one.
