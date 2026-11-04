@@ -4188,7 +4188,7 @@
         </div>
         <div class="map-fallback">
           <div class="map-fallback-card">
-            <h1>No map layer available</h1>
+            <h2>No map layer available</h2>
             <p>${Catalog.escapeHtml(message)}</p>
             <p><a class="primary-button" href="#/catalog?preview=available">Browse previewable layers</a></p>
             <details style="margin-top:0.8rem;text-align:left">
@@ -4228,7 +4228,7 @@ python scripts/fetch_web_previews.py</pre>
           ${canShowImage
             ? `<img src="${Catalog.escapeHtml(previewUrl)}" alt="Preview of ${Catalog.escapeHtml(Catalog.titleLabel(record))}">`
             : `<div class="map-fallback-card">
-                <h1>Map preview unavailable</h1>
+                <h2>Map preview unavailable</h2>
                 <p>${Catalog.escapeHtml(message)}</p>
                 ${errorMessage ? `<p class="muted">${Catalog.escapeHtml(errorMessage)}</p>` : ""}
                 <p><a class="primary-button" href="${datasetHref}">Open dataset details</a></p>
@@ -7316,22 +7316,23 @@ python scripts/fetch_web_previews.py</pre>
     }
     els.content.innerHTML = `
       <div class="dataset-view">
-        <div class="error-state">
-          <h3>Catalog data unavailable</h3>
+        <div class="error-state" role="alert">
+          <h1 tabindex="-1">Catalog data unavailable</h1>
           <p>${Catalog.escapeHtml(error?.message || "The generated catalog could not be loaded.")}</p>
           <p>Generate the catalog with <code>python3 scripts/generate_web_catalog.py</code>, then serve the <code>web/</code> directory.</p>
           <button class="primary-button" type="button" data-retry>Retry</button>
         </div>
       </div>
     `;
+    els.content.querySelector("h1")?.focus();
     updateHeader(0);
   }
 
   function notFoundTemplate(datasetId) {
     return `
       <div class="dataset-view">
-        <div class="error-state">
-          <h3>Dataset not found</h3>
+        <div class="error-state" role="alert">
+          <h1 tabindex="-1">Dataset not found</h1>
           <p>No recovered catalog record matches <code>${Catalog.escapeHtml(datasetId || "unknown")}</code>.</p>
           <p><a class="primary-button" href="${state.lastBrowseHash || "#/catalog"}">Back to catalog</a></p>
         </div>

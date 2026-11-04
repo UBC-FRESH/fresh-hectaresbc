@@ -32,6 +32,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_series_contact_sheet_browser.py
    python scripts/check_web_performance_budgets.py
    python scripts/smoke_test_performance_browser.py
+   python scripts/smoke_test_cold_checkout_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -74,6 +75,23 @@ fallback when WebGL or preview data is unavailable. **Download PNG** exports the
 active map with the layer title, dataset ID, visible context layers, recovered
 legend, date, and attribution. The export uses the rendered MapLibre canvas and
 does not include the hidden control panel.
+
+Cold Checkout And Service Fallbacks
+-----------------------------------
+
+A fresh checkout without generated catalog files shows a catalog-unavailable
+state with the generate command and a Retry action. Without a preview index,
+Browse remains usable, Map explains how to fetch preview payloads, Tours marks
+the year-sequence family unavailable, and Series shows its missing-series state.
+If preview images are missing, the Map shell remains visible with a missing-image
+banner. Without the optional service, Clip/Identify/Assistant/Admin controls stay
+hidden and the Clip tour explains the service requirement.
+
+Verify these states with:
+
+.. code-block:: bash
+
+   python scripts/smoke_test_cold_checkout_browser.py
 
 Performance Budgets
 -------------------

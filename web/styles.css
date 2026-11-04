@@ -825,6 +825,7 @@ body[data-view="tours"] .inspector {
 }
 
 .empty-state h3,
+.error-state h1,
 .error-state h3 {
   margin-bottom: 0.35rem;
   font-size: 1rem;
@@ -1819,7 +1820,8 @@ details.technical pre {
   text-align: center;
 }
 
-.map-fallback-card h1 {
+.map-fallback-card h1,
+.map-fallback-card h2 {
   margin-bottom: 0.35rem;
   font-size: 1.1rem;
 }

@@ -21,7 +21,8 @@ catalog. Its primary surfaces are:
 
 The app does not require a Node build step. `web/catalog.js`, `web/map.js`, and
 `web/app.js` are classic scripts; MapLibre is vendored under `web/vendor/` and
-loaded only on the map route.
+loaded only on the map route. Missing generated catalog/preview artifacts and the
+optional service are handled with explicit fallback states.
 
 ## Generate The Catalog
 
