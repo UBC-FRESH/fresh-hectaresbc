@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light">
     <title>HectaresBC — Recovered Catalog</title>
-    <link rel="stylesheet" href="styles.css?v=20261102-p46">
+    <link rel="stylesheet" href="styles.css?v=20261102-p47">
   </head>
   <body data-view="catalog">
     <a class="skip-link" href="#content">Skip to catalog</a>
@@ -19,17 +19,17 @@
         </span>
       </a>
 
-      <nav class="workspaces" role="tablist" aria-label="Workspaces">
-        <a id="tab-browse" class="workspace-tab" href="#/catalog" role="tab" aria-selected="true">
+      <nav class="workspaces" aria-label="Workspaces">
+        <a id="tab-browse" class="workspace-tab" href="#/catalog" aria-current="page">
           Browse
         </a>
-        <a id="tab-map" class="workspace-tab" href="#/catalog" role="tab" aria-selected="false" aria-disabled="true">
+        <a id="tab-map" class="workspace-tab" href="#/catalog" aria-disabled="true">
           Map
         </a>
-        <a id="tab-bundles" class="workspace-tab" href="#/bundles" role="tab" aria-selected="false">
+        <a id="tab-bundles" class="workspace-tab" href="#/bundles">
           Bundles
         </a>
-        <a id="tab-admin" class="workspace-tab" href="#/admin" role="tab" aria-selected="false" hidden>
+        <a id="tab-admin" class="workspace-tab" href="#/admin" hidden>
           Admin
         </a>
       </nav>
@@ -56,10 +56,10 @@
       <div class="header-meta">
         <span id="preview-status" class="header-pill" hidden></span>
         <span id="status" class="header-status" role="status">Loading catalog…</span>
-        <button id="tray-button" class="tray-button" type="button" aria-expanded="false" aria-controls="tray-panel">
+        <button id="tray-button" class="tray-button" type="button" aria-expanded="false" aria-controls="tray-panel" aria-haspopup="dialog">
           Tray <span id="tray-count" class="tray-count">0</span>
         </button>
-        <button id="assistant-button" class="assistant-button" type="button" hidden>
+        <button id="assistant-button" class="assistant-button" type="button" aria-controls="assistant-panel" aria-haspopup="dialog" aria-expanded="false" hidden>
           <span aria-hidden="true">✦</span> Ask
         </button>
         <button id="help-button" class="icon-button" type="button" title="Keyboard shortcuts and help" aria-label="Help">
@@ -69,7 +69,7 @@
     </header>
 
     <main id="main" class="app-main">
-      <aside id="filter-rail" class="filter-rail" aria-label="Catalog filters">
+      <aside id="filter-rail" class="filter-rail" aria-label="Catalog filters" tabindex="-1">
         <div class="rail-head">
           <h2>Filters</h2>
           <button id="clear-filters" class="link-button" type="button">Clear all</button>
@@ -85,10 +85,10 @@
     </main>
 
     <div id="sheet-backdrop" class="sheet-backdrop"></div>
-    <aside id="assistant-panel" class="assistant-panel" hidden aria-label="HectaresBC assistant">
+    <aside id="assistant-panel" class="assistant-panel" role="dialog" aria-labelledby="assistant-title" hidden>
       <div class="assistant-head">
         <div>
-          <strong>HectaresBC assistant</strong>
+          <strong id="assistant-title">HectaresBC assistant</strong>
           <span id="assistant-model" class="assistant-model">checking…</span>
         </div>
         <div class="assistant-head-actions">
@@ -115,10 +115,10 @@
       <p id="assistant-status" class="assistant-status"></p>
     </aside>
 
-    <aside id="clip-panel" class="clip-panel" hidden aria-label="AOI clip and bundle">
+    <aside id="clip-panel" class="clip-panel" role="dialog" aria-labelledby="clip-title" hidden>
       <div class="clip-head">
         <div>
-          <strong>Clip &amp; bundle</strong>
+          <strong id="clip-title">Clip &amp; bundle</strong>
           <span id="clip-subtitle" class="clip-subtitle">Resolve or draw an AOI, then choose layers</span>
         </div>
         <button id="clip-close" class="icon-button" type="button" aria-label="Close clip panel">×</button>
@@ -126,10 +126,10 @@
       <div id="clip-body" class="clip-body"></div>
     </aside>
 
-    <aside id="tray-panel" class="tray-panel" hidden aria-label="Layer tray">
+    <aside id="tray-panel" class="tray-panel" role="dialog" aria-labelledby="tray-title" hidden>
       <div class="tray-head">
         <div>
-          <strong>Layer tray</strong>
+          <strong id="tray-title">Layer tray</strong>
           <span class="clip-subtitle">Collect layers, then open them on the map</span>
         </div>
         <button id="tray-close" class="icon-button" type="button" aria-label="Close layer tray">×</button>
@@ -137,10 +137,10 @@
       <div id="tray-body" class="tray-body"></div>
     </aside>
 
-    <aside id="discover-panel" class="discover-panel" hidden aria-label="Spatial layer discovery">
+    <aside id="discover-panel" class="discover-panel" role="dialog" aria-labelledby="discover-title" hidden>
       <div class="tray-head">
         <div>
-          <strong>Discover layers</strong>
+          <strong id="discover-title">Discover layers</strong>
           <span class="clip-subtitle">Find previewable layers intersecting the view or AOI</span>
         </div>
         <button id="discover-close" class="icon-button" type="button" aria-label="Close discovery panel">×</button>
@@ -174,8 +174,8 @@
       <p class="noscript">This catalog needs JavaScript to search and render dataset details.</p>
     </noscript>
 
-    <script src="catalog.js?v=20261102-p46" defer></script>
-    <script src="map.js?v=20261102-p46" defer></script>
-    <script src="app.js?v=20261102-p46" defer></script>
+    <script src="catalog.js?v=20261102-p47" defer></script>
+    <script src="map.js?v=20261102-p47" defer></script>
+    <script src="app.js?v=20261102-p47" defer></script>
   </body>
 </html>

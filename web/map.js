@@ -42,6 +42,12 @@
     return maplibrePromise;
   }
 
+  function motionDuration(milliseconds) {
+    return globalScope.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      ? 0
+      : milliseconds;
+  }
+
   function validBounds(bounds) {
     if (!Array.isArray(bounds) || bounds.length !== 4) {
       return null;
@@ -230,7 +236,7 @@
           [bounds[0], bounds[1]],
           [bounds[2], bounds[3]],
         ],
-        { padding: 48, duration: 400 }
+        { padding: 48, duration: motionDuration(400) }
       );
     });
 
@@ -357,7 +363,7 @@
     if (fit) {
       const bounds = geometryBounds(feature);
       if (bounds) {
-        map.fitBounds(bounds, { padding: 48, duration: 400 });
+        map.fitBounds(bounds, { padding: 48, duration: motionDuration(400) });
       }
     }
   }

@@ -476,6 +476,21 @@ frame editor, and detects year-suffixed layer families for one-click playback.
 - [x] P30.3 Add series editor and year-sequence discovery. Child issue: #234.
 - [x] P30.4 Verify and close Phase 30. Child issue: #235.
 
+## Phase 31: Accessibility And Mobile QA
+
+Status: implementation in progress on `feature/p31-accessibility-mobile`. Parent issue: #237. Planning: `planning/accessibility_mobile_plan.md`.
+
+Phase 31 fixes concrete keyboard, focus, touch-target, contrast, and
+reduced-motion gaps across the browser app and adds regression coverage.
+
+- [x] P31.1 Plan accessibility and mobile audit. Child issue: #238.
+- [x] P31.2 Fix navigation, panel focus, and keyboard behavior. Child issue: #239.
+- [x] P31.3 Fix touch targets, contrast, and reduced motion. Child issue: #240.
+- [ ] P31.4 Verify and close Phase 31. Child issue: #241.
+
 ## Current Next Steps
 
-No active implementation phase. Optional follow-ups remain in the roadmap.
+1. Complete P31.1 planning contract and close child issue #238.
+2. Implement P31.2 navigation, focus, and keyboard fixes.
+3. Implement P31.3 touch, contrast, and reduced-motion fixes.
+4. Open the Phase 31 PR, verify, merge, and close parent #237.
