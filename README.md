@@ -2,6 +2,38 @@
 
 Recovering, inventorying, documenting, and modernizing the archived HectaresBC geospatial data collection.
 
+## Current Browser Workspace
+
+The static browser app under `web/` now includes:
+
+- **Browse and Dataset** surfaces with facets, saved searches, favorites, and
+  metadata/provenance inspection.
+- **Map** with live 1-ha tiles or static previews, tray context layers, legends,
+  identify, AOI drawing, Clip, spatial discovery, and labeled PNG export.
+- **Compare** with synchronized Side-by-side, Wipe, and Flicker modes.
+- **Series** with 2–30 frames, lazy sources, prefetch/loading feedback, frame
+  editing, year-sequence discovery, active-frame PNG, contact-sheet PNG, and
+  full-cycle WebM export.
+- **Tours** with five guided routes into Browse, Compare, Series, Clip, and
+  Discovery.
+- **Bundles** with progress, cancellation, retry, downloads, and retention.
+- **Admin** with tile/cache/COG/bundle/AOI storage, retention settings, and
+  manual pruning.
+
+A separate optional FastAPI service adds live tiles, Identify, Clip/bundle jobs,
+the assistant, and protected admin statistics. See:
+
+- `docs/browser_app.rst` for browser behavior and routes;
+- `docs/release_readiness.rst` for prerequisites, operations, verification,
+  budgets, security boundaries, and known limits;
+- `HANDOFF.md` for the current demo and merge state.
+
+For the full local check run:
+
+```bash
+bash scripts/run_release_checks.sh
+```
+
 ## Data Repository
 
 Large HectaresBC payloads are not stored directly in this repository. They live in the DataLad/git-annex data repository:

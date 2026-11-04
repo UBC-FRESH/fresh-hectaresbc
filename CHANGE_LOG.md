@@ -267,3 +267,5 @@
 - Completed P40.2 with a core-admin COG preset, dry-run planner, duplicate suppression, and preset test.
 - Completed P40.3: built six core-admin COGs in the demo (2.1–3.0 MB each); service reports 7 COGs; representative forest-district z9 tile improved from ~0.95 s (ZIP) to ~0.31 s (COG).
 - Completed and merged Phase 40 via PR #296: core-admin COG preset/dry-run, six new demo COGs, 7 total, forest-district z9 tile improved from ~0.95 s to ~0.31 s, test/docs updates.
+- Activated Phase 41 release readiness and documentation consolidation with parent issue #297, child issues #298-#301, and planning/release_readiness_plan.md.
+- Completed P41.2/P41.3 with docs/release_readiness.rst, scripts/run_release_checks.sh, README/overview consolidation, and a passing full release audit.
