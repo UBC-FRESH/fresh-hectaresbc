@@ -29,6 +29,15 @@ if str(SRC_ROOT) not in sys.path:
 from fresh_hectaresbc import HectaresBC  # noqa: E402
 from fresh_hectaresbc.clip import pick_raster_member, resolve_source_zip  # noqa: E402
 
+CORE_ADMIN_DATASETS = [
+    "dl_adminunits_coaltenure",
+    "dl_adminunits_firezone",
+    "dl_adminunits_forestdistrict",
+    "dl_adminunits_healthunits",
+    "dl_adminunits_ilmbregions",
+    "dl_adminunits_municipalities",
+]
+
 
 def _resampling(name: str) -> Resampling:
     try:
@@ -42,8 +51,18 @@ def main() -> int:
     parser.add_argument(
         "--dataset-id",
         action="append",
-        required=True,
+        default=[],
         help="Dataset ID to convert; repeat for multiple layers.",
+    )
+    parser.add_argument(
+        "--preset",
+        choices=("core-admin",),
+        help="Expand a named dataset preset.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print the resolved dataset plan without opening the archive.",
     )
     parser.add_argument(
         "--archive-root",
@@ -70,6 +89,12 @@ def main() -> int:
     )
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
+    dataset_ids = list(args.dataset_id)
+    if args.preset == "core-admin":
+        dataset_ids.extend(CORE_ADMIN_DATASETS)
+    dataset_ids = list(dict.fromkeys(dataset_ids))
+    if not dataset_ids:
+        parser.error("provide --dataset-id or --preset")
 
     try:
         overviews = [int(value) for value in args.overviews.split(",") if value]
@@ -79,12 +104,29 @@ def main() -> int:
         parser.error("overview factors must be integers >= 2")
 
     output_root = args.output_root.expanduser().resolve()
+    if args.dry_run:
+        print(
+            json.dumps(
+                {
+                    "status": "dry-run",
+                    "output_root": str(output_root),
+                    "datasets": [
+                        {
+                            "dataset_id": dataset_id,
+                            "output": str(output_root / f"{dataset_id}.tif"),
+                        }
+                        for dataset_id in dataset_ids
+                    ],
+                }
+            )
+        )
+        return 0
     output_root.mkdir(parents=True, exist_ok=True)
     archive_root = args.archive_root.expanduser() if args.archive_root else None
     hbc = HectaresBC()
     failures = 0
 
-    for dataset_id in dict.fromkeys(args.dataset_id):
+    for dataset_id in dataset_ids:
         record = hbc.get(dataset_id)
         if record is None:
             print(json.dumps({"status": "error", "dataset_id": dataset_id, "error": "unknown dataset"}))
