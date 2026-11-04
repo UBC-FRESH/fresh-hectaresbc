@@ -2810,6 +2810,214 @@
     start();
   }
 
+  function ellipsizeCanvasText(ctx, text, maxWidth) {
+    let value = String(text || "");
+    if (ctx.measureText(value).width <= maxWidth) {
+      return value;
+    }
+    while (value.length > 1 && ctx.measureText(`${value}…`).width > maxWidth) {
+      value = value.slice(0, -1);
+    }
+    return `${value}…`;
+  }
+
+  function mapLegendExportItems() {
+    return [...document.querySelectorAll("#map-layer-panel .layer-legend li")]
+      .map((item) => {
+        const swatch = item.querySelector(".layer-swatch");
+        return {
+          color: swatch ? getComputedStyle(swatch).backgroundColor : "",
+          label: item.textContent?.trim() || "",
+        };
+      })
+      .filter((item) => item.label);
+  }
+
+  async function downloadMapImage() {
+    const handle = state.mapHandle;
+    const canvas = document.querySelector("#map-canvas .maplibregl-canvas");
+    if (!handle?.__hbcReady || !canvas || !canvas.width || !canvas.height) {
+      showToast("The map is still loading.");
+      return;
+    }
+    const title =
+      document.querySelector(".map-title-card h1")?.textContent?.trim() ||
+      "HectaresBC map";
+    const datasetId =
+      document.querySelector(".map-title-card p")?.textContent?.trim() || "";
+    const primaryVisible =
+      document.querySelector("#layer-visible")?.checked !== false;
+    const contextLayers = [...document.querySelectorAll("[data-context-visible]")]
+      .filter((input) => input.checked)
+      .map((input) => input.parentElement?.textContent?.trim())
+      .filter(Boolean);
+    const legendItems = mapLegendExportItems();
+    const scale = Math.max(
+      1,
+      canvas.width / Math.max(1, canvas.clientWidth || canvas.width)
+    );
+    const padding = 14 * scale;
+    const headerHeight = 78 * scale;
+    const footerHeight = 28 * scale;
+    const target = document.createElement("canvas");
+    target.width = canvas.width;
+    target.height = headerHeight + canvas.height + footerHeight;
+    const ctx = target.getContext("2d");
+    if (!ctx) {
+      showToast("PNG export is not supported in this browser.");
+      return;
+    }
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, target.width, target.height);
+
+    ctx.textBaseline = "alphabetic";
+    ctx.font = `600 ${18 * scale}px sans-serif`;
+    ctx.fillStyle = "#1f2933";
+    ctx.fillText(
+      ellipsizeCanvasText(ctx, title, target.width - padding * 2),
+      padding,
+      padding + 18 * scale
+    );
+    ctx.font = `${11 * scale}px monospace`;
+    ctx.fillStyle = "#66727d";
+    ctx.fillText(
+      ellipsizeCanvasText(ctx, datasetId, target.width - padding * 2),
+      padding,
+      padding + 35 * scale
+    );
+    const contextText = [
+      primaryVisible ? "" : "Primary layer hidden",
+      contextLayers.length
+        ? `Context: ${contextLayers.join(" · ")}`
+        : "Context: none",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    ctx.font = `${10 * scale}px sans-serif`;
+    ctx.fillStyle = "#66727d";
+    ctx.fillText(
+      ellipsizeCanvasText(ctx, contextText, target.width - padding * 2),
+      padding,
+      padding + 52 * scale
+    );
+
+    ctx.drawImage(canvas, 0, headerHeight);
+
+    const legendWidth = Math.min(300 * scale, target.width * 0.42);
+    const legendPadding = 10 * scale;
+    const rowHeight = 18 * scale;
+    let maxRows = Math.max(
+      2,
+      Math.min(
+        24,
+        Math.floor((canvas.height - 56 * scale) / rowHeight)
+      )
+    );
+    if (legendItems.length > maxRows) {
+      maxRows = Math.max(1, maxRows - 1);
+    }
+    const shownItems = legendItems.slice(0, maxRows);
+    const hiddenCount = Math.max(0, legendItems.length - shownItems.length);
+    const legendHeight =
+      32 * scale +
+      (shownItems.length || 1) * rowHeight +
+      (hiddenCount ? rowHeight : 0) +
+      legendPadding;
+    const legendX = target.width - legendWidth - 12 * scale;
+    const legendY = headerHeight + 12 * scale;
+    ctx.save();
+    ctx.fillStyle = "rgba(255,255,255,0.94)";
+    ctx.strokeStyle = "#c4d0dc";
+    ctx.lineWidth = Math.max(1, scale);
+    ctx.beginPath();
+    ctx.roundRect(legendX, legendY, legendWidth, legendHeight, 6 * scale);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#1f2933";
+    ctx.font = `650 ${11 * scale}px sans-serif`;
+    ctx.fillText("Legend", legendX + legendPadding, legendY + 17 * scale);
+    let rowY = legendY + 30 * scale;
+    if (!shownItems.length) {
+      ctx.font = `${9 * scale}px sans-serif`;
+      ctx.fillStyle = "#66727d";
+      ctx.fillText(
+        "No recovered legend classes",
+        legendX + legendPadding,
+        rowY + 12 * scale
+      );
+    } else {
+      shownItems.forEach((item) => {
+        ctx.fillStyle = item.color || "#d9e2ec";
+        ctx.fillRect(
+          legendX + legendPadding,
+          rowY + 3 * scale,
+          11 * scale,
+          11 * scale
+        );
+        ctx.strokeStyle = "rgba(31,41,51,0.18)";
+        ctx.strokeRect(
+          legendX + legendPadding,
+          rowY + 3 * scale,
+          11 * scale,
+          11 * scale
+        );
+        ctx.fillStyle = "#1f2933";
+        ctx.font = `${9 * scale}px sans-serif`;
+        ctx.fillText(
+          ellipsizeCanvasText(
+            ctx,
+            item.label,
+            legendWidth - legendPadding * 2 - 15 * scale
+          ),
+          legendX + legendPadding + 15 * scale,
+          rowY + 12 * scale
+        );
+        rowY += rowHeight;
+      });
+      if (hiddenCount) {
+        ctx.fillStyle = "#66727d";
+        ctx.font = `${9 * scale}px sans-serif`;
+        ctx.fillText(
+          `…and ${hiddenCount} more`,
+          legendX + legendPadding,
+          rowY + 12 * scale
+        );
+      }
+    }
+    ctx.restore();
+
+    ctx.font = `${10 * scale}px sans-serif`;
+    ctx.fillStyle = "#66727d";
+    ctx.fillText(
+      `HectaresBC · map · ${new Date().toLocaleDateString()} · Map data © OpenStreetMap contributors`,
+      padding,
+      target.height - 9 * scale
+    );
+
+    try {
+      const blob = await new Promise((resolve, reject) => {
+        target.toBlob(
+          (value) =>
+            value ? resolve(value) : reject(new Error("PNG encoding failed")),
+          "image/png"
+        );
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `hectaresbc-map-${datasetId.replace(/[^a-z0-9_-]+/gi, "-")}-${new Date()
+        .toISOString()
+        .slice(0, 10)}.png`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      showToast("Map PNG downloaded.");
+    } catch (error) {
+      showToast(`Could not export map: ${error.message}`);
+    }
+  }
+
   async function downloadCompareImage() {
     const handle = state.mapHandle;
     if (!handle?.left?.__hbcReady || !handle?.right?.__hbcReady) {
@@ -3224,6 +3432,7 @@
             <a class="secondary-button" href="${datasetHref}">Dataset</a>
             <a class="secondary-button" href="${state.lastBrowseHash || "#/catalog"}">Browse</a>
             <a class="secondary-button" href="#/catalog?preview=available">Preview layers</a>
+            <button class="secondary-button" type="button" data-map-export>Download PNG</button>
             <button class="secondary-button" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}">Add to tray</button>
             <button class="secondary-button" type="button" data-discover-open aria-controls="discover-panel" aria-haspopup="dialog" aria-expanded="false">Discover</button>
             <button class="secondary-button" type="button" data-compare-open>Compare</button>
@@ -3487,6 +3696,10 @@ python scripts/fetch_web_previews.py</pre>
     }
     if (target.closest("[data-series-download]")) {
       void downloadSeriesImage();
+      return;
+    }
+    if (target.closest("[data-map-export]")) {
+      void downloadMapImage();
       return;
     }
     if (target.closest("[data-compare-swap]")) {

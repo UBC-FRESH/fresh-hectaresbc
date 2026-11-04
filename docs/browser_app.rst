@@ -26,6 +26,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_compare_browser.py
    python scripts/smoke_test_series_browser.py
    python scripts/smoke_test_accessibility_browser.py
+   python scripts/smoke_test_map_export_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -63,7 +64,10 @@ sort, and pagination live in the hash so views are shareable. Dataset views
 group metadata, provenance, known gaps, preview evidence, and copyable
 Python/CLI usage commands. The map route includes layer visibility, opacity,
 legend classes, OpenStreetMap/offline basemaps, fit-to-layer, and a static
-fallback when WebGL or preview data is unavailable.
+fallback when WebGL or preview data is unavailable. **Download PNG** exports the
+active map with the layer title, dataset ID, visible context layers, recovered
+legend, date, and attribution. The export uses the rendered MapLibre canvas and
+does not include the hidden control panel.
 
 Accessibility And Keyboard Behavior
 -----------------------------------

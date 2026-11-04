@@ -488,6 +488,21 @@ reduced-motion gaps across the browser app and adds regression coverage.
 - [x] P31.3 Fix touch targets, contrast, and reduced motion. Child issue: #240.
 - [x] P31.4 Verify and close Phase 31. Child issue: #241.
 
+## Phase 32: Single-Map PNG Export
+
+Status: implementation in progress on `feature/p32-map-export`. Parent issue: #243. Planning: `planning/map_export_plan.md`.
+
+Phase 32 adds a labeled PNG export to the regular Map workspace with title,
+dataset ID, visible context layers, legend, date, and attribution.
+
+- [x] P32.1 Plan map PNG export contract. Child issue: #244.
+- [x] P32.2 Implement map PNG composition and UI. Child issue: #245.
+- [x] P32.3 Add map export browser coverage and docs. Child issue: #246.
+- [ ] P32.4 Verify and close Phase 32. Child issue: #247.
+
 ## Current Next Steps
 
-No active implementation phase. Optional follow-ups remain in the roadmap.
+1. Complete P32.1 planning contract and close child issue #244.
+2. Implement P32.2 map PNG composition and action.
+3. Implement P32.3 browser coverage and docs.
+4. Open the Phase 32 PR, verify, merge, and close parent #243.
