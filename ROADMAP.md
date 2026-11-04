@@ -586,7 +586,7 @@ admin dashboard and adds a manual prune action.
 
 ## Phase 40: Core Administrative COG Coverage
 
-Status: implementation in progress on `feature/p40-core-cogs`. Parent issue: #291. Planning: `planning/core_cog_plan.md`.
+Status: completed and merged to `main` via PR #296. Parent issue: #291. Planning: `planning/core_cog_plan.md`.
 
 Phase 40 adds a reproducible core-admin COG preset, builds derivatives for six
 administrative layers in the demo, and measures a representative high-zoom tile.
@@ -594,11 +594,8 @@ administrative layers in the demo, and measures a representative high-zoom tile.
 - [x] P40.1 Plan core-admin COG coverage. Child issue: #292.
 - [x] P40.2 Add COG preset and dry-run. Child issue: #293.
 - [x] P40.3 Build demo COGs and measure latency. Child issue: #294.
-- [ ] P40.4 Verify and close Phase 40. Child issue: #295.
+- [x] P40.4 Verify and close Phase 40. Child issue: #295.
 
 ## Current Next Steps
 
-1. Complete P40.1 planning contract and close child issue #292.
-2. Implement P40.2 preset and dry-run.
-3. Build demo COGs and measure P40.3.
-4. Open the Phase 40 PR, verify, merge, and close parent #291.
+No active implementation phase. Optional follow-ups remain in the roadmap.
