@@ -263,3 +263,6 @@
 - Activated Phase 39 bundle retention/admin storage polish with parent issue #285, child issues #286-#289, and planning/admin_retention_plan.md.
 - Completed P39.2/P39.3 with storage usage and retention fields on /api/stats, POST /api/admin/prune, admin storage/retention panel, prune action, server/browser coverage, docs, and asset bump to p55.
 - Completed and merged Phase 39 via PR #290: storage usage and retention fields on /api/stats, POST /api/admin/prune, admin storage panel/prune UI, server/browser coverage, docs, and asset bump to p55.
+- Activated Phase 40 core administrative COG coverage with parent issue #291, child issues #292-#295, and planning/core_cog_plan.md.
+- Completed P40.2 with a core-admin COG preset, dry-run planner, duplicate suppression, and preset test.
+- Completed P40.3: built six core-admin COGs in the demo (2.1–3.0 MB each); service reports 7 COGs; representative forest-district z9 tile improved from ~0.95 s (ZIP) to ~0.31 s (COG).
