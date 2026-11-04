@@ -240,7 +240,9 @@ per frame and switches the visible layer, so pan/zoom, basemap position, and
 browser resources stay stable across long sequences.
 
 Controls include play/pause, previous/next frame, and fast/normal/slow speeds
-(500/1000/2000 ms). Stepping pauses playback. Reduced-motion preferences start
+(500/1000/2000 ms). Stepping pauses playback. The next frame is warmed at zero
+opacity while the current frame is displayed, and the frame status shows
+``loading…`` until the active source is ready. Reduced-motion preferences start
 the series paused. **Download PNG** exports the active frame with its label,
 dataset ID, frame number, date, and map attribution. A missing-series state is
 shown when fewer than two layers can be loaded.

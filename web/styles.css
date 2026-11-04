@@ -2322,6 +2322,11 @@ kbd {
   font-size: 0.64rem;
 }
 
+.series-frame-status.is-loading {
+  background: var(--warn-soft);
+  color: #8a3f06;
+}
+
 .series-sequences {
   margin: 0.55rem 0;
   padding: 0.5rem 0.6rem;

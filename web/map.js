@@ -875,21 +875,106 @@
 
     let activeIndex = 0;
     let styleReady = false;
+    let prefetchIndex = null;
+    let prefetchTimer = null;
+    let warmTimer = null;
+    let loadingTimer = null;
+    const warmed = new Set();
+    const ready = new Set();
+    const readyListeners = new Set();
+    const layerId = (index) => `series-layer-${index}`;
+    const sourceId = (index) => `series-${index}`;
+    const normalizeIndex = (index) =>
+      ((Number(index) || 0) % layers.length + layers.length) % layers.length;
+    const notifyReady = (index) => {
+      readyListeners.forEach((listener) => listener(index, ready.has(index)));
+    };
+    const markReady = (index) => {
+      if (ready.has(index)) {
+        return;
+      }
+      ready.add(index);
+      notifyReady(index);
+    };
+    const setLayerOpacity = (index, opacity) => {
+      if (map.getLayer(layerId(index))) {
+        map.setPaintProperty(layerId(index), "raster-opacity", opacity);
+      }
+    };
+    const setLayerVisible = (index, visible) => {
+      if (map.getLayer(layerId(index))) {
+        map.setLayoutProperty(
+          layerId(index),
+          "visibility",
+          visible ? "visible" : "none"
+        );
+      }
+    };
+    const clearPrefetch = () => {
+      if (prefetchTimer) {
+        clearTimeout(prefetchTimer);
+        prefetchTimer = null;
+      }
+      if (prefetchIndex !== null && prefetchIndex !== activeIndex) {
+        setLayerOpacity(prefetchIndex, 0.88);
+        setLayerVisible(prefetchIndex, false);
+      }
+      prefetchIndex = null;
+    };
+    const prefetch = (index) => {
+      if (!styleReady || !activeMaps.has(map)) {
+        return;
+      }
+      const target = normalizeIndex(index);
+      if (
+        target === activeIndex ||
+        warmed.has(target) ||
+        !map.getLayer(layerId(target))
+      ) {
+        return;
+      }
+      clearPrefetch();
+      prefetchIndex = target;
+      setLayerOpacity(target, 0);
+      setLayerVisible(target, true);
+      prefetchTimer = window.setTimeout(() => {
+        if (prefetchIndex === target) {
+          warmed.add(target);
+          if (target !== activeIndex) {
+            setLayerVisible(target, false);
+            setLayerOpacity(target, 0.88);
+          }
+          prefetchIndex = null;
+          prefetchTimer = null;
+        }
+      }, 900);
+    };
     const applyActive = () => {
       if (!styleReady) {
         return;
       }
       layers.forEach((_, index) => {
-        const layerId = `series-layer-${index}`;
-        if (map.getLayer(layerId)) {
-          map.setLayoutProperty(
-            layerId,
-            "visibility",
-            index === activeIndex ? "visible" : "none"
-          );
+        setLayerVisible(index, index === activeIndex);
+        if (index === activeIndex) {
+          setLayerOpacity(index, 0.88);
         }
       });
     };
+    map.on("sourcedata", (event) => {
+      if (!event.isSourceLoaded || !event.sourceId) {
+        return;
+      }
+      const match = event.sourceId.match(/^series-(\d+)$/);
+      if (!match) {
+        return;
+      }
+      const index = Number(match[1]);
+      markReady(index);
+      if (prefetchIndex === index) {
+        warmed.add(index);
+      }
+    });
+    map.on("idle", () => markReady(activeIndex));
     map.on("load", () => {
       styleReady = true;
       map.fitBounds(
@@ -902,17 +987,44 @@
       applyActive();
       map.__hbcReady = true;
       requestAnimationFrame(() => map.resize());
+      warmTimer = window.setTimeout(() => prefetch(activeIndex + 1), 400);
     });
     activeMaps.add(map);
     return {
       map,
       activate: (index) => {
-        activeIndex =
-          ((Number(index) || 0) % layers.length + layers.length) % layers.length;
+        if (warmTimer) {
+          clearTimeout(warmTimer);
+          warmTimer = null;
+        }
+        if (loadingTimer) {
+          clearTimeout(loadingTimer);
+          loadingTimer = null;
+        }
+        clearPrefetch();
+        activeIndex = normalizeIndex(index);
         applyActive();
+        notifyReady(activeIndex);
+        if (!ready.has(activeIndex)) {
+          loadingTimer = window.setTimeout(() => {
+            if (activeIndex >= 0) {
+              markReady(activeIndex);
+            }
+            loadingTimer = null;
+          }, 1200);
+        }
+        warmTimer = window.setTimeout(() => prefetch(activeIndex + 1), 250);
         return activeIndex;
       },
       active: () => activeIndex,
+      isFrameReady: (index) => ready.has(normalizeIndex(index)),
+      onFrameReady: (listener) => {
+        readyListeners.add(listener);
+        if (ready.has(activeIndex)) {
+          listener(activeIndex, true);
+        }
+        return () => readyListeners.delete(listener);
+      },
       resize: () => map.resize(),
     };
   }
