@@ -247,3 +247,4 @@
 - Completed and merged Phase 33 via PR #254: curated Tours workspace, five guided cards, header tab, prefilled Clip and auto-open Discovery deep links, mobile header nav scrolling, browser coverage, docs, and asset bump to p49.
 - Activated Phase 34 Series frame prefetch with parent issue #255, child issues #256-#259, and planning/series_prefetch_plan.md.
 - Completed P34.2/P34.3 with hidden zero-opacity next-frame prefetch, source-readiness reporting, active-frame loading feedback, local tile-request verification, browser coverage, docs, and asset bump to p50.
+- Completed and merged Phase 34 via PR #260: next-frame Series prefetch at zero opacity, frame readiness/fallback reporting, loading feedback, local/public tile-request verification, docs, and asset bump to p50.
