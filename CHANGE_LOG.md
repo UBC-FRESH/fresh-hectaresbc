@@ -240,3 +240,4 @@
 - Completed P31.2/P31.3 with route-safe skip focus, aria-current workspace navigation, panel dialog semantics and focus handoff/restore, shortcut isolation, mobile filter focus, larger touch targets, tray-count contrast, reduced-motion map fits, and accessibility/mobile browser coverage.
 - Completed and merged Phase 31 via PR #242: accessibility/mobile QA with skip-link routing fix, current-page nav semantics, panel focus management, overlay shortcut isolation, mobile filter focus, larger touch targets, contrast fixes, reduced-motion map fits, docs, and browser coverage.
 - Activated Phase 32 single-map PNG export with parent issue #243, child issues #244-#247, and planning/map_export_plan.md.
+- Completed P32.2/P32.3 with labeled Map workspace PNG export, title/context/legend composition, hidden-layer and long-label handling, download coverage, docs, and asset bump to p48.

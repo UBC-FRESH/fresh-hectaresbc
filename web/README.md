@@ -8,7 +8,8 @@ catalog. Its primary surfaces are:
 - **Dataset** — metadata, provenance, known gaps, preview status, and copyable
   Python/CLI commands.
 - **Map** — a MapLibre workspace with live 1-ha tiles or the published preview
-  overlay, layer visibility/opacity, legend, and an offline basemap fallback.
+  overlay, layer visibility/opacity, legend, an offline basemap fallback, and
+  labeled PNG export.
 - **Compare** — synchronized two-layer split, wipe, and flicker modes with PNG
   export.
 - **Series** — a two-to-30 layer flicker sequence on one synchronized map, with

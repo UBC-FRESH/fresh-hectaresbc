@@ -496,8 +496,8 @@ Phase 32 adds a labeled PNG export to the regular Map workspace with title,
 dataset ID, visible context layers, legend, date, and attribution.
 
 - [x] P32.1 Plan map PNG export contract. Child issue: #244.
-- [ ] P32.2 Implement map PNG composition and UI. Child issue: #245.
-- [ ] P32.3 Add map export browser coverage and docs. Child issue: #246.
+- [x] P32.2 Implement map PNG composition and UI. Child issue: #245.
+- [x] P32.3 Add map export browser coverage and docs. Child issue: #246.
 - [ ] P32.4 Verify and close Phase 32. Child issue: #247.
 
 ## Current Next Steps
