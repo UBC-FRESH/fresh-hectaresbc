@@ -548,6 +548,21 @@ catalog option lists, and adds asset/browser performance budgets.
 - [x] P36.3 Add performance budgets and browser coverage. Child issue: #270.
 - [x] P36.4 Verify and close Phase 36. Child issue: #271.
 
+## Phase 37: Series Contact-Sheet PNG Export
+
+Status: implementation in progress on `feature/p37-contact-sheet`. Parent issue: #273. Planning: `planning/series_contact_sheet_plan.md`.
+
+Phase 37 exports all Series frames as one labeled contact-sheet PNG with title,
+frame labels, date, and attribution.
+
+- [ ] P37.1 Plan contact-sheet export. Child issue: #274.
+- [ ] P37.2 Implement contact-sheet composition. Child issue: #275.
+- [ ] P37.3 Add contact-sheet UI and browser coverage. Child issue: #276.
+- [ ] P37.4 Verify and close Phase 37. Child issue: #277.
+
 ## Current Next Steps
 
-No active implementation phase. Optional follow-ups remain in the roadmap.
+1. Complete P37.1 planning contract and close child issue #274.
+2. Implement P37.2 grid composition and frame sequencing.
+3. Implement P37.3 UI, browser coverage, and docs.
+4. Open the Phase 37 PR, verify, merge, and close parent #273.

@@ -254,3 +254,4 @@
 - Activated Phase 36 performance and payload audit with parent issue #267, child issues #268-#271, and planning/performance_payload_plan.md.
 - Completed P36.2/P36.3 with lazy Series frame-source registration, cached compare options/year sequences, asset gzip budgets, browser performance budgets, docs, and asset bump to p52.
 - Completed and merged Phase 36 via PR #272: performance/payload audit, lazy Series frame sources, cached compare/year-sequence options, asset and browser budgets, docs, and asset bump to p52.
+- Activated Phase 37 Series contact-sheet export with parent issue #273, child issues #274-#277, and planning/series_contact_sheet_plan.md.
