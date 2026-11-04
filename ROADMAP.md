@@ -603,7 +603,7 @@ Status: implementation in progress on `feature/p41-release-readiness`. Parent is
 Phase 41 consolidates current capabilities, operations, verification, budgets, and
 limitations into a release-readiness guide and repeatable check script.
 
-- [ ] P41.1 Plan release-readiness content. Child issue: #298.
+- [x] P41.1 Plan release-readiness content. Child issue: #298.
 - [ ] P41.2 Add readiness guide and repeatable checks. Child issue: #299.
 - [ ] P41.3 Refresh README, overview, and handoff. Child issue: #300.
 - [ ] P41.4 Verify and close Phase 41. Child issue: #301.
