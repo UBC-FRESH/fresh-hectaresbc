@@ -253,3 +253,4 @@
 - Completed and merged Phase 35 via PR #266: full-cycle Series WebM export using canvas capture and MediaRecorder, recorded labels/footer, readiness-aware sequencing, recording-state UI, WebM download coverage, docs, and asset bump to p51.
 - Activated Phase 36 performance and payload audit with parent issue #267, child issues #268-#271, and planning/performance_payload_plan.md.
 - Completed P36.2/P36.3 with lazy Series frame-source registration, cached compare options/year sequences, asset gzip budgets, browser performance budgets, docs, and asset bump to p52.
+- Completed and merged Phase 36 via PR #272: performance/payload audit, lazy Series frame sources, cached compare/year-sequence options, asset and browser budgets, docs, and asset bump to p52.
