@@ -238,3 +238,4 @@
 - Completed and merged Phase 30 via PR #236: single-map 30-frame series, in-place add/remove/reorder/jump editor, year-suffix sequence detection, one-click 17-year pine-beetle playback, updated PNG export, responsive UI, browser coverage, and docs.
 - Activated Phase 31 accessibility and mobile QA with parent issue #237, child issues #238-#241, and planning/accessibility_mobile_plan.md.
 - Completed P31.2/P31.3 with route-safe skip focus, aria-current workspace navigation, panel dialog semantics and focus handoff/restore, shortcut isolation, mobile filter focus, larger touch targets, tray-count contrast, reduced-motion map fits, and accessibility/mobile browser coverage.
+- Completed and merged Phase 31 via PR #242: accessibility/mobile QA with skip-link routing fix, current-page nav semantics, panel focus management, overlay shortcut isolation, mobile filter focus, larger touch targets, contrast fixes, reduced-motion map fits, docs, and browser coverage.
