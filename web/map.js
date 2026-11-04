@@ -794,6 +794,45 @@
     if (!parsedFit) {
       throw new Error("The series layers do not have usable WGS84 bounds.");
     }
+    const frameSource = (layer) => {
+      const bounds = validBounds(layer?.bounds);
+      if (!bounds) {
+        throw new Error("A series layer does not have usable WGS84 bounds.");
+      }
+      if (!layer.previewUrl && !layer.tileUrl) {
+        throw new Error("A series layer is missing its preview or tile URL.");
+      }
+      if (layer.tileUrl) {
+        return {
+          type: "raster",
+          tiles: [layer.tileUrl],
+          tileSize: layer.tileSize || 256,
+          minzoom: layer.minzoom || 0,
+          maxzoom: layer.maxzoom || 14,
+          bounds,
+        };
+      }
+      return {
+        type: "image",
+        url: layer.previewUrl,
+        coordinates: imageCoordinates(bounds),
+      };
+    };
+    const frameLayer = (layer, index, visible) => ({
+      id: `series-layer-${index}`,
+      type: "raster",
+      source: `series-${index}`,
+      layout: { visibility: visible ? "visible" : "none" },
+      paint: {
+        "raster-opacity": 0.88,
+        "raster-resampling":
+          layer.tileUrl || layer.categorical ? "nearest" : "linear",
+        "raster-fade-duration": 0,
+      },
+    });
+    layers.forEach((layer) => {
+      frameSource(layer);
+    });
     const sources = {
       osm: {
         type: "raster",
@@ -802,6 +841,7 @@
         attribution:
           '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors',
       },
+      "series-0": frameSource(layers[0]),
     };
     const styleLayers = [
       {
@@ -815,45 +855,8 @@
         source: "osm",
         paint: { "raster-opacity": 0.72 },
       },
+      frameLayer(layers[0], 0, true),
     ];
-    layers.forEach((layer, index) => {
-      const bounds = validBounds(layer?.bounds);
-      if (!bounds) {
-        throw new Error("A series layer does not have usable WGS84 bounds.");
-      }
-      if (!layer.previewUrl && !layer.tileUrl) {
-        throw new Error("A series layer is missing its preview or tile URL.");
-      }
-      const sourceId = `series-${index}`;
-      if (layer.tileUrl) {
-        sources[sourceId] = {
-          type: "raster",
-          tiles: [layer.tileUrl],
-          tileSize: layer.tileSize || 256,
-          minzoom: layer.minzoom || 0,
-          maxzoom: layer.maxzoom || 14,
-          bounds,
-        };
-      } else {
-        sources[sourceId] = {
-          type: "image",
-          url: layer.previewUrl,
-          coordinates: imageCoordinates(bounds),
-        };
-      }
-      styleLayers.push({
-        id: `series-layer-${index}`,
-        type: "raster",
-        source: sourceId,
-        layout: { visibility: index === 0 ? "visible" : "none" },
-        paint: {
-          "raster-opacity": 0.88,
-          "raster-resampling":
-            layer.tileUrl || layer.categorical ? "nearest" : "linear",
-          "raster-fade-duration": 0,
-        },
-      });
-    });
 
     const map = new maplibregl.Map({
       container,
@@ -896,6 +899,18 @@
       ready.add(index);
       notifyReady(index);
     };
+    const ensureFrame = (index) => {
+      if (!styleReady || !activeMaps.has(map)) {
+        return;
+      }
+      const source = sourceId(index);
+      if (!map.getSource(source)) {
+        map.addSource(source, frameSource(layers[index]));
+      }
+      if (!map.getLayer(layerId(index))) {
+        map.addLayer(frameLayer(layers[index], index, false));
+      }
+    };
     const setLayerOpacity = (index, opacity) => {
       if (map.getLayer(layerId(index))) {
         map.setPaintProperty(layerId(index), "raster-opacity", opacity);
@@ -926,11 +941,11 @@
         return;
       }
       const target = normalizeIndex(index);
-      if (
-        target === activeIndex ||
-        warmed.has(target) ||
-        !map.getLayer(layerId(target))
-      ) {
+      if (target === activeIndex || warmed.has(target)) {
+        return;
+      }
+      ensureFrame(target);
+      if (!map.getLayer(layerId(target))) {
         return;
       }
       clearPrefetch();
@@ -953,6 +968,7 @@
       if (!styleReady) {
         return;
       }
+      ensureFrame(activeIndex);
       layers.forEach((_, index) => {
         setLayerVisible(index, index === activeIndex);
         if (index === activeIndex) {

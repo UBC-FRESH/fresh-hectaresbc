@@ -251,3 +251,5 @@
 - Activated Phase 35 animated Series WebM export with parent issue #261, child issues #262-#265, and planning/series_video_plan.md.
 - Completed P35.2/P35.3 with browser-native Series WebM recording, composed title/frame/footer canvas, current-speed frame sequencing, recording-state UI, WebM download coverage, docs, and asset bump to p51.
 - Completed and merged Phase 35 via PR #266: full-cycle Series WebM export using canvas capture and MediaRecorder, recorded labels/footer, readiness-aware sequencing, recording-state UI, WebM download coverage, docs, and asset bump to p51.
+- Activated Phase 36 performance and payload audit with parent issue #267, child issues #268-#271, and planning/performance_payload_plan.md.
+- Completed P36.2/P36.3 with lazy Series frame-source registration, cached compare options/year sequences, asset gzip budgets, browser performance budgets, docs, and asset bump to p52.

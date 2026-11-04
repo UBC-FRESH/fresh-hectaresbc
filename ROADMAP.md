@@ -536,6 +536,21 @@ date, and attribution using browser-native canvas capture.
 - [x] P35.3 Add export UI and browser coverage. Child issue: #264.
 - [x] P35.4 Verify and close Phase 35. Child issue: #265.
 
+## Phase 36: Performance And Payload Audit
+
+Status: implementation in progress on `feature/p36-performance-audit`. Parent issue: #267. Planning: `planning/performance_payload_plan.md`.
+
+Phase 36 measures browser payload/runtime cost, lazy-loads Series sources, caches
+catalog option lists, and adds asset/browser performance budgets.
+
+- [x] P36.1 Plan performance audit and budgets. Child issue: #268.
+- [x] P36.2 Lazy-load Series sources and cache catalog options. Child issue: #269.
+- [x] P36.3 Add performance budgets and browser coverage. Child issue: #270.
+- [ ] P36.4 Verify and close Phase 36. Child issue: #271.
+
 ## Current Next Steps
 
-No active implementation phase. Optional follow-ups remain in the roadmap.
+1. Complete P36.1 planning contract and close child issue #268.
+2. Implement P36.2 lazy sources and caches.
+3. Implement P36.3 budget checks and browser coverage.
+4. Open the Phase 36 PR, verify, merge, and close parent #267.

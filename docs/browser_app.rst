@@ -29,6 +29,8 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_map_export_browser.py
    python scripts/smoke_test_tours_browser.py
    python scripts/smoke_test_series_video_browser.py
+   python scripts/check_web_performance_budgets.py
+   python scripts/smoke_test_performance_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -71,6 +73,26 @@ fallback when WebGL or preview data is unavailable. **Download PNG** exports the
 active map with the layer title, dataset ID, visible context layers, recovered
 legend, date, and attribution. The export uses the rendered MapLibre canvas and
 does not include the hidden control panel.
+
+Performance Budgets
+-------------------
+
+Browser asset and catalog payload budgets are checked with:
+
+.. code-block:: bash
+
+   python scripts/check_web_performance_budgets.py
+   python scripts/smoke_test_performance_browser.py
+
+Current gzip budgets are 80 KB for `app.js`, 300 KB for the catalog index,
+350 KB for lazy details, 20 KB for CSS, and 250 KB for vendored MapLibre.
+Browser checks require catalog readiness under 5 s, fewer than 80 initial
+requests, at most four high-resolution preview requests for a paused 17-frame
+Series, and under 80 MB JS heap in headless Chromium.
+
+Series uses lazy frame-source registration: the active frame plus the prefetched
+next frame are loaded rather than every frame up front. Preview layer options and
+detected year sequences are cached by preview-index identity.
 
 Accessibility And Keyboard Behavior
 -----------------------------------
