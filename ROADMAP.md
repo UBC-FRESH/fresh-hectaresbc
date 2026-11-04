@@ -584,6 +584,21 @@ admin dashboard and adds a manual prune action.
 - [x] P39.3 Add admin storage UI and browser coverage. Child issue: #288.
 - [x] P39.4 Verify and close Phase 39. Child issue: #289.
 
+## Phase 40: Core Administrative COG Coverage
+
+Status: implementation in progress on `feature/p40-core-cogs`. Parent issue: #291. Planning: `planning/core_cog_plan.md`.
+
+Phase 40 adds a reproducible core-admin COG preset, builds derivatives for six
+administrative layers in the demo, and measures a representative high-zoom tile.
+
+- [ ] P40.1 Plan core-admin COG coverage. Child issue: #292.
+- [ ] P40.2 Add COG preset and dry-run. Child issue: #293.
+- [ ] P40.3 Build demo COGs and measure latency. Child issue: #294.
+- [ ] P40.4 Verify and close Phase 40. Child issue: #295.
+
 ## Current Next Steps
 
-No active implementation phase. Optional follow-ups remain in the roadmap.
+1. Complete P40.1 planning contract and close child issue #292.
+2. Implement P40.2 preset and dry-run.
+3. Build demo COGs and measure P40.3.
+4. Open the Phase 40 PR, verify, merge, and close parent #291.
