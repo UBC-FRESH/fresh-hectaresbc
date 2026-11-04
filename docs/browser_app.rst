@@ -25,6 +25,7 @@ Generate the catalog and its lazy detail/index artifacts with:
    python scripts/smoke_test_saved_browse_browser.py
    python scripts/smoke_test_compare_browser.py
    python scripts/smoke_test_series_browser.py
+   python scripts/smoke_test_accessibility_browser.py
 
 The generator writes four ignored artifacts:
 
@@ -63,6 +64,22 @@ group metadata, provenance, known gaps, preview evidence, and copyable
 Python/CLI usage commands. The map route includes layer visibility, opacity,
 legend classes, OpenStreetMap/offline basemaps, fit-to-layer, and a static
 fallback when WebGL or preview data is unavailable.
+
+Accessibility And Keyboard Behavior
+-----------------------------------
+
+- The header workspace links are navigation links with ``aria-current="page"``,
+  not a faux tab widget.
+- The skip link focuses the workspace content without changing the route hash.
+- Tray, Clip, Discover, and Assistant panels move focus into the panel when
+  opened and restore focus to their trigger when closed.
+- Escape closes the help dialog, filter rail, and open side panels.
+- Global single-key shortcuts are ignored while a panel or dialog is open.
+- Map fit animations honor ``prefers-reduced-motion``; Compare and Series flicker
+  start paused.
+- App-owned mobile controls meet the 24×24 CSS-pixel target minimum.
+- The mobile filter rail moves focus into the first available facet control and
+  restores the Filters button on close.
 
 Preview Data
 ------------

@@ -68,6 +68,7 @@
     referenceLayers: [],
     route: Catalog.defaultState(),
     lastBrowseHash: "#/catalog",
+    filtersReturnFocus: null,
     selectedId: null,
     browseScroll: 0,
     renderToken: 0,
@@ -3224,10 +3225,10 @@
             <a class="secondary-button" href="${state.lastBrowseHash || "#/catalog"}">Browse</a>
             <a class="secondary-button" href="#/catalog?preview=available">Preview layers</a>
             <button class="secondary-button" type="button" data-tray-add="${Catalog.escapeHtml(record.dataset_id)}">Add to tray</button>
-            <button class="secondary-button" type="button" data-discover-open>Discover</button>
+            <button class="secondary-button" type="button" data-discover-open aria-controls="discover-panel" aria-haspopup="dialog" aria-expanded="false">Discover</button>
             <button class="secondary-button" type="button" data-compare-open>Compare</button>
             <button class="secondary-button" type="button" data-identify-toggle ${state.serviceAvailable ? "" : "hidden"}>Identify</button>
-            <button class="secondary-button" type="button" data-open-clip ${state.serviceAvailable ? "" : "hidden"}>Clip AOI</button>
+            <button class="secondary-button" type="button" data-open-clip aria-controls="clip-panel" aria-haspopup="dialog" aria-expanded="false" ${state.serviceAvailable ? "" : "hidden"}>Clip AOI</button>
             <button class="secondary-button" type="button" data-copy="${Catalog.escapeHtml(record.dataset_id)}">Copy ID</button>
           </div>
         </div>
@@ -3247,7 +3248,7 @@
           <div class="map-context-layers" id="map-context-layers">${contextLayers}</div>
           <h2>Change layer</h2>
           <label class="layer-control map-layer-search-label">
-            <input id="map-layer-search" type="search" placeholder="Find a previewable layer…" autocomplete="off">
+            <input id="map-layer-search" type="search" aria-label="Find a previewable layer" placeholder="Find a previewable layer…" autocomplete="off">
           </label>
           <p id="map-layer-hint" class="map-layer-hint">${Catalog.formatNumber(state.previewMeta?.available || 0)} previewable layers</p>
           <div id="map-layer-results" class="map-layer-results" hidden></div>
@@ -3516,8 +3517,9 @@ python scripts/fetch_web_previews.py</pre>
       toggleFavorite(favoriteToggle.dataset.favoriteToggle);
       return;
     }
-    if (target.closest("[data-discover-open]")) {
-      openDiscover();
+    const discoverOpen = target.closest("[data-discover-open]");
+    if (discoverOpen) {
+      openDiscover(discoverOpen);
       return;
     }
     if (target.closest("[data-admin-refresh]")) {
@@ -3555,7 +3557,7 @@ python scripts/fetch_web_previews.py</pre>
     }
     const openClip = target.closest("[data-open-clip]");
     if (openClip) {
-      void openClipPanel();
+      void openClipPanel(openClip);
       return;
     }
     const copy = target.closest("[data-copy]");
@@ -3603,9 +3605,9 @@ python scripts/fetch_web_previews.py</pre>
       clearAllFilters();
       return;
     }
-    const openFilters = target.closest("[data-open-filters]");
-    if (openFilters) {
-      document.body.classList.add("filters-open");
+    const filterButton = target.closest("[data-open-filters]");
+    if (filterButton) {
+      openFilters(filterButton);
       return;
     }
     const close = target.closest("[data-close-inspector]");
@@ -3710,10 +3712,11 @@ python scripts/fetch_web_previews.py</pre>
       (target.matches("input, textarea, select") || target.isContentEditable);
 
     if (event.key === "Escape") {
-      document.body.classList.remove("filters-open", "inspector-open");
+      document.body.classList.remove("inspector-open");
       if (els.helpDialog.open) {
         els.helpDialog.close();
       }
+      closeFilters();
       if (els.trayPanel && !els.trayPanel.hidden) {
         closeTray();
       }
@@ -3731,6 +3734,15 @@ python scripts/fetch_web_previews.py</pre>
     if (typing) {
       return;
     }
+    const overlayOpen =
+      (els.helpDialog && els.helpDialog.open) ||
+      (els.trayPanel && !els.trayPanel.hidden) ||
+      (els.discoverPanel && !els.discoverPanel.hidden) ||
+      (els.clipPanel && !els.clipPanel.hidden) ||
+      (els.assistantPanel && !els.assistantPanel.hidden);
+    if (overlayOpen) {
+      return;
+    }
     if (event.key === "/") {
       event.preventDefault();
       els.searchInput.focus();
@@ -3744,7 +3756,11 @@ python scripts/fetch_web_previews.py</pre>
     }
     if (event.key === "f") {
       event.preventDefault();
-      document.body.classList.toggle("filters-open");
+      if (document.body.classList.contains("filters-open")) {
+        closeFilters();
+      } else {
+        openFilters();
+      }
       return;
     }
     if (event.key === "m") {
@@ -3813,6 +3829,72 @@ python scripts/fetch_web_previews.py</pre>
   }
 
   let toastTimer = null;
+  function rememberPanelTrigger(panel, trigger = document.activeElement) {
+    if (!panel) {
+      return;
+    }
+    panel.__returnFocus =
+      trigger instanceof HTMLElement && !panel.contains(trigger) ? trigger : null;
+  }
+
+  function restorePanelFocus(panel) {
+    if (!panel) {
+      return;
+    }
+    const trigger = panel.__returnFocus;
+    panel.__returnFocus = null;
+    if (
+      trigger?.isConnected &&
+      !trigger.hidden &&
+      !trigger.disabled &&
+      typeof trigger.focus === "function"
+    ) {
+      trigger.focus();
+    }
+  }
+
+  function focusPanel(panel, selector) {
+    if (!panel) {
+      return;
+    }
+    const target =
+      panel.querySelector(selector) ||
+      panel.querySelector(
+        "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])"
+      );
+    target?.focus();
+  }
+
+  function setDisclosure(selector, expanded) {
+    document.querySelectorAll(selector).forEach((element) => {
+      element.setAttribute("aria-expanded", expanded ? "true" : "false");
+    });
+  }
+
+  function openFilters(trigger = document.activeElement) {
+    document.body.classList.add("filters-open");
+    requestAnimationFrame(() => {
+      const target =
+        els.filterRail?.querySelector(
+          "input:not([disabled]), select:not([disabled]), button:not([disabled]), [tabindex]:not([tabindex='-1'])"
+        ) ||
+        els.filterRail ||
+        null;
+      target?.focus();
+    });
+    state.filtersReturnFocus = trigger instanceof HTMLElement ? trigger : null;
+  }
+
+  function closeFilters({ restore = true } = {}) {
+    const wasOpen = document.body.classList.contains("filters-open");
+    document.body.classList.remove("filters-open");
+    const trigger = state.filtersReturnFocus;
+    state.filtersReturnFocus = null;
+    if (wasOpen && restore && trigger?.isConnected && !trigger.hidden) {
+      trigger.focus();
+    }
+  }
+
   function showToast(message) {
     els.toast.textContent = message;
     els.toast.hidden = false;
@@ -3861,11 +3943,18 @@ python scripts/fetch_web_previews.py</pre>
 
   function updateTabs() {
     const datasetId = state.route.datasetId || state.selectedId;
+    const setCurrent = (element, current) => {
+      if (!element) {
+        return;
+      }
+      if (current) {
+        element.setAttribute("aria-current", "page");
+      } else {
+        element.removeAttribute("aria-current");
+      }
+    };
     els.tabBrowse.href = state.lastBrowseHash || "#/catalog";
-    els.tabBrowse.setAttribute(
-      "aria-selected",
-      state.route.view === "catalog" ? "true" : "false"
-    );
+    setCurrent(els.tabBrowse, state.route.view === "catalog");
     if (datasetId) {
       els.tabMap.href = `#/dataset/${encodeURIComponent(datasetId)}/map`;
       els.tabMap.title = "Open the map workspace for the selected layer";
@@ -3874,27 +3963,15 @@ python scripts/fetch_web_previews.py</pre>
       els.tabMap.title = "Open the map workspace";
     }
     els.tabMap.removeAttribute("aria-disabled");
-    els.tabMap.setAttribute(
-      "aria-selected",
+    setCurrent(
+      els.tabMap,
       state.route.view === "map" ||
         state.route.view === "compare" ||
         state.route.view === "series" ||
         (state.route.view === "dataset" && state.route.map)
-        ? "true"
-        : "false"
     );
-    if (els.tabBundles) {
-      els.tabBundles.setAttribute(
-        "aria-selected",
-        state.route.view === "bundles" ? "true" : "false"
-      );
-    }
-    if (els.tabAdmin) {
-      els.tabAdmin.setAttribute(
-        "aria-selected",
-        state.route.view === "admin" ? "true" : "false"
-      );
-    }
+    setCurrent(els.tabBundles, state.route.view === "bundles");
+    setCurrent(els.tabAdmin, state.route.view === "admin");
   }
 
   /* --------------------------------------------------------------- assistant */
@@ -4286,24 +4363,29 @@ python scripts/fetch_web_previews.py</pre>
       ${renderWorkspaceList()}`;
   }
 
-  function openTray() {
+  function openTray(trigger = document.activeElement) {
     closeAssistant();
     closeDiscover();
     if (els.clipPanel && !els.clipPanel.hidden) {
       closeClipPanel();
     }
+    rememberPanelTrigger(els.trayPanel, trigger);
     state.tray.open = true;
     els.trayPanel.hidden = false;
     renderTray();
     syncTrayButton();
+    focusPanel(els.trayPanel, "#tray-close");
   }
 
   function closeTray() {
-    state.tray.open = false;
-    if (els.trayPanel) {
-      els.trayPanel.hidden = true;
+    if (!els.trayPanel || els.trayPanel.hidden) {
+      return;
     }
+    const panel = els.trayPanel;
+    state.tray.open = false;
+    panel.hidden = true;
     syncTrayButton();
+    restorePanelFocus(panel);
   }
 
   function toggleTray() {
@@ -4859,7 +4941,7 @@ python scripts/fetch_web_previews.py</pre>
     };
   }
 
-  function openAssistant() {
+  function openAssistant(trigger = document.activeElement) {
     if (!state.assistant.enabled) {
       return;
     }
@@ -4868,14 +4950,20 @@ python scripts/fetch_web_previews.py</pre>
     }
     closeTray();
     closeDiscover();
+    rememberPanelTrigger(els.assistantPanel, trigger);
     els.assistantPanel.hidden = false;
     els.assistantButton.setAttribute("aria-expanded", "true");
     els.assistantInput.focus();
   }
 
   function closeAssistant() {
-    els.assistantPanel.hidden = true;
+    if (!els.assistantPanel || els.assistantPanel.hidden) {
+      return;
+    }
+    const panel = els.assistantPanel;
+    panel.hidden = true;
     els.assistantButton.setAttribute("aria-expanded", "false");
+    restorePanelFocus(panel);
   }
 
   function newAssistantChat() {
@@ -5178,23 +5266,30 @@ python scripts/fetch_web_previews.py</pre>
       <p class="clip-status">${state.tray.ids.length}/${state.clip.maxLayers} tray slots used.</p>`;
   }
 
-  function openDiscover() {
+  function openDiscover(trigger = document.activeElement) {
     closeAssistant();
     closeClipPanel();
     closeTray();
+    rememberPanelTrigger(els.discoverPanel, trigger);
     state.discover.open = true;
     els.discoverPanel.hidden = false;
     renderDiscover();
+    setDisclosure("[data-discover-open]", true);
+    focusPanel(els.discoverPanel, "#discover-close");
     if (state.discover.source === "view") {
       runSpatialDiscovery();
     }
   }
 
   function closeDiscover() {
-    state.discover.open = false;
-    if (els.discoverPanel) {
-      els.discoverPanel.hidden = true;
+    if (!els.discoverPanel || els.discoverPanel.hidden) {
+      return;
     }
+    const panel = els.discoverPanel;
+    state.discover.open = false;
+    panel.hidden = true;
+    setDisclosure("[data-discover-open]", false);
+    restorePanelFocus(panel);
   }
 
   function handleDiscoverClick(event) {
@@ -5519,7 +5614,7 @@ python scripts/fetch_web_previews.py</pre>
     renderClipLayers();
   }
 
-  async function openClipPanel() {
+  async function openClipPanel(trigger = document.activeElement) {
     if (!state.serviceAvailable) {
       showToast("Bundle service unavailable.");
       return;
@@ -5527,6 +5622,7 @@ python scripts/fetch_web_previews.py</pre>
     closeAssistant();
     closeTray();
     closeDiscover();
+    rememberPanelTrigger(els.clipPanel, trigger);
     const datasetId = currentMapDatasetId();
     if (state.clip.datasetId && datasetId && state.clip.datasetId !== datasetId) {
       resetClipState();
@@ -5548,17 +5644,33 @@ python scripts/fetch_web_previews.py</pre>
       }
     }
     renderClipPanel();
+    setDisclosure("[data-open-clip]", true);
+    focusPanel(els.clipPanel, "#clip-query");
     if (state.clip.jobId && state.clip.busy) {
       scheduleClipPoll(0);
     }
-    void loadRecentBundles();
+    void loadRecentBundles().then(() => {
+      if (
+        state.clip.open &&
+        (document.activeElement === document.body ||
+          !els.clipPanel.contains(document.activeElement))
+      ) {
+        focusPanel(els.clipPanel, "#clip-query");
+      }
+    });
   }
 
   function closeClipPanel() {
+    if (!els.clipPanel || els.clipPanel.hidden) {
+      return;
+    }
+    const panel = els.clipPanel;
     state.clip.open = false;
-    els.clipPanel.hidden = true;
+    panel.hidden = true;
     stopClipPolling();
+    setDisclosure("[data-open-clip]", false);
     state.mapHandle?.__hbc?.cancelRectangleDraw?.();
+    restorePanelFocus(panel);
   }
 
   async function resolveClipAoi() {
@@ -6229,10 +6341,12 @@ python scripts/fetch_web_previews.py</pre>
     els.content.addEventListener("click", handleContentClick);
     els.content.addEventListener("change", handleContentChange);
     els.inspector.addEventListener("click", handleContentClick);
-    els.sheetBackdrop.addEventListener("click", () => {
-      document.body.classList.remove("filters-open");
-    });
+    els.sheetBackdrop.addEventListener("click", () => closeFilters());
 
+    document.querySelector(".skip-link")?.addEventListener("click", (event) => {
+      event.preventDefault();
+      els.content.focus();
+    });
     els.helpButton.addEventListener("click", openHelp);
     els.helpClose.addEventListener("click", () => els.helpDialog.close());
     els.helpDialog.addEventListener("click", (event) => {

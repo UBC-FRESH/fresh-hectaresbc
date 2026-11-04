@@ -206,7 +206,7 @@ h4 {
   color: var(--ink);
 }
 
-.workspace-tab[aria-selected="true"] {
+.workspace-tab[aria-current="page"] {
   background: var(--ink);
   color: #fff;
 }
@@ -1560,9 +1560,26 @@ details.technical pre {
   font-size: 0.76rem;
 }
 
+.layer-control input[type="checkbox"] {
+  width: 1.5rem;
+  height: 1.5rem;
+  accent-color: var(--accent);
+}
+
 .layer-control input[type="range"] {
   width: 100%;
+  min-height: 1.5rem;
   accent-color: var(--accent);
+}
+
+.layer-control select {
+  min-height: 2rem;
+  padding: 0.15rem 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 0.75rem;
 }
 
 .layer-control output {
@@ -2457,8 +2474,8 @@ kbd {
 }
 
 .series-frame-actions button {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
   padding: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -2488,6 +2505,9 @@ kbd {
 }
 
 .series-add select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 2rem;
   padding: 0.2rem;
   border: 1px solid var(--line);
@@ -2557,6 +2577,7 @@ kbd {
 
 .compare-select-label {
   display: grid;
+  min-width: 0;
   gap: 0.2rem;
   color: var(--muted);
   font-size: 0.65rem;
@@ -2564,6 +2585,9 @@ kbd {
 }
 
 .compare-select-label select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 2rem;
   padding: 0.25rem;
   border: 1px solid var(--line);
@@ -2960,8 +2984,8 @@ kbd {
 }
 
 .tray-layer-actions button {
-  min-width: 1.5rem;
-  min-height: 1.5rem;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
   padding: 0.1rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -3103,8 +3127,8 @@ kbd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.45rem;
-  min-height: 1.45rem;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
   margin-left: 0.3rem;
   padding: 0;
   border: 1px solid var(--line);
@@ -3126,8 +3150,8 @@ kbd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.45rem;
-  min-height: 1.45rem;
+  min-width: 1.75rem;
+  min-height: 1.75rem;
   margin-left: 0.2rem;
   padding: 0;
   border: 1px solid var(--line);

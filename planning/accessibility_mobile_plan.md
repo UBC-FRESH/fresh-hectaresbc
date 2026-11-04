@@ -27,6 +27,14 @@ tabs keyboard model.
 **Fix:** Use a normal navigation landmark with `aria-current="page"` on the
 active workspace. Keep current styling through that attribute.
 
+### Skip Link
+
+**Finding:** The skip link uses `href="#content"`, which conflicts with the
+hash-based router and would navigate to a legacy dataset route named `content`.
+
+**Fix:** Intercept the skip-link activation, prevent the hash change, and focus
+the workspace content region directly.
+
 ### Panel Focus
 
 **Finding:** Tray, Clip, Discover, and Assistant panels open without moving focus
@@ -93,6 +101,7 @@ Add `scripts/smoke_test_accessibility_browser.py` covering:
 - tray focus enters the panel and returns to the trigger on Escape;
 - discover focus enters the panel and returns to its trigger;
 - global shortcuts do not fire while a panel is open;
+- skip link focuses content without changing the route hash;
 - help dialog opens as a modal and returns focus;
 - mobile filter rail focuses its first control and restores the Filters button;
 - app-owned mobile controls are at least 24×24 px;

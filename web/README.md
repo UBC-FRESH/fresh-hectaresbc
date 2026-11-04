@@ -61,6 +61,11 @@ The project server:
 
 In a JupyterHub/code-server proxy, use the corresponding proxied `/web/` URL.
 
+Keyboard and assistive-technology behavior includes a route-safe skip link,
+focus handoff/restore for side panels, Escape closing, isolated global shortcuts,
+`aria-current` workspace navigation, reduced-motion-aware map fits, and mobile
+touch targets of at least 24×24 CSS pixels.
+
 ## Routes
 
 ```text
