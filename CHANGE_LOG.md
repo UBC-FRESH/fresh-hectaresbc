@@ -262,3 +262,4 @@
 - Completed and merged Phase 38 via PR #284: cold-checkout browser coverage, missing catalog retry, preview/index/image/service fallbacks, alert semantics, docs, and asset bump to p54.
 - Activated Phase 39 bundle retention/admin storage polish with parent issue #285, child issues #286-#289, and planning/admin_retention_plan.md.
 - Completed P39.2/P39.3 with storage usage and retention fields on /api/stats, POST /api/admin/prune, admin storage/retention panel, prune action, server/browser coverage, docs, and asset bump to p55.
+- Completed and merged Phase 39 via PR #290: storage usage and retention fields on /api/stats, POST /api/admin/prune, admin storage panel/prune UI, server/browser coverage, docs, and asset bump to p55.

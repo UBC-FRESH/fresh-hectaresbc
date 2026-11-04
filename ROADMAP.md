@@ -574,7 +574,7 @@ states and adds cold-checkout browser coverage.
 
 ## Phase 39: Bundle Retention And Admin Storage Polish
 
-Status: implementation in progress on `feature/p39-admin-retention`. Parent issue: #285. Planning: `planning/admin_retention_plan.md`.
+Status: completed and merged to `main` via PR #290. Parent issue: #285. Planning: `planning/admin_retention_plan.md`.
 
 Phase 39 exposes tile/COG/bundle/AOI storage usage and retention settings in the
 admin dashboard and adds a manual prune action.
@@ -582,11 +582,8 @@ admin dashboard and adds a manual prune action.
 - [x] P39.1 Plan storage and retention admin contract. Child issue: #286.
 - [x] P39.2 Add storage stats and prune endpoint. Child issue: #287.
 - [x] P39.3 Add admin storage UI and browser coverage. Child issue: #288.
-- [ ] P39.4 Verify and close Phase 39. Child issue: #289.
+- [x] P39.4 Verify and close Phase 39. Child issue: #289.
 
 ## Current Next Steps
 
-1. Complete P39.1 planning contract and close child issue #286.
-2. Implement P39.2 storage stats and prune endpoint.
-3. Implement P39.3 admin UI and browser coverage.
-4. Open the Phase 39 PR, verify, merge, and close parent #285.
+No active implementation phase. Optional follow-ups remain in the roadmap.
