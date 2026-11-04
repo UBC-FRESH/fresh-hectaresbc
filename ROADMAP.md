@@ -531,7 +531,7 @@ Status: implementation in progress on `feature/p35-series-video`. Parent issue: 
 Phase 35 records a complete Series playback to a downloadable WebM with labels,
 date, and attribution using browser-native canvas capture.
 
-- [ ] P35.1 Plan animated Series export. Child issue: #262.
+- [x] P35.1 Plan animated Series export. Child issue: #262.
 - [ ] P35.2 Implement Series WebM recording. Child issue: #263.
 - [ ] P35.3 Add export UI and browser coverage. Child issue: #264.
 - [ ] P35.4 Verify and close Phase 35. Child issue: #265.
