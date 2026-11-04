@@ -16,7 +16,8 @@ catalog. Its primary surfaces are:
 - **Series** — a two-to-30 layer flicker sequence on one synchronized map, with
   play/pause, stepping, speed control, next-frame prefetch/loading feedback,
   lazy frame-source loading, in-place frame editing, year-sequence suggestions,
-  active-frame PNG export, and full-cycle WebM recording.
+  active-frame PNG export, a full-frame contact-sheet PNG, and full-cycle WebM
+  recording.
 
 The app does not require a Node build step. `web/catalog.js`, `web/map.js`, and
 `web/app.js` are classic scripts; MapLibre is vendored under `web/vendor/` and
