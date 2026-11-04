@@ -519,7 +519,7 @@ Status: implementation in progress on `feature/p34-series-prefetch`. Parent issu
 Phase 34 warms the next Series frame and reports active-frame loading state until
 the source is ready.
 
-- [ ] P34.1 Plan Series prefetch contract. Child issue: #256.
+- [x] P34.1 Plan Series prefetch contract. Child issue: #256.
 - [ ] P34.2 Implement next-frame warming and readiness. Child issue: #257.
 - [ ] P34.3 Add loading feedback and browser coverage. Child issue: #258.
 - [ ] P34.4 Verify and close Phase 34. Child issue: #259.
