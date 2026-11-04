@@ -562,7 +562,7 @@ frame labels, date, and attribution.
 
 ## Phase 38: Offline And Cold-Checkout QA
 
-Status: implementation in progress on `feature/p38-cold-checkout`. Parent issue: #279. Planning: `planning/cold_checkout_plan.md`.
+Status: completed and merged to `main` via PR #284. Parent issue: #279. Planning: `planning/cold_checkout_plan.md`.
 
 Phase 38 validates missing catalog, preview index, preview image, and service
 states and adds cold-checkout browser coverage.
@@ -570,11 +570,8 @@ states and adds cold-checkout browser coverage.
 - [x] P38.1 Plan cold-checkout QA. Child issue: #280.
 - [x] P38.2 Fix cold-checkout fallbacks. Child issue: #281.
 - [x] P38.3 Add cold-checkout browser coverage and docs. Child issue: #282.
-- [ ] P38.4 Verify and close Phase 38. Child issue: #283.
+- [x] P38.4 Verify and close Phase 38. Child issue: #283.
 
 ## Current Next Steps
 
-1. Complete P38.1 planning contract and close child issue #280.
-2. Verify/fix cold-checkout fallbacks.
-3. Add browser coverage and docs.
-4. Open the Phase 38 PR, verify, merge, and close parent #279.
+No active implementation phase. Optional follow-ups remain in the roadmap.

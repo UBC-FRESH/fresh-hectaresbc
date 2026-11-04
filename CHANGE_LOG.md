@@ -259,3 +259,4 @@
 - Completed and merged Phase 37 via PR #278: Series contact-sheet PNG export, responsive labeled grid, export-busy state, dimension/signature coverage, docs, and asset bump to p53.
 - Activated Phase 38 offline/cold-checkout QA with parent issue #279, child issues #280-#283, and planning/cold_checkout_plan.md.
 - Completed P38.2/P38.3 with cold-checkout coverage for missing catalog/preview/image/service states, clearer alert and fallback headings, docs, and asset bump to p54.
+- Completed and merged Phase 38 via PR #284: cold-checkout browser coverage, missing catalog retry, preview/index/image/service fallbacks, alert semantics, docs, and asset bump to p54.

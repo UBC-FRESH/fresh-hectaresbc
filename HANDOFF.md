@@ -1,10 +1,10 @@
 # Agent Handoff
 
 Date: 2026-11-03
-Status: P19/P20/P21/P22/P23/P24/P25/P26/P27/P28/P29/P30/P31/P32/P33/P34/P35/P36/P37 complete; no active implementation branch or open issues/PRs.
+Status: P19/P20/P21/P22/P23/P24/P25/P26/P27/P28/P29/P30/P31/P32/P33/P34/P35/P36/P37/P38 complete; no active implementation branch or open issues/PRs.
 Branch: `main`
-Latest feature merge: `8f12445`
-Latest merged PR: #278 (Series contact sheet); compare export: #216
+Latest feature merge: `9c03a96`
+Latest merged PR: #284 (cold-checkout QA); compare export: #216
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
 
@@ -320,7 +320,7 @@ resolution tests. Use the web/agent test command above for this feature set.
 
 ## Final Closeout
 
-- P19, P20, P21, P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32, P33, P34, P35, P36, and P37 are complete; no active implementation branch remains.
+- P19, P20, P21, P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32, P33, P34, P35, P36, P37, and P38 are complete; no active implementation branch remains.
 - No open GitHub issues or pull requests at closeout.
 - Final protected public verification and browser smoke checks passed.
 - Sphinx sources refreshed for tiles, COGs, stats, Clip AOI preflight, jobs, and retention.
@@ -342,6 +342,7 @@ resolution tests. Use the web/agent test command above for this feature set.
 - Phase 35 added full-cycle Series WebM recording with composed labels, readiness-aware frame sequencing, and browser-native MediaRecorder export.
 - Phase 36 added lazy Series frame-source registration, cached catalog option/sequence lists, gzip asset budgets, and browser readiness/request/heap budgets.
 - Phase 37 added an all-frame Series contact-sheet PNG with labeled grid tiles, date, and attribution.
+- Phase 38 added cold-checkout coverage for missing catalog/preview/image/service states and clarified fallback semantics.
 - Remaining items below are optional follow-ups, not blockers.
 
 ## Optional Follow-Ups
