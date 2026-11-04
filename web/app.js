@@ -129,6 +129,7 @@
       count: 0,
       layers: [],
       sequences: [],
+      mapReady: false,
     },
     preflight: {
       busy: false,
@@ -2229,6 +2230,7 @@
     state.series.paused = false;
     state.series.index = 0;
     state.series.count = 0;
+    state.series.mapReady = false;
   }
 
   function seriesCompareHref(layers) {
@@ -2448,6 +2450,19 @@
     if (els.liveStatus) {
       els.liveStatus.textContent = "Guided tours.";
     }
+  }
+
+  function updateSeriesFrameStatus() {
+    const frameStatus = document.querySelector("[data-series-frame]");
+    const layer = state.series.layers[state.series.index];
+    if (!frameStatus || !layer) {
+      return;
+    }
+    const ready =
+      state.series.mapReady &&
+      state.mapHandle?.isFrameReady?.(state.series.index) !== false;
+    frameStatus.textContent = `Frame ${state.series.index + 1} of ${state.series.count} · ${layer.title} · ${layer.dataset_id}${ready ? "" : " · loading…"}`;
+    frameStatus.classList.toggle("is-loading", !ready);
   }
 
   function seriesRouteFor(layerIds, speed = state.series.speed) {
@@ -2705,7 +2720,14 @@
         })),
         fitBounds,
       });
+      state.series.mapReady = true;
       state.mapHandle.activate(state.series.index);
+      state.mapHandle.onFrameReady?.((index) => {
+        if (index === state.series.index) {
+          updateSeriesFrameStatus();
+        }
+      });
+      updateSeriesFrameStatus();
       const handle = state.mapHandle;
       const resize = () => handle?.resize?.();
       if (state.compareResizeHandler) {
@@ -2731,7 +2753,6 @@
 
   function bindSeriesControls(loaded) {
     const toggle = document.querySelector("[data-series-toggle]");
-    const frameStatus = document.querySelector("[data-series-frame]");
     const speedSelect = document.querySelector("[data-series-speed]");
     const previous = document.querySelector("[data-series-prev]");
     const next = document.querySelector("[data-series-next]");
@@ -2755,9 +2776,7 @@
       document.querySelectorAll("[data-series-chip]").forEach((chip, chipIndex) => {
         chip.classList.toggle("is-active", chipIndex === active);
       });
-      if (frameStatus) {
-        frameStatus.textContent = `Frame ${active + 1} of ${loaded.length} · ${layer.title} · ${layer.dataset_id}`;
-      }
+      updateSeriesFrameStatus();
     };
     const stop = () => {
       if (state.series.timer) {
