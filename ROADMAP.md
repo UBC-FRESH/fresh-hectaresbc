@@ -591,7 +591,7 @@ Status: implementation in progress on `feature/p40-core-cogs`. Parent issue: #29
 Phase 40 adds a reproducible core-admin COG preset, builds derivatives for six
 administrative layers in the demo, and measures a representative high-zoom tile.
 
-- [ ] P40.1 Plan core-admin COG coverage. Child issue: #292.
+- [x] P40.1 Plan core-admin COG coverage. Child issue: #292.
 - [ ] P40.2 Add COG preset and dry-run. Child issue: #293.
 - [ ] P40.3 Build demo COGs and measure latency. Child issue: #294.
 - [ ] P40.4 Verify and close Phase 40. Child issue: #295.
