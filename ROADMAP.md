@@ -524,6 +524,21 @@ the source is ready.
 - [x] P34.3 Add loading feedback and browser coverage. Child issue: #258.
 - [x] P34.4 Verify and close Phase 34. Child issue: #259.
 
+## Phase 35: Animated Series WebM Export
+
+Status: implementation in progress on `feature/p35-series-video`. Parent issue: #261. Planning: `planning/series_video_plan.md`.
+
+Phase 35 records a complete Series playback to a downloadable WebM with labels,
+date, and attribution using browser-native canvas capture.
+
+- [ ] P35.1 Plan animated Series export. Child issue: #262.
+- [ ] P35.2 Implement Series WebM recording. Child issue: #263.
+- [ ] P35.3 Add export UI and browser coverage. Child issue: #264.
+- [ ] P35.4 Verify and close Phase 35. Child issue: #265.
+
 ## Current Next Steps
 
-No active implementation phase. Optional follow-ups remain in the roadmap.
+1. Complete P35.1 planning contract and close child issue #262.
+2. Implement P35.2 canvas recording and frame sequencing.
+3. Implement P35.3 UI, browser coverage, and docs.
+4. Open the Phase 35 PR, verify, merge, and close parent #261.
