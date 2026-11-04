@@ -242,3 +242,4 @@
 - Activated Phase 32 single-map PNG export with parent issue #243, child issues #244-#247, and planning/map_export_plan.md.
 - Completed P32.2/P32.3 with labeled Map workspace PNG export, title/context/legend composition, hidden-layer and long-label handling, download coverage, docs, and asset bump to p48.
 - Completed and merged Phase 32 via PR #248: labeled Map workspace PNG export with title/context/legend composition, high-DPI text, long-label and legend caps, download coverage, docs, and asset bump to p48.
+- Activated Phase 33 curated demo tours with parent issue #249, child issues #250-#253, and planning/demo_tours_plan.md.

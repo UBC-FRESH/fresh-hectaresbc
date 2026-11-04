@@ -500,6 +500,21 @@ dataset ID, visible context layers, legend, date, and attribution.
 - [x] P32.3 Add map export browser coverage and docs. Child issue: #246.
 - [x] P32.4 Verify and close Phase 32. Child issue: #247.
 
+## Phase 33: Curated Demo Tours
+
+Status: implementation in progress on `feature/p33-demo-tours`. Parent issue: #249. Planning: `planning/demo_tours_plan.md`.
+
+Phase 33 adds a Tours workspace with guided Browse, Compare, Series, Clip, and
+Discovery examples, including prefilled Clip and auto-open Discovery deep links.
+
+- [ ] P33.1 Plan tours route and deep-link contract. Child issue: #250.
+- [ ] P33.2 Add Tours route and header entry. Child issue: #251.
+- [ ] P33.3 Add Clip/Discovery deep links and browser coverage. Child issue: #252.
+- [ ] P33.4 Verify and close Phase 33. Child issue: #253.
+
 ## Current Next Steps
 
-No active implementation phase. Optional follow-ups remain in the roadmap.
+1. Complete P33.1 planning contract and close child issue #250.
+2. Implement P33.2 Tours route, cards, and header entry.
+3. Implement P33.3 Clip/Discovery deep links and browser coverage.
+4. Open the Phase 33 PR, verify, merge, and close parent #249.
