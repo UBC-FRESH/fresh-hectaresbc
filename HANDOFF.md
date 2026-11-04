@@ -1,12 +1,13 @@
 # Agent Handoff
 
-Date: 2026-11-03
-Status: P19/P20/P21/P22/P23/P24/P25/P26/P27/P28/P29/P30/P31/P32/P33/P34/P35/P36/P37/P38/P39/P40 complete; no active implementation branch or open issues/PRs.
+Date: 2026-11-04
+Status: P19–P41 complete; no active implementation branch or open issues/PRs. Release-readiness guide: `docs/release_readiness.rst`.
 Branch: `main`
-Latest feature merge: `398dd1e`
-Latest merged PR: #296 (core-admin COG coverage); compare export: #216
+Latest feature merge: `3103093`
+Latest merged PR: #302 (release readiness); compare export: #216
 Demo host: `https://fresh-hectaresbc.01101.dev`
 Foundation: #140 (P19/P20 browser UI and agent GIS assistant)
+Full release checks: `bash scripts/run_release_checks.sh`
 
 ## What Is Implemented
 
@@ -320,7 +321,7 @@ resolution tests. Use the web/agent test command above for this feature set.
 
 ## Final Closeout
 
-- P19, P20, P21, P22, P23, P24, P25, P26, P27, P28, P29, P30, P31, P32, P33, P34, P35, P36, P37, P38, P39, and P40 are complete; no active implementation branch remains.
+- P19–P41 are complete; no active implementation branch remains.
 - No open GitHub issues or pull requests at closeout.
 - Final protected public verification and browser smoke checks passed.
 - Sphinx sources refreshed for tiles, COGs, stats, Clip AOI preflight, jobs, and retention.
@@ -345,6 +346,7 @@ resolution tests. Use the web/agent test command above for this feature set.
 - Phase 38 added cold-checkout coverage for missing catalog/preview/image/service states and clarified fallback semantics.
 - Phase 39 added admin storage usage, retention policy display, and a manual prune action.
 - Phase 40 added a core-admin COG preset/dry-run and built six administrative COGs in the demo, for a total of seven.
+- Phase 41 added `docs/release_readiness.rst` and `scripts/run_release_checks.sh`, consolidating capabilities, routes, operations, budgets, security, limits, and the release checklist.
 - Remaining items below are optional follow-ups, not blockers.
 
 ## Optional Follow-Ups

@@ -598,7 +598,7 @@ administrative layers in the demo, and measures a representative high-zoom tile.
 
 ## Phase 41: Release Readiness And Documentation Consolidation
 
-Status: implementation in progress on `feature/p41-release-readiness`. Parent issue: #297. Planning: `planning/release_readiness_plan.md`.
+Status: completed and merged to `main` via PR #302. Parent issue: #297. Planning: `planning/release_readiness_plan.md`.
 
 Phase 41 consolidates current capabilities, operations, verification, budgets, and
 limitations into a release-readiness guide and repeatable check script.
@@ -606,11 +606,9 @@ limitations into a release-readiness guide and repeatable check script.
 - [x] P41.1 Plan release-readiness content. Child issue: #298.
 - [x] P41.2 Add readiness guide and repeatable checks. Child issue: #299.
 - [x] P41.3 Refresh README, overview, and handoff. Child issue: #300.
-- [ ] P41.4 Verify and close Phase 41. Child issue: #301.
+- [x] P41.4 Verify and close Phase 41. Child issue: #301.
 
 ## Current Next Steps
 
-1. Complete P41.1 planning and close child issue #298.
-2. Add readiness guide and run_release_checks script.
-3. Refresh README/overview/HANDOFF.
-4. Open the Phase 41 PR, verify, merge, and close parent #297.
+No active implementation phase. See `docs/release_readiness.rst` and `HANDOFF.md`
+for the current release state.

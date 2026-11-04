@@ -269,3 +269,4 @@
 - Completed and merged Phase 40 via PR #296: core-admin COG preset/dry-run, six new demo COGs, 7 total, forest-district z9 tile improved from ~0.95 s to ~0.31 s, test/docs updates.
 - Activated Phase 41 release readiness and documentation consolidation with parent issue #297, child issues #298-#301, and planning/release_readiness_plan.md.
 - Completed P41.2/P41.3 with docs/release_readiness.rst, scripts/run_release_checks.sh, README/overview consolidation, and a passing full release audit.
+- Completed and merged Phase 41 via PR #302: release-readiness guide, full release check script, README/overview consolidation, and a passing end-to-end release audit.
