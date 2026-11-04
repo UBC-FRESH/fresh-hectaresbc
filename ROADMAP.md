@@ -512,6 +512,21 @@ Discovery examples, including prefilled Clip and auto-open Discovery deep links.
 - [x] P33.3 Add Clip/Discovery deep links and browser coverage. Child issue: #252.
 - [x] P33.4 Verify and close Phase 33. Child issue: #253.
 
+## Phase 34: Series Frame Prefetch And Loading Feedback
+
+Status: implementation in progress on `feature/p34-series-prefetch`. Parent issue: #255. Planning: `planning/series_prefetch_plan.md`.
+
+Phase 34 warms the next Series frame and reports active-frame loading state until
+the source is ready.
+
+- [ ] P34.1 Plan Series prefetch contract. Child issue: #256.
+- [ ] P34.2 Implement next-frame warming and readiness. Child issue: #257.
+- [ ] P34.3 Add loading feedback and browser coverage. Child issue: #258.
+- [ ] P34.4 Verify and close Phase 34. Child issue: #259.
+
 ## Current Next Steps
 
-No active implementation phase. Optional follow-ups remain in the roadmap.
+1. Complete P34.1 planning contract and close child issue #256.
+2. Implement P34.2 prefetch and readiness.
+3. Implement P34.3 loading feedback and browser coverage.
+4. Open the Phase 34 PR, verify, merge, and close parent #255.
